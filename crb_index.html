@@ -12005,6 +12005,29 @@
       return function updMs(key, subfield, val) { setD(p => ({ ...p, [key]: { ...(p[key] || {}), [subfield]: val } })); };
     }
 
+    function makeAddComm(commNote, commTo, d, setD, setCommNote, onUpdate) {
+      return function addComm() {
+        if (!commNote.trim()) return;
+        const nc = buildComment(commNote, commTo);
+        const newComms = [...(d.comms || []), nc];
+        setD(p => ({ ...p, comms: newComms }));
+        setCommNote('');
+        if (onUpdate) onUpdate({ ...d, comms: newComms });
+      };
+    }
+
+    function makeSendComment(commNote, commTo, appt, comms, setComms, setCommNote, onUpdate, extraFields) {
+      return function sendComment() {
+        if (!commNote.trim()) return;
+        const nc = buildComment(commNote, commTo);
+        const base = (appt.comms || []).length >= comms.length ? (appt.comms || []) : comms;
+        const newComms = [...base, nc];
+        setComms(newComms);
+        setCommNote('');
+        if (onUpdate) onUpdate({ ...appt, comms: newComms, ...(extraFields || {}) });
+      };
+    }
+
     function PatientModal({ appt, onSave, onUpdate, onClose, onDelete }) {
       const [confirmDelete, setConfirmDelete] = useState(false);
       const [d, setD] = useState({
@@ -12094,14 +12117,7 @@
         });
       }
 
-      function addComm() {
-        if (!commNote.trim()) return;
-        const nc = buildComment(commNote, commTo);
-        const newComms = [...(d.comms || []), nc];
-        setD(p => ({ ...p, comms: newComms }));
-        setCommNote('');
-        if (onUpdate) onUpdate({ ...d, comms: newComms });
-      }
+      const addComm = makeAddComm(commNote, commTo, d, setD, setCommNote, onUpdate);
       function addUDate() {
         const v = uDate.trim();
         if (v && !(d.unsigned || []).includes(v)) setD(p => ({ ...p, unsigned: [...(p.unsigned || []), v] }));
@@ -12612,20 +12628,12 @@
         }
       }, [comms.length]);
 
-      function sendComment() {
-        if (!commNote.trim()) return;
-        const nc = buildComment(commNote, commTo);
-        // Use appt.comms (prop) as the base when it is current or ahead of local state —
-        // it carries readBy updates from markCommsReadPersist so those aren't overwritten.
-        // Fall back to local comms if local state has more entries (user sent multiple
-        // messages before the parent prop cycled back).
-        const base = (appt.comms || []).length >= comms.length ? (appt.comms || []) : comms;
-        const newComms = [...base, nc];
-        setComms(newComms);
-        setCommNote('');
-        // Send is FINAL — persist immediately without closing modal
-        if (onUpdate) onUpdate({ ...appt, comms: newComms, rxMeds, cpt, out });
-      }
+      // Use appt.comms (prop) as the base when it is current or ahead of local state —
+      // it carries readBy updates from markCommsReadPersist so those aren't overwritten.
+      // Fall back to local comms if local state has more entries (user sent multiple
+      // messages before the parent prop cycled back).
+      // Send is FINAL — persist immediately without closing modal
+      const sendComment = makeSendComment(commNote, commTo, appt, comms, setComms, setCommNote, onUpdate, { rxMeds, cpt, out });
 
       function handleSave() {
         onSave({ ...appt, comms, rxMeds, cpt, out });
@@ -14416,18 +14424,10 @@
         if (commListRef.current) commListRef.current.scrollTop = commListRef.current.scrollHeight;
       }, [comms.length]);
 
-      function sendComment() {
-        if (!commNote.trim()) return;
-        const nc = buildComment(commNote, commTo);
-        // Use appt.comms (prop) as base when current — it carries readBy updates
-        // from markCommsReadPersist so they aren't lost when we persist the new comment.
-        const base = (appt.comms || []).length >= comms.length ? (appt.comms || []) : comms;
-        const newComms = [...base, nc];
-        setComms(newComms);
-        setCommNote('');
-        // Send is FINAL — persist immediately, popup stays open
-        if (onUpdate) onUpdate({ ...appt, comms: newComms });
-      }
+      // Use appt.comms (prop) as base when current — it carries readBy updates
+      // from markCommsReadPersist so they aren't lost when we persist the new comment.
+      // Send is FINAL — persist immediately, popup stays open
+      const sendComment = makeSendComment(commNote, commTo, appt, comms, setComms, setCommNote, onUpdate);
 
       return (
         <div className="cp-overlay" onClick={onClose}>
@@ -16660,16 +16660,9 @@
       const msKey = d.method === 'alma' ? 'alma' : d.method === 'hw' ? 'hw' : d.method === 'grow' ? 'grow' : 'direct';
       const ms = d[msKey] || { text: '', valid: null };
 
-      function addComm() {
-        if (!commNote.trim()) return;
-        const nc = buildComment(commNote, commTo);
-        // d.comms synced with readBy updates in useEffect above
-        const newComms = [...(d.comms || []), nc];
-        setD(p => ({ ...p, comms: newComms }));
-        setCommNote('');
-        // Send is FINAL — persist immediately via onUpdate without closing
-        if (onUpdate) onUpdate({ ...d, comms: newComms });
-      }
+      // d.comms synced with readBy updates in useEffect above
+      // Send is FINAL — persist immediately via onUpdate without closing
+      const addComm = makeAddComm(commNote, commTo, d, setD, setCommNote, onUpdate);
 
       const ns = d.noteStatus || '';
       const nsInfo = NS_LABELS[ns] || NS_LABELS[''];
