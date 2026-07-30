@@ -10501,6 +10501,8 @@
   <script type="text/babel">
     const { useState, useEffect, useRef, useCallback } = React;
 
+    const BEST_CHANNEL_API_BASE = 'http://192.168.88.178:8000';
+
     const PROVIDERS = [
       { id: 'jodene', name: 'Jodene' },
       { id: 'katie', name: 'Katie' },
@@ -11349,6 +11351,8 @@
       );
     }
 
+    function urgCls(n) { return n >= 3 ? 'u3p' : n === 2 ? 'u2' : 'u1'; }
+
     function UnsignedAlert({ appts, date, onClearPhantom }) {
       // Display-time filter: strip same-day entries and void appointments from each
       // appt's unsigned list before we decide whether/what to show.
@@ -11360,7 +11364,6 @@
         .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
       if (!hits.length) return null;
       const totalNotes = hits.reduce((s, a) => s + a._displayUnsigned.length, 0);
-      function urgCls(n) { return n >= 3 ? 'u3p' : n === 2 ? 'u2' : 'u1'; }
       return (
         <div className="una-wrap">
           <div className="una-head">
@@ -11412,7 +11415,6 @@
       }, []);
       if (!groups.length) return null;
       const totalNotes = groups.reduce((s, g) => s + g.appts.reduce((ss, a) => ss + a._displayUnsigned.length, 0), 0);
-      function urgCls(n) { return n >= 3 ? 'u3p' : n === 2 ? 'u2' : 'u1'; }
       function fmtGroupDate(ds) {
         const [y, m, d] = ds.split('-');
         const dow = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(+y, +m - 1, +d).getDay()];
@@ -11999,6 +12001,10 @@
         </div>
       );
     }
+    function makeUpdMs(setD) {
+      return function updMs(key, subfield, val) { setD(p => ({ ...p, [key]: { ...(p[key] || {}), [subfield]: val } })); };
+    }
+
     function PatientModal({ appt, onSave, onUpdate, onClose, onDelete }) {
       const [confirmDelete, setConfirmDelete] = useState(false);
       const [d, setD] = useState({
@@ -12037,7 +12043,7 @@
         if (commListRef.current) commListRef.current.scrollTop = commListRef.current.scrollHeight;
       }, [(d.comms || []).length]);
       function upd(k, v) { setD(p => ({ ...p, [k]: v })); }
-      function updMs(ms, k, v) { setD(p => ({ ...p, [ms]: { ...p[ms], [k]: v } })); }
+      const updMs = makeUpdMs(setD);
       function updScr(k, v) {
         const newScr = { ...(d.scr || {}), [k]: v };
         setD(p => ({ ...p, scr: newScr }));
@@ -14067,7 +14073,7 @@
       React.useEffect(() => {
         if (!carrier || !state || carrier.toLowerCase().includes('cash')) { setData(null); return; }
         setLoading(true); setData(null);
-        fetch('http://192.168.88.178:8000/api/best-channel?carrier=' + encodeURIComponent(carrier) +
+        fetch(BEST_CHANNEL_API_BASE + '/api/best-channel?carrier=' + encodeURIComponent(carrier) +
           '&state=' + encodeURIComponent(state) + '&cpts=99214,90833,90836,90838')
           .then(r => r.json()).then(d => { setLoading(false); setData(d); }).catch(() => setLoading(false));
       }, [carrier, state]);
@@ -15658,7 +15664,7 @@
       React.useEffect(() => {
         if (!insurance || !patientState || insurance.toLowerCase().includes('cash')) { setBestChannel(null); return; }
         setBestChannelLoading(true); setBestChannel(null);
-        fetch('http://192.168.88.178:8000/api/best-channel?carrier=' + encodeURIComponent(insurance) +
+        fetch(BEST_CHANNEL_API_BASE + '/api/best-channel?carrier=' + encodeURIComponent(insurance) +
           '&state=' + encodeURIComponent(patientState) + '&cpts=' + encodeURIComponent(normCpt(localAppt.cpt).join(',') || '99214'))
           .then(r => r.json()).then(d => { setBestChannelLoading(false); setBestChannel(d); })
           .catch(() => setBestChannelLoading(false));
@@ -16649,7 +16655,7 @@
       }, [(d.comms || []).length]);
 
       function upd(field, val) { setD(p => ({ ...p, [field]: val })); }
-      function updMs(key, subfield, val) { setD(p => ({ ...p, [key]: { ...(p[key] || {}), [subfield]: val } })); }
+      const updMs = makeUpdMs(setD);
 
       const msKey = d.method === 'alma' ? 'alma' : d.method === 'hw' ? 'hw' : d.method === 'grow' ? 'grow' : 'direct';
       const ms = d[msKey] || { text: '', valid: null };
@@ -17293,7 +17299,7 @@
             return;
           }
           setBestRateLoading(true);
-          fetch('http://192.168.88.178:8000/api/best-channel?carrier=' + encodeURIComponent(carrier) +
+          fetch(BEST_CHANNEL_API_BASE + '/api/best-channel?carrier=' + encodeURIComponent(carrier) +
             '&state=FL&cpts=' + encodeURIComponent(cpts) + '&provider=' + encodeURIComponent(a.provID || ''))
             .then(r => r.json())
             .then(d => { setBestRateLoading(false); setBestRateData(d); })

@@ -137,3 +137,31 @@ This section is scoped as background for a *future* phase, per the request. Noth
 5. Keep the CSS split (`styles.html`) as the first, lowest-risk step if this is ever staged incrementally — it has no scope/closure concerns at all, unlike the JS.
 
 A "real" module split (separate `<script>` tags, explicit exports, eventually a bundler) is a different and larger undertaking — it would require auditing every cross-component reference individually rather than a mechanical cut-and-diff, and is out of scope for anything described above.
+
+---
+
+## 5. Comment-sending logic — side-by-side comparison
+
+*Added after the CSS/JS map above was written and after two small edits to `crb_index.html` (extracting `BEST_CHANNEL_API_BASE` and consolidating `urgCls`), so line numbers here reflect the file's current state and are a few lines higher than any earlier references to this code elsewhere in this document.*
+
+Four components each implement "take the pending comment note, build a comment object, append it to the comments array, and persist" as their own local function. They are **not** all independent — they split into two identical pairs, differing from each other only in one structural choice (how the component stores its own state) and one consequence of that choice (what gets included in the persisted payload). Validation, comment construction, and error handling are identical across all four.
+
+| | `PatientModal.addComm` (line 12,093) | `BillerApptModal.addComm` (line 16,659) | `ProviderApptModal.sendComment` (line 12,611) | `CommentsPopup.sendComment` (line 14,415) |
+|---|---|---|---|---|
+| **Validation** | `if (!commNote.trim()) return;` | Identical | Identical | Identical |
+| **Comment object built via** | `buildComment(commNote, commTo)` (shared, line 12,493 — not duplicated) | Same | Same | Same |
+| **Local state shape** | Single mirrored object `d` (`useState({...appt, scr, scrData, ...})`), updated with `setD` | Single mirrored object `d` (`useState(() => ({...appt}))`), updated with `setD` | Dedicated `comms` array only (`useState(appt.comms \|\| [])`), updated with `setComms` | Dedicated `comms` array only (`useState(appt.comms \|\| [])`), updated with `setComms` |
+| **Base array read from** | `d.comms \|\| []` — local mirror only | `d.comms \|\| []` — local mirror only | `(appt.comms \|\| []).length >= comms.length ? (appt.comms \|\| []) : comms` — picks whichever of the prop or local state is longer | Identical "longer wins" comparison against `appt.comms` |
+| **Read-receipt race guard** | None — relies entirely on the mount-time `markCommsReadPersist` effect having already folded `readBy` updates into `d.comms` before any send happens | None — same reliance as `PatientModal` | Explicit: the "longer wins" comparison exists specifically so a `readBy` update landing on the `appt` prop after a local send won't get clobbered, and a local send racing ahead of the prop won't get lost either (per the inline comment at the call site) | Identical explicit guard, identical comment rationale |
+| **`onUpdate` payload** | `{ ...d, comms: newComms }` — the *entire* local mirror, so every other field the user has touched anywhere else in this modal (screener scores, notes, method-validation fields, etc.) rides along with the comment save | `{ ...d, comms: newComms }` — same pattern, whatever fields `d` accumulates via this modal's own `upd`/`updMs` calls | `{ ...appt, comms: newComms, rxMeds, cpt, out }` — spreads the *original prop* (not a continuously-synced mirror), then explicitly re-adds the three extra pieces of state this component tracks separately | `{ ...appt, comms: newComms }` — spreads the original prop; no extra fields, because this component doesn't track anything besides comments |
+| **Function name** | `addComm` | `addComm` | `sendComment` | `sendComment` |
+| **Endpoint / backend call** | None directly — calls the `onUpdate` prop | Same | Same | Same |
+
+**All four ultimately go through the same backend path.** None of the four functions calls `gsr()` or `fetch()` itself, and none has any try/catch or error handling of its own — each just invokes the `onUpdate` prop it was given, fire-and-forget, with no `await`. All four `onUpdate` props trace back to the same save/queue/rollback machinery in `App` (§2.2 #39), so there is no endpoint difference between them — the difference is entirely in what each function decides to *pass into* `onUpdate`, and how it decides what to merge as the comments array.
+
+**Net read:** this isn't four independently-drifted copies. It's one two-way fork —
+
+- **`d`-mirror pattern** (`PatientModal`, `BillerApptModal`): near-identical bodies (differ only in comments, not code), full-local-state payload, no race guard.
+- **`comms`-array pattern** (`ProviderApptModal`, `CommentsPopup`): near-identical bodies (differ only in whether `rxMeds, cpt, out` are appended to the payload), explicit race guard present in both.
+
+— that happened to get reimplemented per-component rather than factored out once. The one behavioral asymmetry worth flagging on its own: the `d`-mirror pair has no defense against the `readBy` race that the `comms`-array pair explicitly guards against. In practice this is probably safe today (the mount-time effect that folds `readBy` into `d.comms` likely resolves well before a user can type and send a comment), but it's a real, not cosmetic, difference in behavior under a race — not just a difference in code shape. No consolidation or edit has been made; this section is a comparison only, per instructions.
