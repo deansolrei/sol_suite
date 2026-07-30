@@ -17442,6 +17442,29 @@
                                 );
                               })}
                             </tbody>
+                            <tfoot>
+                              <tr style={{ borderTop: '2px solid #09371F', background: '#F2EDDB' }}>
+                                <td style={{
+                                  padding: '8px 8px', fontWeight: 800, color: '#2B2716', fontSize: 11,
+                                  textTransform: 'uppercase', letterSpacing: '.5px'
+                                }}>TOTAL</td>
+                                {['Clinic Submit', 'Headway', 'Alma', 'Grow Therapy'].map(ch2 => {
+                                  const total = (bestRateData.channel_totals || {})[ch2];
+                                  const isWinner = total != null && ch2 === ch;
+                                  const co = C[ch2];
+                                  return (
+                                    <td key={ch2} style={{
+                                      padding: '8px 8px', textAlign: 'right', fontWeight: 800,
+                                      background: isWinner && co ? co.bg : 'transparent',
+                                      color: isWinner && co ? co.tx : '#2B2716'
+                                    }}>
+                                      {total != null ? `$${total.toFixed(2)}` : '—'}{isWinner ? ' ★' : ''}
+                                    </td>
+                                  );
+                                })}
+                                <td></td>
+                              </tr>
+                            </tfoot>
                           </table>
                           <div style={{
                             marginTop: 12, padding: '8px 12px', background: '#F2EDDB', borderRadius: 0,
