@@ -17203,6 +17203,7 @@
           insurance: a.directIns || (pt && pt.insurance) || '',
           portion: a.paymentType || (pt && pt.patientPortion) || '',
           rate: a.paymentRate || (pt && pt.rate) || '',
+          patientState: (pt && pt.patientState) || '',
         };
       }
 
@@ -17285,7 +17286,6 @@
           setBestRateOpen(true);
           if (bestRateData) return; // already loaded
           const carrier = info.insurance;
-          const state = ''; // no state on appt — shows all-state rates
           const cpts = normCpt(a.cpt).join(',') || '99214';
           if (!carrier || carrier.toLowerCase().includes('cash')) {
             setBestRateData({ mapped: false, raw_carrier: carrier || 'No carrier' });
@@ -17293,7 +17293,7 @@
           }
           setBestRateLoading(true);
           fetch(BEST_CHANNEL_API_BASE + '/api/best-channel?carrier=' + encodeURIComponent(carrier) +
-            '&state=FL&cpts=' + encodeURIComponent(cpts) + '&provider=' + encodeURIComponent(a.provID || ''))
+            '&state=' + encodeURIComponent(info.patientState || '') + '&cpts=' + encodeURIComponent(cpts) + '&provider=' + encodeURIComponent(a.provID || ''))
             .then(r => r.json())
             .then(d => { setBestRateLoading(false); setBestRateData(d); })
             .catch(() => { setBestRateLoading(false); setBestRateData({ error: true }); });
