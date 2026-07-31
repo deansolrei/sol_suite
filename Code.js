@@ -580,6 +580,96 @@ function searchPatient(query) {
   }
 }
 
+/**
+ * Returns the CPT codes from a patient's most recent PAST appointment with
+ * a given provider that already has CPT codes assigned.
+ *
+ * Matches patientName by exact normalized equality (same style as
+ * diagnoseNewPatient's Appointments-tab comparison) — this identifies one
+ * specific patient precisely, unlike searchPatient's loose substring match
+ * for its live-search box.
+ *
+ * Returns [] if no matching row is found. No fallback/default codes are
+ * applied here — this function's only job is to report what's actually on
+ * file, honestly, including "nothing." Any default-code fallback belongs
+ * in a later stage, not here.
+ */
+function getLastCodedAppointment(patientName, provID) {
+  try {
+    var target = String(patientName || '').trim().toLowerCase();
+    if (!target || !provID) return [];
+
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return [];
+
+    var COL_PATIENT = APPT_COLS.indexOf('Patient');
+    var COL_PROV_ID = APPT_COLS.indexOf('ProvID');
+    var COL_DATE    = APPT_COLS.indexOf('Date');
+    var COL_CPT     = APPT_COLS.indexOf('CPTCodes');
+
+    var today = _fmtDate(new Date());
+    var rows  = sheet.getDataRange().getValues();
+    var matches = [];
+
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+
+      var ptCell = String(r[COL_PATIENT] || '').trim().toLowerCase();
+      if (ptCell !== target) continue;
+
+      if (String(r[COL_PROV_ID] || '').trim() !== String(provID).trim()) continue;
+
+      var date = _fmtDate(r[COL_DATE]);
+      if (!date || date >= today) continue;
+
+      if (!r[COL_CPT]) continue;
+
+      matches.push({ date: date, cptRaw: r[COL_CPT] });
+    }
+
+    if (!matches.length) return [];
+
+    matches.sort(function(a, b) {
+      return a.date > b.date ? -1 : a.date < b.date ? 1 : 0;
+    });
+
+    return String(matches[0].cptRaw).split(/[|,;]/).map(function(s) { return s.trim(); }).filter(Boolean);
+  } catch (e) {
+    Logger.log('getLastCodedAppointment error: ' + e.message);
+    return [];
+  }
+}
+
+/**
+ * Convenience wrapper — edit the patient name and provider ID here, then
+ * click ▶ Run. Prints the result via Logger.log (View → Logs) so you can
+ * verify it against a real patient/provider pair you already know by
+ * looking at the sheet yourself.
+ */
+function runGetLastCodedAppointment() {
+  var patientName = 'Jane Smith';   // ← CHANGE THIS NAME
+  var provID      = 'jodene';       // ← CHANGE THIS PROVIDER ID
+  var cpts = getLastCodedAppointment(patientName, provID);
+  Logger.log('getLastCodedAppointment("' + patientName + '", "' + provID + '") → ' + JSON.stringify(cpts));
+}
+
+/**
+ * TEMPORARY — manual testing convenience only.
+ * Same as runGetLastCodedAppointment(), but shows the result as a popup
+ * dialog via SpreadsheetApp.getUi().alert() instead of Logger.log, so you
+ * don't have to open View → Logs. Edit the patient name and provider ID
+ * here, then click ▶ Run.
+ */
+function runGetLastCodedAppointmentAlert() {
+  var patientName = 'Jane Smith';   // ← CHANGE THIS NAME
+  var provID      = 'jodene';       // ← CHANGE THIS PROVIDER ID
+  var cpts = getLastCodedAppointment(patientName, provID);
+  SpreadsheetApp.getUi().alert(
+    'getLastCodedAppointment("' + patientName + '", "' + provID + '")\n\n' + JSON.stringify(cpts)
+  );
+}
+
 
 /* ════════════════════════════════════════════════════════════════
    WRITE — APPOINTMENTS
