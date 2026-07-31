@@ -267,23 +267,6 @@ function styleHeaderRow(sheet, numCols, bg, fg) {
 
 
 /* ════════════════════════════════════════════════════════════════
-   LOGO
-════════════════════════════════════════════════════════════════ */
-function getLogoBase64() {
-  try {
-    const file  = DriveApp.getFileById(LOGO_FILE_ID);
-    const blob  = file.getBlob();
-    const mime  = blob.getContentType() || 'image/png';
-    const b64   = Utilities.base64Encode(blob.getBytes());
-    return 'data:' + mime + ';base64,' + b64;
-  } catch (e) {
-    Logger.log('getLogoBase64 error: ' + e.message);
-    return '';
-  }
-}
-
-
-/* ════════════════════════════════════════════════════════════════
    READ — APPOINTMENTS
 ════════════════════════════════════════════════════════════════ */
 
@@ -2115,10 +2098,6 @@ function getCurrentUserWithRole() {
    INTERNAL HELPERS
 ════════════════════════════════════════════════════════════════ */
 
-function _apptSheet() {
-  return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TAB_APPT);
-}
-
 function _getStaffRecord(ss, email) {
   const sheet = ss.getSheetByName(TAB_STAFF);
   if (!sheet || sheet.getLastRow() < 2) return null;
@@ -2816,38 +2795,6 @@ function _tebraDateFmt(d) {
 function _parseYMD(s) {
   var p = s.split('-');
   return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
-}
-
-function _parseTebraApiDate(s) {
-  if (!s) return '';
-  var p = s.split('/');
-  if (p.length !== 3) return s;
-  return p[2] + '-' + String(p[0]).padStart(2, '0') + '-' + String(p[1]).padStart(2, '0');
-}
-
-function _parseTebraApiTime(s) {
-  if (!s) return '';
-  s = s.trim();
-  var ampm = /^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/i.exec(s);
-  if (ampm) {
-    var h = parseInt(ampm[1], 10);
-    var m = ampm[2];
-    var period = ampm[3].toUpperCase();
-    if (period === 'PM' && h !== 12) h += 12;
-    if (period === 'AM' && h === 12) h = 0;
-    var isPM2 = h >= 12;
-    var h12   = h === 0 ? 12 : (h > 12 ? h - 12 : h);
-    return h12 + ':' + m + (isPM2 ? 'PM' : 'AM');
-  }
-  var h24 = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(s);
-  if (h24) {
-    var h = parseInt(h24[1], 10);
-    var m = h24[2];
-    var isPM = h >= 12;
-    var h12  = h === 0 ? 12 : (h > 12 ? h - 12 : h);
-    return h12 + ':' + m + (isPM ? 'PM' : 'AM');
-  }
-  return s;
 }
 
 function _parseTebraStartDate(s) {
