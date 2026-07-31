@@ -12065,6 +12065,21 @@
       const commListRef = React.useRef(null);
       const myRole = _crbUser.role || 'assistant';
       const toOptions = COMM_TO_OPTIONS[myRole] || COMM_TO_OPTIONS.assistant;
+      // ── TEMP DEBUG (Stage B scaffolding) — proves the getLastCodedAppointment
+      // frontend→backend plumbing works end-to-end. Purely additive: does not
+      // touch BestChannelHint's behavior/gating. Remove once verified. ──
+      const [debugLastCoded, setDebugLastCoded] = useState(null);
+      React.useEffect(() => {
+        gsr('getLastCodedAppointment', appt.patient, appt.provID)
+          .then(result => {
+            console.log('[TEMP DEBUG] getLastCodedAppointment(', appt.patient, ',', appt.provID, ') →', result);
+            setDebugLastCoded(Array.isArray(result) ? result : []);
+          })
+          .catch(err => {
+            console.log('[TEMP DEBUG] getLastCodedAppointment error:', err);
+            setDebugLastCoded([]);
+          });
+      }, []);
       React.useEffect(() => {
         markCommsReadPersist(appt, (u) => {
           setD(p => ({ ...p, comms: u.comms }));
@@ -12207,6 +12222,11 @@
                           placeholder={d.paymentType === 'coinsurance' ? 'e.g. 20%' : 'e.g. 30'} /></div>
                     </div>
                   </>
+                )}
+                {debugLastCoded !== null && (
+                  <div style={{ fontSize: 11, color: '#B45309', background: '#FFFBEB', border: '1px dashed #F59E0B', borderRadius: 6, padding: '6px 10px', marginTop: 8 }}>
+                    [TEMP DEBUG] Last coded CPTs: {debugLastCoded.length ? debugLastCoded.join(', ') : '(none found)'}
+                  </div>
                 )}
                 {/* Billing status inline — text note + validity radio, now part of Appointment Info */}
                 <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '10px 12px', marginTop: 10, border: '1px solid #E2E8F0' }}>
