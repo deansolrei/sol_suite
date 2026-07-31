@@ -17397,6 +17397,7 @@
                   defaultValue={a.claimPaidAmount && !isNaN(parseFloat(a.claimPaidAmount))
                     ? `$${parseFloat(a.claimPaidAmount).toFixed(2)}` : ''}
                   onFocus={e => { e.target.value = e.target.value.replace(/[^0-9.]/g, ''); e.target.select(); }}
+                  onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
                   onBlur={e => {
                     const v = e.target.value.replace(/[^0-9.]/g, '');
                     e.target.value = (v && !isNaN(parseFloat(v))) ? `$${parseFloat(v).toFixed(2)}` : '';
