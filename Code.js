@@ -654,22 +654,6 @@ function runGetLastCodedAppointment() {
   Logger.log('getLastCodedAppointment("' + patientName + '", "' + provID + '") → ' + JSON.stringify(cpts));
 }
 
-/**
- * TEMPORARY — manual testing convenience only.
- * Same as runGetLastCodedAppointment(), but shows the result as a popup
- * dialog via SpreadsheetApp.getUi().alert() instead of Logger.log, so you
- * don't have to open View → Logs. Edit the patient name and provider ID
- * here, then click ▶ Run.
- */
-function runGetLastCodedAppointmentAlert() {
-  var patientName = 'Jane Smith';   // ← CHANGE THIS NAME
-  var provID      = 'jodene';       // ← CHANGE THIS PROVIDER ID
-  var cpts = getLastCodedAppointment(patientName, provID);
-  SpreadsheetApp.getUi().alert(
-    'getLastCodedAppointment("' + patientName + '", "' + provID + '")\n\n' + JSON.stringify(cpts)
-  );
-}
-
 
 /* ════════════════════════════════════════════════════════════════
    WRITE — APPOINTMENTS
