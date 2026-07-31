@@ -12065,19 +12065,16 @@
       const commListRef = React.useRef(null);
       const myRole = _crbUser.role || 'assistant';
       const toOptions = COMM_TO_OPTIONS[myRole] || COMM_TO_OPTIONS.assistant;
-      // ── TEMP DEBUG (Stage B scaffolding) — proves the getLastCodedAppointment
-      // frontend→backend plumbing works end-to-end. Purely additive: does not
-      // touch BestChannelHint's behavior/gating. Remove once verified. ──
-      const [debugLastCoded, setDebugLastCoded] = useState(null);
+      // ── Most recent coded CPTs for this patient + provider — seeds
+      // BestChannelHint's rate lookup instead of the flat default CPT list. ──
+      const [lastCodedCpts, setLastCodedCpts] = useState(null);
       React.useEffect(() => {
         gsr('getLastCodedAppointment', appt.patient, appt.provID)
           .then(result => {
-            console.log('[TEMP DEBUG] getLastCodedAppointment(', appt.patient, ',', appt.provID, ') →', result);
-            setDebugLastCoded(Array.isArray(result) ? result : []);
+            setLastCodedCpts(Array.isArray(result) ? result : []);
           })
-          .catch(err => {
-            console.log('[TEMP DEBUG] getLastCodedAppointment error:', err);
-            setDebugLastCoded([]);
+          .catch(() => {
+            setLastCodedCpts([]);
           });
       }, []);
       React.useEffect(() => {
@@ -12207,7 +12204,6 @@
                         onChange={e => { upd('directIns', e.target.value); updMs('direct', 'text', e.target.value); }}
                         placeholder="e.g. Blue Cross Blue Shield, Cash Pay" />
                     </div>
-                    {d.directIns && d.directIns.length > 2 && !d.directIns.toLowerCase().includes('cash') && <BestChannelHint carrier={d.directIns} state={d.patientState || ''} />}
                     <div className="g2 frm">
                       <div><label className="fl">Cost-Share Classification</label>
                         <select className="fi" value={d.paymentType || ''} onChange={e => upd('paymentType', e.target.value)}>
@@ -12223,10 +12219,12 @@
                     </div>
                   </>
                 )}
-                {debugLastCoded !== null && (
-                  <div style={{ fontSize: 11, color: '#B45309', background: '#FFFBEB', border: '1px dashed #F59E0B', borderRadius: 6, padding: '6px 10px', marginTop: 8 }}>
-                    [TEMP DEBUG] Last coded CPTs: {debugLastCoded.length ? debugLastCoded.join(', ') : '(none found)'}
-                  </div>
+                {d.insuranceCarrier && d.insuranceCarrier.length > 2 && !d.insuranceCarrier.toLowerCase().includes('cash') && lastCodedCpts !== null && (
+                  <BestChannelHint
+                    carrier={d.insuranceCarrier}
+                    state={d.patientState || ''}
+                    cpts={lastCodedCpts.length ? lastCodedCpts.join(',') : '99214,90833'}
+                  />
                 )}
                 {/* Billing status inline — text note + validity radio, now part of Appointment Info */}
                 <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '10px 12px', marginTop: 10, border: '1px solid #E2E8F0' }}>
@@ -14104,16 +14102,16 @@
     }
 
     // ── Best Channel Hint Component ──────────────────────────
-    function BestChannelHint({ carrier, state }) {
+    function BestChannelHint({ carrier, state, cpts }) {
       const [data, setData] = React.useState(null);
       const [loading, setLoading] = React.useState(false);
       React.useEffect(() => {
         if (!carrier || !state || carrier.toLowerCase().includes('cash')) { setData(null); return; }
         setLoading(true); setData(null);
         fetch(BEST_CHANNEL_API_BASE + '/api/best-channel?carrier=' + encodeURIComponent(carrier) +
-          '&state=' + encodeURIComponent(state) + '&cpts=99214,90833,90836,90838')
+          '&state=' + encodeURIComponent(state) + '&cpts=' + encodeURIComponent(cpts || '99214,90833,90836,90838'))
           .then(r => r.json()).then(d => { setLoading(false); setData(d); }).catch(() => setLoading(false));
-      }, [carrier, state]);
+      }, [carrier, state, cpts]);
       if (!loading && !data) return null;
       const C = { 'Clinic Submit': { bg: '#7494AA', bd: '#7494AA', tx: '#fff', lb: 'CLINIC' }, 'Headway': { bg: '#16A562', bd: '#16A562', tx: '#fff', lb: 'HEADWAY' }, 'Alma': { bg: '#2D4F33', bd: '#2D4F33', tx: '#fff', lb: 'ALMA' }, 'Grow Therapy': { bg: '#BCA9F7', bd: '#BCA9F7', tx: '#2B2716', lb: 'GROW' } };
       return (
@@ -14121,11 +14119,11 @@
           {loading && <span style={{ color: '#94a3b8' }}>Checking best channel…</span>}
           {data && data.mapped && data.overall_best_channel && (() => {
             const c = C[data.overall_best_channel] || { bg: '#f1f5f9', bd: '#cbd5e1', tx: '#475569', lb: data.overall_best_channel };
-            const r = (data.cpt_results || []).find(r => r.cpt_code === '99214');
+            const total = (data.channel_totals || {})[data.overall_best_channel];
             return <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.5px' }}>💰 Best rate:</span>
               <span style={{ background: c.bg, border: `1.5px solid ${c.bd}`, color: c.tx, padding: '2px 10px', borderRadius: '20px', fontSize: '.7rem', fontWeight: 700 }}>★ {c.lb}</span>
-              {r && r.best_rate && <span style={{ color: '#475569', fontSize: '.72rem' }}>{data.canonical_payer} · {data.state} · 99214: ${r.best_rate.toFixed(2)}</span>}
+              {total != null && <span style={{ color: '#475569', fontSize: '.72rem' }}>{data.canonical_payer} · {data.state} · total: ${total.toFixed(2)}</span>}
             </div>;
           })()}
           {data && !data.mapped && <span style={{ color: '#94a3b8' }}>No rate data — defaults to Clinic Submit</span>}
