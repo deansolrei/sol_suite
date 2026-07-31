@@ -3090,7 +3090,7 @@ function testTebraProviders() {
 // Run once, then check View → Logs.
 // ─────────────────────────────────────────────────────────────────
 function testTebraWsdl() {
-  var BASE = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?xsd=';
+  var BASE = TEBRA_ENDPOINT + '?xsd=';
   // xsd0 = main Kareo schemas; xsd5 = AppointmentService.Model — most likely to hold
   // AppointmentFieldsToReturn.  We also check xsd2 and xsd4 as fallbacks.
   var candidates = ['xsd0', 'xsd5', 'xsd2', 'xsd4'];
@@ -3122,7 +3122,7 @@ function testTebraWsdl() {
  * if the filter misses something.
  */
 function testTebraFindInsuranceField() {
-  var BASE = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?xsd=';
+  var BASE = TEBRA_ENDPOINT + '?xsd=';
   var xsdList = ['xsd0', 'xsd1', 'xsd2', 'xsd3', 'xsd4', 'xsd5', 'xsd6', 'xsd7'];
 
   xsdList.forEach(function(xsd) {
