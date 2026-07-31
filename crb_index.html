@@ -12037,6 +12037,17 @@
       };
     }
 
+    // ── Best-channel API channel name → METHODS id ───────────────────────
+    // The best-channel API returns overall_best_channel as one of these exact
+    // display strings; METHODS (billing-channel selector buttons) uses short
+    // internal ids. Shared by PatientModal and BillerApptModal's "suggested
+    // channel" glow on the Billing Channel buttons.
+    const BEST_CHANNEL_METHOD_MAP = { 'Clinic Submit': 'direct', 'Headway': 'hw', 'Alma': 'alma', 'Grow Therapy': 'grow' };
+    function suggestedMethodIdFor(bestChannelData) {
+      if (!bestChannelData || !bestChannelData.mapped || !bestChannelData.overall_best_channel) return null;
+      return BEST_CHANNEL_METHOD_MAP[bestChannelData.overall_best_channel] || null;
+    }
+
     function PatientModal({ appt, onSave, onUpdate, onClose, onDelete }) {
       const [confirmDelete, setConfirmDelete] = useState(false);
       const [d, setD] = useState({
@@ -12077,6 +12088,10 @@
             setLastCodedCpts([]);
           });
       }, []);
+      // ── Best-channel API result, surfaced from BestChannelHint via onResult
+      // so the Billing Channel buttons below can show a "suggested" glow. ──
+      const [bestChannelData, setBestChannelData] = useState(null);
+      const suggestedMethodId = suggestedMethodIdFor(bestChannelData);
       React.useEffect(() => {
         markCommsReadPersist(appt, (u) => {
           setD(p => ({ ...p, comms: u.comms }));
@@ -12193,7 +12208,13 @@
                 <div className="frm">
                   <label className="fl">Billing Channel</label>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    {METHODS.map(({ id, label }) => (<div key={id} className={methCls(id, d.method)} onClick={() => upd('method', id)}>{label}</div>))}
+                    {METHODS.map(({ id, label }) => (
+                      <div key={id} className={methCls(id, d.method)} onClick={() => upd('method', id)}
+                        style={suggestedMethodId === id && id !== d.method ? { boxShadow: '0 0 0 3px rgba(245, 158, 11, .45)' } : undefined}
+                        title={suggestedMethodId === id && id !== d.method ? 'Suggested best rate for this carrier' : undefined}>
+                        {label}
+                      </div>
+                    ))}
                   </div>
                 </div>
                 {d.method === 'direct' && (
@@ -12224,6 +12245,7 @@
                     carrier={d.insuranceCarrier}
                     state={d.patientState || ''}
                     cpts={lastCodedCpts.length ? lastCodedCpts.join(',') : '99214,90833'}
+                    onResult={setBestChannelData}
                   />
                 )}
                 {/* Billing status inline — text note + validity radio, now part of Appointment Info */}
@@ -14102,15 +14124,26 @@
     }
 
     // ── Best Channel Hint Component ──────────────────────────
-    function BestChannelHint({ carrier, state, cpts }) {
+    function BestChannelHint({ carrier, state, cpts, onResult }) {
       const [data, setData] = React.useState(null);
       const [loading, setLoading] = React.useState(false);
       React.useEffect(() => {
-        if (!carrier || !state || carrier.toLowerCase().includes('cash')) { setData(null); return; }
+        if (!carrier || !state || carrier.toLowerCase().includes('cash')) {
+          setData(null);
+          if (onResult) onResult(null);
+          return;
+        }
         setLoading(true); setData(null);
         fetch(BEST_CHANNEL_API_BASE + '/api/best-channel?carrier=' + encodeURIComponent(carrier) +
           '&state=' + encodeURIComponent(state) + '&cpts=' + encodeURIComponent(cpts || '99214,90833,90836,90838'))
-          .then(r => r.json()).then(d => { setLoading(false); setData(d); }).catch(() => setLoading(false));
+          .then(r => r.json()).then(d => {
+            setLoading(false); setData(d);
+            if (onResult) onResult(d);
+          })
+          .catch(() => {
+            setLoading(false);
+            if (onResult) onResult(null);
+          });
       }, [carrier, state, cpts]);
       if (!loading && !data) return null;
       const C = { 'Clinic Submit': { bg: '#7494AA', bd: '#7494AA', tx: '#fff', lb: 'CLINIC' }, 'Headway': { bg: '#16A562', bd: '#16A562', tx: '#fff', lb: 'HEADWAY' }, 'Alma': { bg: '#2D4F33', bd: '#2D4F33', tx: '#fff', lb: 'ALMA' }, 'Grow Therapy': { bg: '#BCA9F7', bd: '#BCA9F7', tx: '#2B2716', lb: 'GROW' } };
@@ -16667,6 +16700,11 @@
       const myRole = _crbUser.role || 'biller';
       const toOptions = COMM_TO_OPTIONS[myRole] || COMM_TO_OPTIONS.biller;
 
+      // ── Best-channel API result, surfaced from BestChannelHint via onResult
+      // so the Billing Channel buttons below can show a "suggested" glow. ──
+      const [bestChannelData, setBestChannelData] = React.useState(null);
+      const suggestedMethodId = suggestedMethodIdFor(bestChannelData);
+
       // Mark all incoming as read and persist readBy so sender's icon loses the !
       // Also sync d.comms with the readBy-updated version so addComm doesn't overwrite.
       React.useEffect(() => {
@@ -16722,8 +16760,10 @@
                         style={{
                           cursor: 'pointer', padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700,
                           background: d.method === id ? '#3D768A' : '#F1F5F9',
-                          color: d.method === id ? '#fff' : '#374151'
+                          color: d.method === id ? '#fff' : '#374151',
+                          ...(suggestedMethodId === id && id !== d.method ? { boxShadow: '0 0 0 3px rgba(245, 158, 11, .45)' } : {})
                         }}
+                        title={suggestedMethodId === id && id !== d.method ? 'Suggested best rate for this carrier' : undefined}
                         onClick={() => upd('method', id)}>{label}</div>
                     ))}
                   </div>
@@ -16741,7 +16781,14 @@
                       placeholder="e.g. Blue Cross Blue Shield, Cash Pay" />
                   </div>
                 )}
-                {d.method === 'direct' && d.directIns && d.directIns.length > 2 && !d.directIns.toLowerCase().includes('cash') && <BestChannelHint carrier={d.directIns} state={ptRec.patientState || ''} />}
+                {d.insuranceCarrier && d.insuranceCarrier.length > 2 && !d.insuranceCarrier.toLowerCase().includes('cash') && (
+                  <BestChannelHint
+                    carrier={d.insuranceCarrier}
+                    state={ptRec.patientState || ''}
+                    cpts={normCpt(d.cpt).join(',')}
+                    onResult={setBestChannelData}
+                  />
+                )}
                 <div className="frm">
                   <label className="fl">Billing Status Note (with initials)</label>
                   <input className="fi" value={ms.text || ''} onChange={e => updMs(msKey, 'text', e.target.value)}
