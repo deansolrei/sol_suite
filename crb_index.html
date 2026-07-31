@@ -11932,6 +11932,7 @@
       const [directIns, setDirectIns] = useState('');
       const [paymentType, setPaymentType] = useState('');
       const [paymentRate, setPaymentRate] = useState('');
+      const [patientState, setPatientState] = useState('');
 
       function handleSelect(p) {
         setPatient(`${p.firstName} ${p.lastName}`);
@@ -11939,6 +11940,7 @@
         if (p.insurance) setDirectIns(p.insurance);
         if (p.patientPortion) setPaymentType(p.patientPortion);
         if (p.rate) setPaymentRate(p.rate);
+        if (p.patientState) setPatientState(p.patientState);
       }
       function normalizeTime(raw) {
         const hhmm = parseInputTime(raw);
@@ -11980,7 +11982,14 @@
                 <label className="fl">Insurance Carrier</label>
                 <input className="fi" value={directIns} onChange={e => setDirectIns(e.target.value)} placeholder="e.g. Blue Cross, Cash Pay" />
               </div>
-              {directIns && directIns.length > 2 && !directIns.toLowerCase().includes('cash') && <BestChannelHint carrier={directIns} state={''} />}
+              <div className="frm">
+                <label className="fl">Patient State</label>
+                <select className="fi" value={patientState} onChange={e => setPatientState(e.target.value)}>
+                  <option value="">— Select —</option>
+                  {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              {directIns && directIns.length > 2 && !directIns.toLowerCase().includes('cash') && <BestChannelHint carrier={directIns} state={patientState || ''} />}
               <div className="g2 frm">
                 <div><label className="fl">Cost-Share Classification</label>
                   <select className="fi" value={paymentType} onChange={e => setPaymentType(e.target.value)}>
