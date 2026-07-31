@@ -16714,7 +16714,7 @@
                       placeholder="e.g. Blue Cross Blue Shield, Cash Pay" />
                   </div>
                 )}
-                {d.method === 'direct' && d.directIns && d.directIns.length > 2 && !d.directIns.toLowerCase().includes('cash') && <BestChannelHint carrier={d.directIns} state={''} />}
+                {d.method === 'direct' && d.directIns && d.directIns.length > 2 && !d.directIns.toLowerCase().includes('cash') && <BestChannelHint carrier={d.directIns} state={ptRec.patientState || ''} />}
                 <div className="frm">
                   <label className="fl">Billing Status Note (with initials)</label>
                   <input className="fi" value={ms.text || ''} onChange={e => updMs(msKey, 'text', e.target.value)}
