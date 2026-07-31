@@ -17334,10 +17334,6 @@
         const ms = methodStatus(a);
         const isDirect = a.method === 'direct';
         const isSubmitted = a.billing === 'submitted';
-        // Splits the old single "submitted" state into pending vs paid, per
-        // Dean's 4-state card color spec — anything submitted but not yet
-        // marked Paid (Pending / Denied / Resubmitted) reads as "pending".
-        const isPaid = isSubmitted && a.claimStatus === 'Paid';
         const info = getPatientInfo(a);
         const [statusMenuOpen, setStatusMenuOpen] = React.useState(false);
         const [bestRateOpen, setBestRateOpen] = React.useState(false);
@@ -17353,7 +17349,26 @@
         })();
         const CS_CLS = { Paid: 'csb-paid', Pending: 'csb-pend', Denied: 'csb-denied', Resubmitted: 'csb-resub' };
         const CS_ICON = { Paid: '✅', Pending: '⏳', Denied: '✗', Resubmitted: '🔄' };
-        const st = a.claimStatus || 'Pending';
+        // ── Buffer claim status while the Paid-amount input is focused, so an
+        // external a.claimStatus change mid-keystroke can't unmount the input
+        // out from under the user (it only exists in the tree while
+        // st === 'Paid'). Declared here in BRow, not inside ClaimBadge below —
+        // ClaimBadge is redefined and re-rendered as a fresh element identity
+        // on every BRow render, so a ref/state declared inside it would reset
+        // every time and never actually persist.
+        const isAmountFocusedRef = React.useRef(false);
+        const [st, setSt] = React.useState(a.claimStatus || 'Pending');
+        React.useEffect(() => {
+          if (isAmountFocusedRef.current) return;
+          setSt(a.claimStatus || 'Pending');
+        }, [a.claimStatus]);
+        // Splits the old single "submitted" state into pending vs paid, per
+        // Dean's 4-state card color spec — anything submitted but not yet
+        // marked Paid (Pending / Denied / Resubmitted) reads as "pending".
+        // Derived from the buffered st (not a.claimStatus directly) so the
+        // card color holds steady in agreement with ClaimBadge while the
+        // Paid-amount input is focused.
+        const isPaid = isSubmitted && st === 'Paid';
 
         function openBestRate(e) {
           e.stopPropagation();
@@ -17396,12 +17411,14 @@
                   placeholder="$0.00"
                   defaultValue={a.claimPaidAmount && !isNaN(parseFloat(a.claimPaidAmount))
                     ? `$${parseFloat(a.claimPaidAmount).toFixed(2)}` : ''}
-                  onFocus={e => { e.target.value = e.target.value.replace(/[^0-9.]/g, ''); e.target.select(); }}
+                  onFocus={e => { isAmountFocusedRef.current = true; e.target.value = e.target.value.replace(/[^0-9.]/g, ''); e.target.select(); }}
                   onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
                   onBlur={e => {
+                    isAmountFocusedRef.current = false;
                     const v = e.target.value.replace(/[^0-9.]/g, '');
                     e.target.value = (v && !isNaN(parseFloat(v))) ? `$${parseFloat(v).toFixed(2)}` : '';
                     if (v !== (a.claimPaidAmount || '')) scrollSafeUpdate({ ...a, claimPaidAmount: v });
+                    setSt(a.claimStatus || 'Pending');
                   }}
                 />
               )}
@@ -17659,18 +17676,17 @@
                   );
                 })()}
                 {isSubmitted && (() => {
-                  const clSt = a.claimStatus || 'Pending';
                   const stStyle = {
                     Paid: { bd: '#16a34a', fg: '#16a34a' },
                     Pending: { bd: '#BE992A', fg: '#BE992A' },
                     Denied: { bd: '#D9383A', fg: '#791F1F' },
                     Resubmitted: { bd: '#7494AA', fg: '#3D768A' },
-                  }[clSt] || { bd: '#777355', fg: '#777355' };
-                  const stIcon = { Paid: '✅', Pending: '⏳', Denied: '✗', Resubmitted: '🔄' }[clSt] || '⏳';
-                  const paidAmt = clSt === 'Paid' && a.claimPaidAmount ? ` · $${parseFloat(a.claimPaidAmount).toFixed(2)}` : '';
+                  }[st] || { bd: '#777355', fg: '#777355' };
+                  const stIcon = { Paid: '✅', Pending: '⏳', Denied: '✗', Resubmitted: '🔄' }[st] || '⏳';
+                  const paidAmt = st === 'Paid' && a.claimPaidAmount ? ` · $${parseFloat(a.claimPaidAmount).toFixed(2)}` : '';
                   return (
                     <div style={{ background: '#fff', border: `1px solid ${stStyle.bd}`, color: stStyle.fg, borderRadius: 0, padding: '6px 18px', fontSize: 15, fontWeight: 900, textAlign: 'center' }}>
-                      {stIcon} {clSt}{paidAmt}
+                      {stIcon} {st}{paidAmt}
                     </div>
                   );
                 })()}
@@ -17690,8 +17706,8 @@
                   </button>
                 </div>
                 {isDirect
-                  ? (isSubmitted ? <ClaimBadge /> : <div className="b-card-open-hint">📋 Open</div>)
-                  : (isSubmitted ? <ClaimBadge /> : (
+                  ? (isSubmitted ? ClaimBadge() : <div className="b-card-open-hint">📋 Open</div>)
+                  : (isSubmitted ? ClaimBadge() : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                       {action}
                       {onOpen && <div className="b-card-open-hint" style={{ fontSize: 10 }}>📋 Open Details</div>}
