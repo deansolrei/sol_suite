@@ -2065,6 +2065,7 @@ function getClaimsLedger(provFilter) {
         provID:            appt.provID,
         id:                appt.id,
         patient:           appt.patient,
+        patientState:      appt.patientState,
         memberID:          ptInfo.memberID || '',
         carrier:           carrier,
         date:              appt.date,
@@ -6472,7 +6473,7 @@ function generateRateAnalysis() {
     } else {
       rateSheet.clearContents();
     }
-    rateSheet.setTabColor('#059669');
+    rateSheet.setTabColor('#16A34A');
 
     var headers = [
       'Insurance Carrier',
@@ -6507,7 +6508,7 @@ function generateRateAnalysis() {
     writeRange.setValues(sheetData);
 
     // Header styling
-    styleHeaderRow(rateSheet, headers.length, '#059669', '#F2EDDB');
+    styleHeaderRow(rateSheet, headers.length, '#16A34A', '#F2EDDB');
     rateSheet.setFrozenRows(1);
 
     // Currency formatting for Avg/Min/Max columns (E, F, G = cols 5, 6, 7)
