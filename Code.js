@@ -1094,6 +1094,91 @@ function getTotalUnsignedCount(prov) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+   OVERDUE DIRECT-PAY COLLECTIONS — getOverdueDirectPay
+   ════════════════════════════════════════════════════════════════════
+   Scans every direct-pay appointment (BillingChannel === 'direct') for
+   an uncollected copay / coinsurance / cash-pay / deductible balance
+   whose appointment date is 30+ days in the past. Powers the header-
+   level "Cost Share Overdue" alert so a biller sees it regardless of
+   which window/date they're currently viewing — mirrors
+   getTotalUnsignedCount()'s cross-date scan pattern.
+
+   A row counts only if: method is direct, the visit actually occurred
+   (same _visitOccurred rule as unsigned-note counting), the patient
+   isn't a placeholder/calendar-block row, PaymentCollected isn't TRUE,
+   and CostShareRate is set to a genuine non-zero value (blank/$0 rows
+   have nothing to collect, so they're excluded — same rule the Billing
+   Day view's DirectPaySection already uses via isZeroRate()).
+   ════════════════════════════════════════════════════════════════════ */
+function getOverdueDirectPay() {
+  try {
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ items: [] });
+
+    var PROV_IDX      = APPT_COLS.indexOf('ProvID');
+    var DATE_IDX      = APPT_COLS.indexOf('Date');
+    var PATIENT_IDX   = APPT_COLS.indexOf('Patient');
+    var METHOD_IDX    = APPT_COLS.indexOf('BillingChannel');
+    var TYPE_IDX      = APPT_COLS.indexOf('CostShareClass');
+    var RATE_IDX      = APPT_COLS.indexOf('CostShareRate');
+    var COLLECTED_IDX = APPT_COLS.indexOf('PaymentCollected');
+    var TEBRA_IDX     = APPT_COLS.indexOf('TebraStatus');
+    var STATE_IDX     = APPT_COLS.indexOf('PatientState');
+
+    var tz    = Session.getScriptTimeZone();
+    var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+    var rows  = sheet.getDataRange().getValues();
+    var items = [];
+    var PLACEHOLDER_NAMES = PLACEHOLDER_PATIENT_NAMES;
+
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+
+      if (String(r[METHOD_IDX] || '') !== 'direct') continue;
+
+      var collected = r[COLLECTED_IDX];
+      var isCollected = collected === true || String(collected).trim().toUpperCase() === 'TRUE';
+      if (isCollected) continue;
+
+      // Genuine, non-zero rate only — blank or $0/0% rows have nothing to
+      // collect (same rule as the frontend's isZeroRate()).
+      var rawRate = r[RATE_IDX];
+      if (rawRate === null || rawRate === undefined || rawRate === '') continue;
+      var rateNum = parseFloat(String(rawRate).replace(/[$%,\s]/g, ''));
+      if (isNaN(rateNum) || rateNum === 0) continue;
+
+      var tebraStatus = TEBRA_IDX >= 0 ? String(r[TEBRA_IDX] || '') : '';
+      if (!_visitOccurred(tebraStatus)) continue;
+
+      var patName = String(r[PATIENT_IDX] || '').trim();
+      if (PLACEHOLDER_NAMES.indexOf(patName.toUpperCase()) !== -1) continue;
+
+      var rowDate = _fmtDate(r[DATE_IDX]);
+      if (!rowDate) continue;
+      var ageDays = Math.floor((new Date(today) - new Date(rowDate)) / 86400000);
+      if (ageDays < 30) continue;
+
+      items.push({
+        provID:       String(r[PROV_IDX] || ''),
+        patient:      patName,
+        patientState: STATE_IDX >= 0 ? String(r[STATE_IDX] || '') : '',
+        date:         rowDate,
+        paymentType:  String(r[TYPE_IDX] || ''),
+        rate:         String(rawRate),
+        daysSince:    ageDays,
+      });
+    }
+
+    items.sort(function (a, b) { return b.daysSince - a.daysSince; });
+    return JSON.stringify({ items: items });
+  } catch (e) {
+    Logger.log('getOverdueDirectPay ERROR: ' + e.message);
+    return JSON.stringify({ items: [], error: e.message });
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
    READ-ONLY AUDIT — auditUnsignedNotes
    ════════════════════════════════════════════════════════════════════
    Diagnoses the "168 outstanding notes vs. ~60 real" discrepancy Dean

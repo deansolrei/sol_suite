@@ -804,6 +804,98 @@
       line-height: 1.3;
     }
 
+    /* ── Overdue direct-pay alert (Main Header, biller-only) ──────────── */
+    .overdue-alert {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .overdue-alert-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(220, 38, 38, .22);
+      border-color: #FEF2F2;
+      color: #FEF2F2;
+    }
+
+    .overdue-alert-btn:hover {
+      background: rgba(220, 38, 38, .38);
+    }
+
+    .overdue-dropdown {
+      position: absolute;
+      top: calc(100% + 7px);
+      right: 0;
+      width: 300px;
+      max-height: 340px;
+      overflow-y: auto;
+      background: #FBFBF3;
+      border-radius: 10px;
+      box-shadow: 0 10px 36px rgba(9, 55, 31, .18), 0 2px 8px rgba(9, 55, 31, .09);
+      border: 1px solid #D8D3BF;
+      z-index: 60;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .overdue-dropdown-hdr {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      color: #DC2626;
+      padding: 2px 4px 6px;
+    }
+
+    .overdue-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2px 8px;
+      font-family: inherit;
+      font-size: 12px;
+      color: #2B2716;
+      border-radius: 6px;
+      padding: 6px 9px;
+      border: 1px solid #D8D3BF;
+      background: #FBFBF3;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .overdue-row:hover {
+      background: #FEF2F2;
+      border-color: #DC2626;
+    }
+
+    .overdue-row-name {
+      font-weight: 800;
+    }
+
+    .overdue-row-amt {
+      font-weight: 800;
+      color: #DC2626;
+    }
+
+    .overdue-row-type {
+      font-size: 10px;
+      font-weight: 700;
+      color: #777355;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+
+    .overdue-row-date {
+      font-size: 10px;
+      font-weight: 600;
+      color: #777355;
+      text-align: right;
+    }
+
     /* ── Page ───────────────────────────────────────────────── */
     .page {
       padding: 14px 16px;
@@ -8072,6 +8164,33 @@
       color: #16A34A;
     }
 
+    /* ── Claim-status variants — reuses .ns-badge shape, shown in the
+       Provider post-visit badge slot once a note is signed. ── */
+    .ns-badge.ns-nosub {
+      border-color: #777355;
+      color: #777355;
+    }
+
+    .ns-badge.ns-pend {
+      border-color: #BE992A;
+      color: #BE992A;
+    }
+
+    .ns-badge.ns-paid {
+      border-color: #16A34A;
+      color: #16A34A;
+    }
+
+    .ns-badge.ns-denied {
+      border-color: #DC2626;
+      color: #DC2626;
+    }
+
+    .ns-badge.ns-resub {
+      border-color: #3D768A;
+      color: #3D768A;
+    }
+
     .ns-cycle-btn {
       background: none;
       border: none;
@@ -12627,6 +12746,18 @@
     };
     const NS_CYCLE = ['', 'in_progress', 'ready'];
 
+    /* ── Claim-status badge labels — same visual language as NS_LABELS,
+       shown in the Provider Day View post-visit badge slot once a note
+       is signed (a.out), replacing the note-prep status with the
+       Biller-assigned claim status. ── */
+    const CLAIM_BADGE_LABELS = {
+      '': { label: 'Not Submitted', cls: 'ns-nosub', icon: '○' },
+      'Pending': { label: 'Pending', cls: 'ns-pend', icon: '⏳' },
+      'Paid': { label: 'Paid', cls: 'ns-paid', icon: '✅' },
+      'Denied': { label: 'Denied', cls: 'ns-denied', icon: '❌' },
+      'Resubmitted': { label: 'Resubmitted', cls: 'ns-resub', icon: '🔄' },
+    };
+
     /* ── Current user cache (set once on App init, used by addComm) ── */
     let _crbUser = { display: '', email: '', role: '' };
 
@@ -14052,6 +14183,11 @@
                           <PatientName name={a.patient} state={a.patientState} />
                         </span>
                         {(() => {
+                          if (a.out) {
+                            const cs = a.billing === 'submitted' ? (a.claimStatus || 'Pending') : '';
+                            const info = CLAIM_BADGE_LABELS[cs] || CLAIM_BADGE_LABELS[''];
+                            return <span className={`ns-badge ${info.cls}`} title="Claim status — set by Billing">{info.icon} {info.label}</span>;
+                          }
                           const ns = a.noteStatus || '';
                           const info = (NS_LABELS[ns] || NS_LABELS['']);
                           return <span className={`ns-badge ${info.cls}`}>{info.icon} {info.label}</span>;
@@ -18206,6 +18342,32 @@
         return () => document.removeEventListener('mousedown', handler);
       }, []);
 
+      // ── Overdue direct-pay alert (Main Header, biller-only) — cost-share
+      // (copay/coinsurance/cash-pay/deductible) not yet collected 30+ days
+      // after the appointment date. Header-level so it's visible no matter
+      // which window/date the biller currently has open — same idea as the
+      // admin menu above, fetched cross-date via a dedicated backend scan
+      // (getOverdueDirectPay) rather than the currently-loaded day/week data.
+      const [overdueOpen, setOverdueOpen] = useState(false);
+      const [overdueDirectPay, setOverdueDirectPay] = useState([]);
+      const overdueMenuRef = useRef(null);
+      useEffect(() => {
+        function handler(e) {
+          if (overdueMenuRef.current && !overdueMenuRef.current.contains(e.target)) setOverdueOpen(false);
+        }
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+      }, []);
+      useEffect(() => {
+        if (initLoading || !IS_GAS || userRole !== 'biller') return;
+        gsr('getOverdueDirectPay')
+          .then(json => {
+            try { const r = JSON.parse(json); setOverdueDirectPay(Array.isArray(r.items) ? r.items : []); }
+            catch (e) { setOverdueDirectPay([]); }
+          })
+          .catch(() => setOverdueDirectPay([]));
+      }, [initLoading, userRole, refreshTick]);
+
       // ── Mobile header layout switch ──
       // The phone header is a genuinely different arrangement (a 4-row
       // grid), not just a reflowed version of the desktop one, so it's
@@ -19002,6 +19164,39 @@
       // on the Patients sheet or a distinct-patients-from-appointments query.
       const providerPatientCount = providerCounts[prov] || 0;
 
+      // ── Overdue direct-pay alert — small header flag, biller-only.
+      // Click a row to jump straight to that appointment's Billing Day view.
+      const OVERDUE_TYPE_LABELS = { copay: 'Copay', coinsurance: 'Coinsurance', 'cash-pay': 'Cash Pay', deductible: 'Deductible' };
+      function renderOverdueAlert() {
+        if (userRole !== 'biller' || !overdueDirectPay.length) return null;
+        return (
+          <div className="overdue-alert" ref={overdueMenuRef}>
+            <button className="hdr-btn overdue-alert-btn" onClick={() => setOverdueOpen(o => !o)}
+              title={`${overdueDirectPay.length} cost-share collection${overdueDirectPay.length !== 1 ? 's' : ''} overdue 30+ days`}>
+              🚩 {overdueDirectPay.length}
+            </button>
+            {overdueOpen && (
+              <div className="overdue-dropdown">
+                <div className="overdue-dropdown-hdr">⚠ Cost Share Overdue — 30+ Days</div>
+                {overdueDirectPay.map((it, i) => (
+                  <button key={i} className="overdue-row" onClick={() => {
+                    if (it.provID) setProv(it.provID);
+                    setView('billing');
+                    switchToDay(it.date);
+                    setOverdueOpen(false);
+                  }}>
+                    <span className="overdue-row-name"><PatientName name={it.patient} state={it.patientState} /></span>
+                    <span className="overdue-row-amt">{String(it.rate).includes('%') ? it.rate : `$${parseFloat(it.rate).toFixed(2)}`}</span>
+                    <span className="overdue-row-type">{OVERDUE_TYPE_LABELS[it.paymentType] || it.paymentType || '—'}</span>
+                    <span className="overdue-row-date">{fmtShort(it.date)} · {it.daysSince}d</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+
       // ── Admin menu — Sync Tebra / Full Sync / API toggle, combined ──
       // Billing-view + biller-role only ("the biller is the administrator").
       // Assistants previously had their own access to Sync Tebra; that's
@@ -19165,6 +19360,11 @@
                       {renderAdminMenu()}
                     </div>
                   )}
+                  {overdueDirectPay.length > 0 && (
+                    <div className="hdr-mobile-drawer-row">
+                      {renderOverdueAlert()}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -19277,6 +19477,7 @@
                 title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
                 {theme === 'dark' ? '☀️' : '🌙'}
               </button>
+              {renderOverdueAlert()}
               {renderAdminMenu()}
               <div className="view-tabs">
                 {[['provider', 'Provider'], ['assistant', '✏️ Assistant'], ['billing', '💳 Billing']]
