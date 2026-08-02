@@ -28,7 +28,8 @@
       font-family: 'Wix Madefor Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: #777355;
       color: #2B2716;
-      min-height: 100vh
+      min-height: 100vh;
+      min-height: 100dvh;
     }
 
     /* ── Patient Search ─────────────────────────────────────── */
@@ -257,6 +258,7 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
+      height: 100dvh;
       background: #777355;
       gap: 14px
     }
@@ -4799,6 +4801,7 @@
       width: 100%;
       max-width: 520px;
       max-height: calc(100vh - 32px);
+      max-height: calc(100dvh - 32px);
       display: flex;
       flex-direction: column;
       box-shadow: 0 24px 72px rgba(9, 55, 31, .3);
@@ -6424,429 +6427,6 @@
       color: #777355
     }
 
-    /* ── CPT Rate Reference Card ────────────────────────────── */
-    /* Floating action button */
-    .rate-fab {
-      position: fixed;
-      bottom: 28px;
-      right: 28px;
-      z-index: 140;
-      background: #09371F;
-      color: #F2EDDB;
-      border: none;
-      border-radius: 50px;
-      padding: 10px 20px;
-      font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 4px 22px rgba(9, 55, 31, .38);
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      transition: background .15s, transform .15s, box-shadow .15s;
-      font-family: inherit;
-      letter-spacing: .2px;
-    }
-
-    .rate-fab:hover {
-      background: #16A34A;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 28px rgba(9, 55, 31, .42);
-    }
-
-    .rate-fab.open {
-      background: #3D768A
-    }
-
-    .rate-fab.open:hover {
-      background: #09371F
-    }
-
-    /* The panel */
-    .rate-panel {
-      position: fixed;
-      bottom: 82px;
-      right: 28px;
-      z-index: 140;
-      background: #FBFBF3;
-      border-radius: 12px;
-      box-shadow: 0 10px 44px rgba(43, 39, 22, .28);
-      width: 340px;
-      max-height: 72vh;
-      overflow-y: auto;
-      border: 1.5px solid #FBFBF3;
-      animation: rate-slide-up .18s ease
-    }
-
-    @keyframes rate-slide-up {
-      from {
-        opacity: 0;
-        transform: translateY(12px)
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0)
-      }
-    }
-
-    .rate-panel-hdr {
-      padding: 12px 16px;
-      background: #09371F;
-      color: #F2EDDB;
-      border-radius: 10px 10px 0 0;
-      font-size: 13px;
-      font-weight: 800;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      letter-spacing: .2px;
-    }
-
-    .rate-panel-sub {
-      font-size: 10px;
-      opacity: .65;
-      font-weight: 600;
-      margin-top: 2px
-    }
-
-    .rate-close-btn {
-      background: none;
-      border: none;
-      color: rgba(242, 237, 219, .65);
-      cursor: pointer;
-      font-size: 20px;
-      line-height: 1;
-      padding: 0;
-      font-family: inherit;
-      transition: color .12s
-    }
-
-    .rate-close-btn:hover {
-      color: #FFFFFF
-    }
-
-    .rate-section-lbl {
-      font-size: 9px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .8px;
-      color: #3D768A;
-      padding: 10px 16px 4px;
-    }
-
-    .rate-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-bottom: 1px solid #F2EDDB;
-      cursor: pointer;
-      transition: background .1s;
-      user-select: none;
-    }
-
-    .rate-row:last-child {
-      border-bottom: none
-    }
-
-    .rate-row:hover {
-      background: #F0FDF4
-    }
-
-    .rate-row.copied {
-      background: #F0FDF4
-    }
-
-    .rate-code {
-      font-size: 13px;
-      font-weight: 800;
-      color: #09371F;
-      min-width: 42px;
-      flex-shrink: 0
-    }
-
-    .rate-alt-badge {
-      font-size: 9px;
-      font-weight: 800;
-      color: #FFFFFF;
-      background: #3D768A;
-      border-radius: 3px;
-      padding: 1px 5px;
-      white-space: nowrap;
-      flex-shrink: 0
-    }
-
-    .rate-desc {
-      font-size: 11px;
-      color: #777355;
-      flex: 1;
-      line-height: 1.3
-    }
-
-    .rate-amt {
-      font-size: 15px;
-      font-weight: 800;
-      color: #2B2716;
-      white-space: nowrap;
-      letter-spacing: -.3px
-    }
-
-    .rate-copy-icon {
-      width: 26px;
-      height: 26px;
-      border-radius: 6px;
-      background: #F2EDDB;
-      border: 1.5px solid #FBFBF3;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      flex-shrink: 0;
-      transition: all .12s;
-      color: #09371F;
-      cursor: pointer;
-    }
-
-    .rate-row:hover .rate-copy-icon {
-      background: #09371F;
-      color: #F2EDDB;
-      border-color: #09371F
-    }
-
-    .rate-row.copied .rate-copy-icon {
-      background: #16A34A;
-      color: #FFFFFF;
-      border-color: #16A34A
-    }
-
-    .rate-panel-footer {
-      padding: 10px 16px 12px;
-      font-size: 10px;
-      color: #777355;
-      background: #F0FDF4;
-      border-radius: 0 0 10px 10px;
-      line-height: 1.7;
-      border-top: 1px solid #FBFBF3;
-    }
-
-    .rate-panel-footer strong {
-      color: #3D768A
-    }
-
-    /* ── Rate Analysis Panel ─────────────────────────────────── */
-    .ra-fab {
-      position: fixed;
-      bottom: 10px;
-      right: 360px;
-      z-index: 140;
-      background: #065F46;
-      color: #F2EDDB;
-      border: none;
-      border-radius: 0;
-      padding: 10px 20px;
-      font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(9, 55, 31, .25);
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      transition: background .15s, transform .15s, box-shadow .15s;
-      font-family: inherit;
-      letter-spacing: .2px;
-    }
-
-    .ra-fab:hover {
-      background: #065F46;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 28px rgba(6, 95, 70, .42);
-    }
-
-    .ra-fab.open {
-      background: #3D768A
-    }
-
-    .ra-fab.open:hover {
-      background: #065F46
-    }
-
-    .ra-panel {
-      position: fixed;
-      bottom: 64px;
-      right: 28px;
-      z-index: 145;
-      background: #FBFBF3;
-      border-radius: 12px;
-      box-shadow: 0 10px 44px rgba(43, 39, 22, .28);
-      width: 560px;
-      max-height: 78vh;
-      overflow-y: auto;
-      border: 1.5px solid #FBFBF3;
-      animation: rate-slide-up .18s ease;
-    }
-
-    .ra-panel-filters {
-      padding: 8px 14px;
-      display: grid;
-      grid-template-columns: 1fr 88px 75px;
-      gap: 6px;
-      border-bottom: 1px solid #F8EFD8;
-    }
-
-    .ra-sel {
-      font-size: 11px;
-      font-family: inherit;
-      font-weight: 600;
-      border: 1.5px solid #FBFBF3;
-      border-radius: 5px;
-      padding: 4px 7px;
-      background: #F0FDF4;
-      color: #2B2716;
-      cursor: pointer;
-      outline: none;
-    }
-
-    .ra-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px
-    }
-
-    .ra-table th {
-      background: #09371F;
-      color: #F2EDDB;
-      font-weight: 700;
-      padding: 7px 10px;
-      text-align: left;
-      font-size: 10px;
-      letter-spacing: .3px;
-      white-space: nowrap
-    }
-
-    .ra-table th.ra-right,
-    .ra-table td.ra-right {
-      text-align: right
-    }
-
-    .ra-table td {
-      padding: 6px 10px;
-      border-bottom: 1px solid #F8EFD8;
-      white-space: nowrap;
-      vertical-align: middle
-    }
-
-    .ra-table tr:nth-child(even) td {
-      background: #F0FDF4
-    }
-
-    .ra-table tr:hover td {
-      background: #F8EFD8
-    }
-
-    .ra-carrier-cell {
-      max-width: 160px;
-      overflow: hidden;
-      text-overflow: ellipsis
-    }
-
-    .ra-cpt-cell {
-      font-family: 'Courier New', monospace;
-      font-weight: 700;
-      color: #09371F
-    }
-
-    .ra-avg-cell {
-      font-weight: 700;
-      color: #065F46
-    }
-
-    .ra-minmax-cell {
-      color: #777355
-    }
-
-    .ra-gen-btn {
-      font-size: 11px;
-      padding: 5px 13px;
-      background: #09371F;
-      color: #F2EDDB;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 700;
-      font-family: inherit;
-      transition: background .14s;
-    }
-
-    .ra-gen-btn:hover {
-      background: #16A34A
-    }
-
-    .ra-gen-btn:disabled {
-      background: #777355;
-      cursor: not-allowed
-    }
-
-    .ra-toolbar {
-      padding: 10px 14px;
-      border-bottom: 1px solid #F8EFD8;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .ra-toolbar-info {
-      font-size: 10px;
-      color: #777355;
-      font-weight: 600;
-      margin-left: auto
-    }
-
-    .ra-empty {
-      padding: 20px;
-      text-align: center;
-      color: #777355;
-      font-size: 12px
-    }
-
-    body.dark .ra-panel {
-      background: #2B2716;
-      border-color: #2B2716
-    }
-
-    body.dark .ra-sel {
-      background: #051F11;
-      border-color: #2B2716;
-      color: #F8EFD8
-    }
-
-    body.dark .ra-table th {
-      background: #051F11
-    }
-
-    body.dark .ra-table td {
-      border-color: #2B2716
-    }
-
-    body.dark .ra-table tr:nth-child(even) td {
-      background: #051F11
-    }
-
-    body.dark .ra-table tr:hover td {
-      background: #051F11
-    }
-
-    body.dark .ra-cpt-cell {
-      color: #6B9E8A
-    }
-
-    body.dark .ra-avg-cell {
-      color: #16A34A
-    }
-
     /* CPT rate badge on chips (inside ClaimSubmitModal) */
     .cpt-rate-chip {
       display: inline-flex;
@@ -6887,43 +6467,6 @@
       color: #777355;
       font-style: italic;
       margin-left: 2px
-    }
-
-    /* Dark mode — rate card */
-    body.dark .rate-panel {
-      background: #2B2716;
-      border-color: #2B2716
-    }
-
-    body.dark .rate-row {
-      border-color: #2B2716
-    }
-
-    body.dark .rate-row:hover {
-      background: #2B2716
-    }
-
-    body.dark .rate-row.copied {
-      background: #051F11
-    }
-
-    body.dark .rate-amt {
-      color: #D8D3BF
-    }
-
-    body.dark .rate-desc {
-      color: #777355
-    }
-
-    body.dark .rate-copy-icon {
-      background: #2B2716;
-      border-color: #2B2716;
-      color: #6B9E8A
-    }
-
-    body.dark .rate-panel-footer {
-      background: #051F11;
-      border-color: #2B2716
     }
 
     /* ── Claim Submit Modal ──────────────────────────────────── */
@@ -7943,6 +7486,7 @@
       width: 100%;
       max-width: 520px;
       max-height: calc(100vh - 32px);
+      max-height: calc(100dvh - 32px);
       display: flex;
       flex-direction: column;
       box-shadow: 0 20px 70px rgba(9, 55, 31, .35);
@@ -8298,6 +7842,7 @@
       width: 100%;
       max-width: 580px;
       max-height: calc(100vh - 32px);
+      max-height: calc(100dvh - 32px);
       display: flex;
       flex-direction: column;
       box-shadow: 0 24px 80px rgba(9, 55, 31, .35);
@@ -8599,7 +8144,8 @@
       position: fixed;
       bottom: 10px;
       right: 360px;
-      /* sits to the left of cl-fab-offset (right:192) and ra-fab (right:24) */
+      /* base default — actual position is set inline per-view (AssistantView,
+         ProviderView) since each view has a different number of FAB buttons */
       z-index: 140;
       background: #065F46;
       color: #F2EDDB;
@@ -8688,6 +8234,7 @@
       width: 100%;
       max-width: 860px;
       height: calc(100vh - 40px);
+      height: calc(100dvh - 40px);
       display: flex;
       flex-direction: column;
       animation: cl-slide-up .2s ease;
@@ -8925,12 +8472,6 @@
       background: #3D768A
     }
 
-    .cl-fab.cl-fab-offset {
-      right: 192px
-    }
-
-    /* shift left of Rate Analysis FAB */
-
     /* ── Billing Channels FAB — Biller View only, leftmost of the 6 FABs ── */
     .bc-fab {
       position: fixed;
@@ -9031,6 +8572,57 @@
       overflow-y: auto;
       border: 1.5px solid #FBFBF3;
       animation: rate-slide-up .18s ease;
+    }
+
+    @keyframes rate-slide-up {
+      from {
+        opacity: 0;
+        transform: translateY(12px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .bc-panel-hdr {
+      padding: 12px 16px;
+      background: #09371F;
+      color: #F2EDDB;
+      border-radius: 10px 10px 0 0;
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      letter-spacing: .2px;
+    }
+
+    .bc-panel-sub {
+      font-size: 10px;
+      opacity: .65;
+      font-weight: 600;
+      margin-top: 2px
+    }
+
+    .bc-close-btn {
+      background: none;
+      border: none;
+      color: rgba(242, 237, 219, .65);
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      padding: 0;
+      font-family: inherit;
+      transition: color .12s
+    }
+
+    .bc-close-btn:hover {
+      color: #FFFFFF
     }
 
     .bc-search-wrap {
@@ -9195,6 +8787,7 @@
       width: 100%;
       max-width: 1150px;
       height: calc(100vh - 40px);
+      height: calc(100dvh - 40px);
       display: flex;
       flex-direction: column;
       animation: cl-slide-up .2s ease;
@@ -9835,7 +9428,7 @@
        but was also the light-mode default above, where it was nearly
        invisible against this row's white background. Pin it here instead. */
     body.dark .cl-notes-input::placeholder {
-      color: #F2EDDB;
+      color: rgba(216, 211, 191, .55);
       font-style: italic
     }
 
@@ -10542,14 +10135,13 @@
         padding: 7px 8px
       }
 
-      /* ── Bottom action buttons (Billing's 6, Provider's 3, Assistant's 1) ──
+      /* ── Bottom action buttons (Billing's 4, Provider's 2, Assistant's 1) ──
          On desktop these are individual FABs (Billing's .billing-fab-bar row,
-         plus the legacy per-view .ra-fab/.cl-fab/.nb-fab). Stacked/spread out
+         plus the legacy per-view .cl-fab/.nb-fab). Stacked/spread out
          like that on a narrow phone, they end up covering appointment rows.
          Hide all of them here and show the single MobileToolsMenu button
          (.mtm-wrap) instead — same actions, one button + a drop-up list. */
       .billing-fab-bar,
-      .ra-fab,
       .cl-fab,
       .nb-fab {
         display: none;
@@ -10559,14 +10151,11 @@
         display: flex;
       }
 
-      /* The popup panels those buttons open (Billing's Assign Channel / Rate
-         Analysis / CPT Rates, plus Provider/Assistant's Rate Analysis /
-         Claims Ledger) are position:fixed with a hand-placed "right" offset
-         (up to 846px) sized for a wide desktop window. On mobile, pin them
-         full-width near the bottom instead — they still open the same way,
-         just from the Tools menu now. */
-      .rate-panel,
-      .ra-panel,
+      /* The popup panels those buttons open (Billing's Assign Channel, plus
+         Provider/Assistant's Claims Ledger) are position:fixed with a
+         hand-placed "right" offset sized for a wide desktop window. On
+         mobile, pin them full-width near the bottom instead — they still
+         open the same way, just from the Tools menu now. */
       .bc-panel {
         right: 8px !important;
         left: 8px !important;
@@ -10608,8 +10197,6 @@
       .pam-modal,
       .nb-panel,
       .cl-panel,
-      .rate-panel,
-      .ra-panel,
       .bc-panel {
         max-width: 100%;
         max-height: 96vh;
@@ -10623,19 +10210,102 @@
       .nb-panel,
       .cl-panel {
         height: calc(100vh - 16px);
+        height: calc(100dvh - 16px);
       }
 
       .pim-hdr,
       .cp-hdr,
       .pam-hdr,
       .nb-hdr,
-      .cl-hdr,
-      .rate-panel-hdr {
+      .cl-hdr {
         border-radius: 0
       }
 
       /* ── Header calendar icon's new day-of-week band (Task: header icon)
          still fits fine at mobile's smaller icon size — no change needed. */
+
+      /* ════════════════════════════════════════════════════════════════
+         iPHONE / MOBILE WEBKIT FIXES
+         (Chrome on iOS runs on WebKit, same engine as Safari — these
+         address real WebKit behaviors, not just narrow-screen layout.)
+         ════════════════════════════════════════════════════════════════ */
+
+      /* Claims Ledger's 7-column table was squeezed to fit 100% width
+         (unreadable at phone widths). Give it back a real min-width so
+         table-layout:fixed computes sane per-column widths again, and
+         let .cl-body's existing overflow:auto scroll it horizontally —
+         same pattern .wk-grid already uses for the week view. */
+      .cl-table {
+        min-width: 640px;
+      }
+      .cl-body {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Any form control under 16px makes iOS auto-zoom the whole page
+         on focus. Bumping these to 16px on mobile only (desktop keeps
+         its denser sizing) stops that jump. */
+      .psearch-input,
+      .hdr select,
+      .date-input,
+      .rx-select,
+      .rx-dosage-input,
+      .rx-manual-input,
+      .csb-amt-input,
+      .bulk-bar select,
+      .scr-score-input,
+      .csm-field input,
+      .csm-field select,
+      .cp-to-select,
+      .pam-to-select,
+      .cl-filter-select,
+      .cl-search-input,
+      .cl-notes-input,
+      .hdr-mobile select {
+        font-size: 16px !important;
+      }
+
+      /* Expanded invisible tap area for small header icon buttons — the
+         visual size (and the compact header's height) stays unchanged,
+         but the actual tappable region grows toward Apple's 44px
+         guideline. Kept to 36px for icons packed tightly in the 3-col
+         header grid to avoid overlapping neighboring tap zones; the
+         more isolated ones get the full 44px. */
+      .hdr-mobile .date-btn,
+      .hdr-mobile .hdr-icon-btn,
+      .hdr-mobile .hdr-cal-btn,
+      .hdr-mobile .theme-toggle {
+        position: relative;
+      }
+      .hdr-mobile .date-btn::after,
+      .hdr-mobile .hdr-icon-btn::after,
+      .hdr-mobile .hdr-cal-btn::after,
+      .hdr-mobile .theme-toggle::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 36px;
+        height: 36px;
+        transform: translate(-50%, -50%);
+      }
+
+      .hdr-mobile-more-btn,
+      .cal-nav-btn,
+      .rate-copy-icon {
+        position: relative;
+      }
+      .hdr-mobile-more-btn::after,
+      .cal-nav-btn::after,
+      .rate-copy-icon::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 44px;
+        height: 44px;
+        transform: translate(-50%, -50%);
+      }
     }
 
     @media (max-width: 480px) {
@@ -13845,7 +13515,6 @@
       const [rxModal, setRxModal] = useState(null);
       const [notesDraft, setNotesDraft] = useState({});
       const [showLedger, setShowLedger] = useState(false);
-      const [showRateAnalysis, setShowRateAnalysis] = useState(false);
       const [showNoteBoard, setShowNoteBoard] = useState(false);
       const [pamModal, setPamModal] = useState(null); // ProviderApptModal from day view 💬 button
       const [infoModalId, setInfoModalId] = useState(null); // PatientInfoModal — store ID for live lookup
@@ -14303,39 +13972,30 @@
             />
           )}
 
-          {/* ── Rate Analysis panel ── */}
-          {showRateAnalysis && <RateAnalysisPanel onClose={() => setShowRateAnalysis(false)} />}
-
           {/* ── Claims Ledger ── */}
           {showLedger && <ClaimsLedger onClose={() => setShowLedger(false)} provFilter={prov} />}
 
           {/* ── Note Board panel ── */}
           {showNoteBoard && <NoteBoardPanel onClose={() => setShowNoteBoard(false)} role={userRole || 'provider'} provFilter={prov} />}
 
-          {/* Rate Analysis FAB — right:24; Claims Ledger — right:158; Note Board — right:295 */}
+          {/* Claims Ledger — right:24; Note Board — right:158 (Rate Analysis removed) */}
           <button
-            className={`ra-fab${showRateAnalysis ? ' open' : ''}`}
+            className={`cl-fab${showLedger ? ' open' : ''}`}
             style={{ right: 24 }}
-            onClick={e => { e.stopPropagation(); setShowRateAnalysis(o => !o); }}
-            title="Insurance Rate Analysis — what each carrier pays per CPT code">
-            📊 {showRateAnalysis ? 'Close Rates' : 'Rate Analysis'}
-          </button>
-          <button
-            className={`cl-fab cl-fab-offset${showLedger ? ' open' : ''}`}
             onClick={e => { e.stopPropagation(); setShowLedger(o => !o); }}
             title="Claims Ledger">
             📋 {showLedger ? 'Close Ledger' : 'Claims Ledger'}
           </button>
           <button
             className={`nb-fab${showNoteBoard ? ' open' : ''}`}
+            style={{ right: 158 }}
             onClick={e => { e.stopPropagation(); setShowNoteBoard(o => !o); }}
             title="Note Board — clinic note formatting status">
             📝 {showNoteBoard ? 'Close Notes' : 'Note Board'}
           </button>
 
-          {/* Phone-only equivalent of the 3 buttons above (see MobileToolsMenu) */}
+          {/* Phone-only equivalent of the 2 buttons above (see MobileToolsMenu) */}
           <MobileToolsMenu items={[
-            { key: 'rate-analysis', label: 'Rate Analysis', icon: '📊', active: showRateAnalysis, onClick: () => setShowRateAnalysis(o => !o) },
             { key: 'ledger', label: 'Claims Ledger', icon: '📋', active: showLedger, onClick: () => setShowLedger(o => !o) },
             { key: 'notes', label: 'Note Board', icon: '📝', active: showNoteBoard, onClick: () => setShowNoteBoard(o => !o) },
           ]} />
@@ -15338,87 +14998,6 @@
     }
 
     /* ════════════════════════════════════════════════════════════════
-       CPT RATE REFERENCE CARD
-       Floating panel — accessible from Billing View at all times.
-       Click any row to copy the charge to clipboard.
-    ════════════════════════════════════════════════════════════════ */
-    const RATE_GROUPS = [
-      {
-        label: 'New Patient (E&M)', rows: [
-          { code: '99205', alt: '98003', desc: '60 min', amount: 484.18 },
-          { code: '99204', alt: '98002', desc: '45 min', amount: 375.99 },
-        ]
-      },
-      {
-        label: 'Follow-up (E&M)', rows: [
-          { code: '99215', alt: '98007', desc: '40 min', amount: 362.60 },
-          { code: '99214', alt: '98006', desc: '30 min', amount: 258.72 },
-        ]
-      },
-      {
-        label: 'Psychotherapy Add-ons', rows: [
-          { code: '90833', alt: null, desc: '+16–37 min', amount: 173.38 },
-          { code: '90836', alt: null, desc: '+38–52 min', amount: 230.44 },
-          { code: '90838', alt: null, desc: '+53+ min', amount: 274.15 },
-        ]
-      },
-      {
-        label: 'Complexity', rows: [
-          { code: '90785', alt: null, desc: 'Interactive Complexity', amount: 30.48 },
-        ]
-      },
-    ];
-
-    function RateCardPanel({ onClose }) {
-      const [copiedCode, setCopiedCode] = useState(null);
-
-      function handleCopy(code, amount) {
-        copyToClipboard(amount.toFixed(2), () => {
-          setCopiedCode(code);
-          setTimeout(() => setCopiedCode(c => c === code ? null : c), 2200);
-        });
-      }
-
-      return (
-        <div className="rate-panel">
-          <div className="rate-panel-hdr">
-            <div>
-              <div>💲 CPT Charge Reference</div>
-              <div className="rate-panel-sub">Click any row to copy the charge amount</div>
-            </div>
-            <button className="rate-close-btn" onClick={onClose}>×</button>
-          </div>
-
-          {RATE_GROUPS.map(g => (
-            <div key={g.label}>
-              <div className="rate-section-lbl">{g.label}</div>
-              {g.rows.map(r => (
-                <div
-                  key={r.code}
-                  className={`rate-row${copiedCode === r.code ? ' copied' : ''}`}
-                  onClick={() => handleCopy(r.code, r.amount)}
-                  title={`Click to copy $${r.amount.toFixed(2)}`}>
-                  <div className="rate-code">{r.code}</div>
-                  {r.alt && <div className="rate-alt-badge">={r.alt}</div>}
-                  <div className="rate-desc">{r.desc}</div>
-                  <div className="rate-amt">${r.amount.toFixed(2)}</div>
-                  <div className="rate-copy-icon">
-                    {copiedCode === r.code ? '✓' : '📋'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ))}
-
-          <div className="rate-panel-footer">
-            <strong>BH Alt codes</strong> share the same charge as their E&amp;M equivalents:<br />
-            <strong>98002</strong> = 99204 · <strong>98003</strong> = 99205 · <strong>98006</strong> = 99214 · <strong>98007</strong> = 99215
-          </div>
-        </div>
-      );
-    }
-
-    /* ════════════════════════════════════════════════════════════════
        BILLING CHANNELS PANEL — BillingChannelsPanel
        Biller-only tool for setting each patient's Platform (Alma /
        Headway / Grow / Direct / Unknown) on the Patients tab. This is
@@ -15489,12 +15068,12 @@
 
       return (
         <div className="bc-panel" onClick={e => e.stopPropagation()}>
-          <div className="rate-panel-hdr">
+          <div className="bc-panel-hdr">
             <div>
               <div>🔀 Billing Channels</div>
-              <div className="rate-panel-sub">Sets each patient's channel going forward — applies to appointments created by future Tebra Syncs</div>
+              <div className="bc-panel-sub">Sets each patient's channel going forward — applies to appointments created by future Tebra Syncs</div>
             </div>
-            <button className="rate-close-btn" onClick={onClose}>×</button>
+            <button className="bc-close-btn" onClick={onClose}>×</button>
           </div>
           <div className="bc-search-wrap">
             <input
@@ -15542,328 +15121,6 @@
               </div>
             );
           })}
-        </div>
-      );
-    }
-
-    // Priority CPT display order used in Rate Analysis panel dropdowns and table rows.
-    // Top 7 codes appear first (in this exact sequence); all others follow numerically.
-    const RA_CPT_PRIORITY = ['99214', '99215', '90833', '90836', '90838', '99205', '99204'];
-
-    /* ════════════════════════════════════════════════════════════════
-       RATE ANALYSIS PANEL
-       Props:
-         onClose        — close handler
-         showProviderDim — true in Billing View only; unlocks the
-                           "👤 By Provider" toggle. Omit/false in
-                           Provider View for the clean simple view.
-    ════════════════════════════════════════════════════════════════ */
-    function RateAnalysisPanel({ onClose, showProviderDim }) {
-      // ── Simple (carrier-only) view state ─────────────────────────────────
-      const [data, setData] = useState(null);
-      const [loading, setLoading] = useState(true);
-      const [generating, setGenerating] = useState(false);
-      const [genMsg, setGenMsg] = useState('');
-      const [filterCarrier, setFilterCarrier] = useState('');
-      const [filterState, setFilterState] = useState('');
-      const [filterCpt, setFilterCpt] = useState('');
-
-      // ── By-Provider view state (Billing View only) ────────────────────────
-      const [byProvider, setByProvider] = useState(false);
-      const [provData, setProvData] = useState(null);   // null = not yet loaded
-      const [provLoading, setProvLoading] = useState(false);
-      const [provGenerating, setProvGenerating] = useState(false);
-      const [provGenMsg, setProvGenMsg] = useState('');
-      const [filterProvider, setFilterProvider] = useState('');
-      const [fpCarrier, setFpCarrier] = useState('');
-      const [fpState, setFpState] = useState('');
-      const [fpCpt, setFpCpt] = useState('');
-
-      // ── Load simple data on mount ─────────────────────────────────────────
-      function loadData() {
-        setLoading(true);
-        gsr('getRateAnalysisData').then(json => {
-          try { const r = JSON.parse(json); setData(Array.isArray(r) ? r : []); }
-          catch (e) { setData([]); }
-          setLoading(false);
-        }).catch(() => { setData([]); setLoading(false); });
-      }
-      useEffect(() => { loadData(); }, []);
-
-      // ── Load provider data (lazy — only on first toggle) ──────────────────
-      function loadProvData() {
-        setProvLoading(true);
-        gsr('getProviderRateAnalysisData').then(json => {
-          try { const r = JSON.parse(json); setProvData(Array.isArray(r) ? r : []); }
-          catch (e) { setProvData([]); }
-          setProvLoading(false);
-        }).catch(() => { setProvData([]); setProvLoading(false); });
-      }
-
-      function handleToggleProvider() {
-        const next = !byProvider;
-        setByProvider(next);
-        if (next && provData === null) loadProvData();   // lazy first load
-      }
-
-      // ── Generate handlers ─────────────────────────────────────────────────
-      function handleGenerate() {
-        setGenerating(true); setGenMsg('');
-        gsr('generateRateAnalysis').then(json => {
-          try {
-            const r = JSON.parse(json);
-            if (r.ok) setGenMsg(`✅ ${r.rows} rows from ${r.paidClaims} paid claims`);
-            else if (r.error) setGenMsg('❌ ' + r.error);
-          } catch (e) { setGenMsg('✅ Done.'); }
-          setGenerating(false); loadData();
-        }).catch(err => { setGenMsg('❌ ' + (err.message || 'Error')); setGenerating(false); });
-      }
-
-      function handleProvGenerate() {
-        setProvGenerating(true); setProvGenMsg('');
-        gsr('generateProviderRateAnalysis').then(json => {
-          try {
-            const r = JSON.parse(json);
-            if (r.ok) setProvGenMsg(`✅ ${r.rows} rows from ${r.paidClaims} paid claims`);
-            else if (r.error) setProvGenMsg('❌ ' + r.error);
-          } catch (e) { setProvGenMsg('✅ Done.'); }
-          setProvGenerating(false); loadProvData();
-        }).catch(err => { setProvGenMsg('❌ ' + (err.message || 'Error')); setProvGenerating(false); });
-      }
-
-      // ── Priority CPT sort ─────────────────────────────────────────────────
-      function raCptSortKey(cpt) {
-        const idx = RA_CPT_PRIORITY.indexOf(cpt);
-        return idx >= 0 ? `0_${String(idx).padStart(2, '0')}` : `1_${cpt}`;
-      }
-
-      // ── Simple view derived data ──────────────────────────────────────────
-      // Valid US state/territory codes — filter guard so subscriber names or other bad data never pollute the State dropdown.
-      const VALID_US_STATES_SET = new Set([
-        'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA',
-        'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-        'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT',
-        'VA', 'WA', 'WV', 'WI', 'WY', 'DC', 'PR', 'VI', 'GU', 'AS', 'MP'
-      ]);
-      const isValidState = s => !!s && VALID_US_STATES_SET.has(String(s).trim().toUpperCase());
-
-      const carriers = [...new Set((data || []).map(r => r.carrier).filter(Boolean))].sort();
-      const states = [...new Set((data || []).map(r => r.state).filter(isValidState))].sort();
-      const cpts = [...new Set((data || []).map(r => r.cpt).filter(Boolean))]
-        .sort((a, b) => raCptSortKey(a).localeCompare(raCptSortKey(b)));
-      const filtered = (data || [])
-        .filter(r =>
-          (!filterCarrier || r.carrier === filterCarrier) &&
-          (!filterState || r.state === filterState) &&
-          (!filterCpt || r.cpt === filterCpt)
-        )
-        .sort((a, b) => {
-          const cc = a.carrier.localeCompare(b.carrier); if (cc) return cc;
-          const cs = (a.state || '').localeCompare(b.state || ''); if (cs) return cs;
-          return raCptSortKey(a.cpt).localeCompare(raCptSortKey(b.cpt));
-        });
-
-      // ── Provider view derived data ────────────────────────────────────────
-      const provProviders = [...new Set((provData || []).map(r => r.provider).filter(Boolean))].sort();
-      const provCarriers = [...new Set((provData || []).map(r => r.carrier).filter(Boolean))].sort();
-      const provStates = [...new Set((provData || []).map(r => r.state).filter(isValidState))].sort();
-      const provCpts = [...new Set((provData || []).map(r => r.cpt).filter(Boolean))]
-        .sort((a, b) => raCptSortKey(a).localeCompare(raCptSortKey(b)));
-      const filteredProv = (provData || [])
-        .filter(r =>
-          (!filterProvider || r.provider === filterProvider) &&
-          (!fpCarrier || r.carrier === fpCarrier) &&
-          (!fpState || r.state === fpState) &&
-          (!fpCpt || r.cpt === fpCpt)
-        )
-        .sort((a, b) => {
-          const cp = a.provider.localeCompare(b.provider); if (cp) return cp;
-          const cc = a.carrier.localeCompare(b.carrier); if (cc) return cc;
-          const cs = (a.state || '').localeCompare(b.state || ''); if (cs) return cs;
-          return raCptSortKey(a.cpt).localeCompare(raCptSortKey(b.cpt));
-        });
-
-      const generatedAt = (data || []).length > 0 ? (data[0].generated || '') : '';
-      const provGeneratedAt = (provData || []).length > 0 ? (provData[0].generated || '') : '';
-      const isProvView = byProvider && showProviderDim;
-
-      return (
-        <div className="ra-panel" onClick={e => e.stopPropagation()}>
-
-          {/* ── Header ── */}
-          <div className="rate-panel-hdr">
-            <div>
-              <div>📊 Rate Analysis{isProvView ? ' — By Provider' : ''}</div>
-              <div className="rate-panel-sub">
-                {isProvView
-                  ? 'Actual payments · Provider × Carrier × CPT × State'
-                  : 'Actual insurance payments · Carrier × CPT × State'}
-                {!isProvView && generatedAt && <span style={{ marginLeft: 8, opacity: .65 }}>Generated {generatedAt}</span>}
-                {isProvView && provGeneratedAt && <span style={{ marginLeft: 8, opacity: .65 }}>Generated {provGeneratedAt}</span>}
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {showProviderDim && (
-                <button
-                  onClick={handleToggleProvider}
-                  style={{
-                    fontSize: 11, fontFamily: 'inherit', cursor: 'pointer', borderRadius: 0,
-                    padding: '3px 9px', border: 'none', fontWeight: 700,
-                    background: byProvider ? '#1C6FA3' : 'rgba(242, 237, 219, 0.18)',
-                    color: byProvider ? '#FFFFFF' : '#F2EDDB',
-                    transition: 'background 0.18s',
-                  }}
-                  title={byProvider ? 'Switch back to Carrier view' : 'Break down rates by individual provider'}>
-                  👤 By Provider
-                </button>
-              )}
-              <button className="rate-close-btn" onClick={onClose}>×</button>
-            </div>
-          </div>
-
-          {/* ── Toolbar ── */}
-          <div className="ra-toolbar">
-            {!isProvView ? (<>
-              <button className="ra-gen-btn" onClick={handleGenerate} disabled={generating}>
-                {generating ? '⏳ Generating…' : '🔄 Refresh Rate Data'}
-              </button>
-              {genMsg && <span style={{ fontSize: 11, color: genMsg.startsWith('✅') ? '#065F46' : '#DC2626', fontWeight: 600 }}>{genMsg}</span>}
-              {!genMsg && filtered.length > 0 && <span className="ra-toolbar-info">{filtered.length} rate{filtered.length !== 1 ? 's' : ''}</span>}
-            </>) : (<>
-              <button className="ra-gen-btn" onClick={handleProvGenerate} disabled={provGenerating}
-                style={{ background: '#3D768A' }}>
-                {provGenerating ? '⏳ Generating…' : '🔄 Refresh Provider Data'}
-              </button>
-              {provGenMsg && <span style={{ fontSize: 11, color: provGenMsg.startsWith('✅') ? '#065F46' : '#DC2626', fontWeight: 600 }}>{provGenMsg}</span>}
-              {!provGenMsg && filteredProv.length > 0 && <span className="ra-toolbar-info">{filteredProv.length} rate{filteredProv.length !== 1 ? 's' : ''}</span>}
-            </>)}
-          </div>
-
-          {/* ── Filters: simple view ── */}
-          {!isProvView && (
-            <div className="ra-panel-filters">
-              <select className="ra-sel" value={filterCarrier} onChange={e => setFilterCarrier(e.target.value)}>
-                <option value="">All Carriers</option>
-                {carriers.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <select className="ra-sel" value={filterState} onChange={e => setFilterState(e.target.value)}>
-                <option value="">All States</option>
-                {states.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <select className="ra-sel" value={filterCpt} onChange={e => setFilterCpt(e.target.value)}>
-                <option value="">All CPT</option>
-                {cpts.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          )}
-
-          {/* ── Filters: provider view ── */}
-          {isProvView && (
-            <div className="ra-panel-filters">
-              <select className="ra-sel" value={filterProvider} onChange={e => setFilterProvider(e.target.value)}>
-                <option value="">All Providers</option>
-                {provProviders.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-              <select className="ra-sel" value={fpCarrier} onChange={e => setFpCarrier(e.target.value)}>
-                <option value="">All Carriers</option>
-                {provCarriers.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <select className="ra-sel" value={fpState} onChange={e => setFpState(e.target.value)}>
-                <option value="">All States</option>
-                {provStates.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <select className="ra-sel" value={fpCpt} onChange={e => setFpCpt(e.target.value)}>
-                <option value="">All CPT</option>
-                {provCpts.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          )}
-
-          {/* ── Table: simple view ── */}
-          {!isProvView && (<>
-            {loading && <div className="ra-empty">Loading rate data…</div>}
-            {!loading && filtered.length === 0 && (
-              <div className="ra-empty">
-                {(data || []).length === 0
-                  ? <>No rate data yet.<br />Click <strong>Refresh Rate Data</strong> to generate<br />(requires paid claims with CPT codes in the sheet).</>
-                  : 'No results match the current filters.'}
-              </div>
-            )}
-            {!loading && filtered.length > 0 && (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="ra-table">
-                  <thead>
-                    <tr>
-                      <th>Carrier</th><th>ST</th><th>CPT</th>
-                      <th className="ra-right">#</th>
-                      <th className="ra-right">Avg Paid</th>
-                      <th className="ra-right">Min</th>
-                      <th className="ra-right">Max</th>
-                      <th>Last Paid</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((r, i) => (
-                      <tr key={i}>
-                        <td className="ra-carrier-cell" title={r.carrier}>{r.carrier}</td>
-                        <td style={{ fontWeight: 700 }}>{r.state || '—'}</td>
-                        <td className="ra-cpt-cell">{r.cpt}</td>
-                        <td className="ra-right" style={{ color: '#2B2716' }}>{r.count}</td>
-                        <td className="ra-right ra-avg-cell">${r.avg.toFixed(2)}</td>
-                        <td className="ra-right ra-minmax-cell">${r.min.toFixed(2)}</td>
-                        <td className="ra-right ra-minmax-cell">${r.max.toFixed(2)}</td>
-                        <td style={{ color: '#777355', fontSize: 10 }}>{r.lastDate || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>)}
-
-          {/* ── Table: by-provider view ── */}
-          {isProvView && (<>
-            {provLoading && <div className="ra-empty">Loading provider rate data…</div>}
-            {!provLoading && filteredProv.length === 0 && (
-              <div className="ra-empty">
-                {(provData || []).length === 0
-                  ? <>No provider rate data yet.<br />Click <strong>Refresh Provider Data</strong> to generate<br />(requires paid direct-pay claims with CPT codes).</>
-                  : 'No results match the current filters.'}
-              </div>
-            )}
-            {!provLoading && filteredProv.length > 0 && (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="ra-table">
-                  <thead>
-                    <tr>
-                      <th>Provider</th><th>Carrier</th><th>ST</th><th>CPT</th>
-                      <th className="ra-right">#</th>
-                      <th className="ra-right">Avg Paid</th>
-                      <th className="ra-right">Min</th>
-                      <th className="ra-right">Max</th>
-                      <th>Last Paid</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredProv.map((r, i) => (
-                      <tr key={i}>
-                        <td style={{ fontWeight: 700, color: '#1C6FA3', whiteSpace: 'nowrap' }}>{r.provider}</td>
-                        <td className="ra-carrier-cell" title={r.carrier}>{r.carrier}</td>
-                        <td style={{ fontWeight: 700 }}>{r.state || '—'}</td>
-                        <td className="ra-cpt-cell">{r.cpt}</td>
-                        <td className="ra-right" style={{ color: '#2B2716' }}>{r.count}</td>
-                        <td className="ra-right ra-avg-cell">${r.avg.toFixed(2)}</td>
-                        <td className="ra-right ra-minmax-cell">${r.min.toFixed(2)}</td>
-                        <td className="ra-right ra-minmax-cell">${r.max.toFixed(2)}</td>
-                        <td style={{ color: '#777355', fontSize: 10 }}>{r.lastDate || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>)}
-
         </div>
       );
     }
@@ -17463,9 +16720,7 @@
       const [rxModal, setRxModal] = useState(null);
       const [claimModal, setClaimModal] = useState(null);
       const [billerModal, setBillerModal] = useState(null);   // BillerApptModal for non-direct appointments
-      const [rateCardOpen, setRateCardOpen] = useState(false);
       const [showLedger, setShowLedger] = useState(false);
-      const [showRateAnalysis, setShowRateAnalysis] = useState(false);
       const [showNoteBoard, setShowNoteBoard] = useState(false);
       const [showImportPanel, setShowImportPanel] = useState(false);
       const [showBillingChannels, setShowBillingChannels] = useState(false);
@@ -18050,9 +17305,6 @@
           {/* ── Note Board (read-only for biller) ── */}
           {showNoteBoard && <NoteBoardPanel onClose={() => setShowNoteBoard(false)} role="biller" provFilter="" />}
 
-          {/* ── Rate Analysis Panel (Billing View — provider breakdown enabled) ── */}
-          {showRateAnalysis && <RateAnalysisPanel showProviderDim={true} onClose={() => setShowRateAnalysis(false)} />}
-
           {/* ── Payment Import Panel ── */}
           {showImportPanel && (
             <PaymentImportPanel
@@ -18061,7 +17313,7 @@
               onClose={() => setShowImportPanel(false)} />
           )}
 
-          {/* Billing bottom action bar — 6 uniform square buttons in one flex row, distinguished only by icon/label */}
+          {/* Billing bottom action bar — 4 uniform square buttons in one flex row, distinguished only by icon/label */}
           {showBillingChannels && (
             <BillingChannelsPanel
               patientDb={patientDb}
@@ -18069,7 +17321,6 @@
               onRefreshPatients={onRefreshPatients} />
           )}
           {showLedger && <ClaimsLedger onClose={() => setShowLedger(false)} provFilter="" />}
-          {rateCardOpen && <RateCardPanel onClose={() => setRateCardOpen(false)} />}
 
           <div className="billing-fab-bar">
             <button
@@ -18077,13 +17328,6 @@
               onClick={e => { e.stopPropagation(); setShowBillingChannels(o => !o); }}
               title="Set patients' billing/claim-submission channel going forward">
               🔀 {showBillingChannels ? 'Close Channel' : 'Assign Channel'}
-            </button>
-
-            <button
-              className={`bfab-btn${showRateAnalysis ? ' open' : ''}`}
-              onClick={e => { e.stopPropagation(); setShowRateAnalysis(o => !o); }}
-              title="Insurance Rate Analysis — what each carrier pays per CPT code">
-              📊 {showRateAnalysis ? 'Close Rates' : 'Rate Analysis'}
             </button>
 
             <button
@@ -18106,23 +17350,14 @@
               title="Import payment amounts from CRB_Import.csv">
               📥 {showImportPanel ? 'Close Import' : 'Import Payments'}
             </button>
-
-            <button
-              className={`bfab-btn${rateCardOpen ? ' open' : ''}`}
-              onClick={e => { e.stopPropagation(); setRateCardOpen(o => !o); }}
-              title="CPT charge reference">
-              💲 {rateCardOpen ? 'Close Rates' : 'CPT Rates'}
-            </button>
           </div>
 
-          {/* Phone-only equivalent of the 6 buttons above (see MobileToolsMenu) */}
+          {/* Phone-only equivalent of the 4 buttons above (see MobileToolsMenu) */}
           <MobileToolsMenu items={[
             { key: 'channel', label: 'Assign Channel', icon: '🔀', active: showBillingChannels, onClick: () => setShowBillingChannels(o => !o) },
-            { key: 'rates-analysis', label: 'Rate Analysis', icon: '📊', active: showRateAnalysis, onClick: () => setShowRateAnalysis(o => !o) },
             { key: 'ledger', label: 'Claims Ledger', icon: '📋', active: showLedger, onClick: () => setShowLedger(o => !o) },
             { key: 'notes', label: 'Note Board', icon: '📝', active: showNoteBoard, onClick: () => setShowNoteBoard(o => !o) },
             { key: 'import', label: 'Import Payments', icon: '📥', active: showImportPanel, onClick: () => setShowImportPanel(o => !o) },
-            { key: 'cpt-rates', label: 'CPT Rates', icon: '💲', active: rateCardOpen, onClick: () => setRateCardOpen(o => !o) },
           ]} />
         </div>
       );
@@ -18545,7 +17780,7 @@
         if (fetchedRef.current.has(k)) return;
         // Only show the loading spinner on the FIRST load for this date+prov.
         // Background refreshes (auto-refresh, re-sync) update silently so that
-        // open panels like Rate Analysis are not dismissed by the re-mount.
+        // open panels like Claims Ledger are not dismissed by the re-mount.
         const isFirstLoad = !data[k];
         fetchedRef.current.add(k);
         if (isFirstLoad) setApptLoading(true);
