@@ -2234,6 +2234,43 @@ function saveClaimNotes(provId, dateStr, apptId, notes) {
 
 
 /* ════════════════════════════════════════════════════════════════
+   PAYMENT TRACKER — Comments field (column BL, index 64)
+   ════════════════════════════════════════════════════════════════
+   Intentionally standalone, NOT part of APPT_COLS. Columns 60-63
+   (BH-BK) hold 3 dead duplicate headers (ScrData/ScrNote/
+   ChecklistNote — confirmed empty, see auditColumnAlignment() run
+   2026-08-02) and a real PatientID column written by the separate
+   patient-id-system's nightly Tebra sync — not by SolBoard. Every
+   normal appointment save rewrites a contiguous block exactly as
+   wide as APPT_COLS; keeping this column out of that array means
+   ordinary saves never touch it, or anything from column 60 onward.
+   Single targeted cell write only, same pattern as saveClaimNotes().
+════════════════════════════════════════════════════════════════ */
+var PAYMENT_COMMENTS_COL = 64;
+
+function savePaymentComment(provId, dateStr, apptId, comment) {
+  try {
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet) return JSON.stringify({ error: 'Appointments sheet not found' });
+
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      var r = data[i];
+      if (String(r[2]) === String(apptId) && String(r[0]) === String(provId)) {
+        sheet.getRange(i + 1, PAYMENT_COMMENTS_COL).setValue(comment || '');
+        return JSON.stringify({ ok: true });
+      }
+    }
+    return JSON.stringify({ error: 'Appointment not found' });
+  } catch (e) {
+    Logger.log('savePaymentComment error: ' + e.message);
+    return JSON.stringify({ error: e.message });
+  }
+}
+
+
+/* ════════════════════════════════════════════════════════════════
    USER INFO & ROLE
 ════════════════════════════════════════════════════════════════ */
 
