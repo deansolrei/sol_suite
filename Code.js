@@ -157,6 +157,16 @@ function _sv(v) {
   return (v !== undefined && v !== null && v !== '') ? String(v) : '';
 }
 
+// True only for a genuine $0/0% rate — blank/unset is NOT zero (nothing
+// entered yet is a different state from "confirmed nothing owed"). Mirrors
+// the frontend's isZeroRate() in crb_index.html; kept in sync manually
+// since Code.js and crb_index.html don't share modules.
+function _isZeroRate(rate) {
+  if (rate === null || rate === undefined || rate === '') return false;
+  var n = parseFloat(String(rate).replace(/[$%,\s]/g, ''));
+  return !isNaN(n) && n === 0;
+}
+
 
 /* ════════════════════════════════════════════════════════════════
    SERVE THE WEB APP
@@ -2234,17 +2244,21 @@ function saveClaimNotes(provId, dateStr, apptId, notes) {
 
 
 /* ════════════════════════════════════════════════════════════════
-   PAYMENT TRACKER — Comments field (column BL, index 64)
+   PAYMENT TRACKER
    ════════════════════════════════════════════════════════════════
-   Intentionally standalone, NOT part of APPT_COLS. Columns 60-63
-   (BH-BK) hold 3 dead duplicate headers (ScrData/ScrNote/
-   ChecklistNote — confirmed empty, see auditColumnAlignment() run
-   2026-08-02) and a real PatientID column written by the separate
-   patient-id-system's nightly Tebra sync — not by SolBoard. Every
-   normal appointment save rewrites a contiguous block exactly as
-   wide as APPT_COLS; keeping this column out of that array means
-   ordinary saves never touch it, or anything from column 60 onward.
-   Single targeted cell write only, same pattern as saveClaimNotes().
+   Phase 1, "SolBoard Auto" source only — main Appointments tab rows
+   with a Cost-Share Collection entry. The PaymentTrackerManual tab
+   merge is a separate follow-up step, not yet wired in here.
+
+   Comments field lives at column BL (index 64), intentionally
+   standalone and NOT part of APPT_COLS. Columns 60-63 (BH-BK) hold
+   3 dead duplicate headers (ScrData/ScrNote/ChecklistNote —
+   confirmed empty, see auditColumnAlignment() run 2026-08-02) and a
+   real PatientID column written by the separate patient-id-system's
+   nightly Tebra sync — not by SolBoard. Every normal appointment
+   save rewrites a contiguous block exactly as wide as APPT_COLS;
+   keeping this column out of that array means ordinary saves never
+   touch it, or anything from column 60 onward.
 ════════════════════════════════════════════════════════════════ */
 var PAYMENT_COMMENTS_COL = 64;
 
@@ -2265,6 +2279,105 @@ function savePaymentComment(provId, dateStr, apptId, comment) {
     return JSON.stringify({ error: 'Appointment not found' });
   } catch (e) {
     Logger.log('savePaymentComment error: ' + e.message);
+    return JSON.stringify({ error: e.message });
+  }
+}
+
+/* ── getPaymentTrackerData — "SolBoard Auto" rows only ────────────────────
+   Same read pattern as getClaimsLedger: full sheet scan, rowToAppt() per
+   row, filter, enrich, return JSON. Mirrors Claims Ledger's "direct-pay
+   only" restriction (Cost-Share Collection is a Clinic-Submit concept —
+   Alma/Headway/Grow copays aren't collected through SolBoard's own
+   payment flow), and reuses _checkProvAccess exactly like saveAppointment
+   does, so a provider-role caller can never pull another provider's rows
+   by requesting a different provFilter — the same mechanism the "Jodene
+   only" Payment Tracker button in the Provider window depends on.
+──────────────────────────────────────────────────────────────────────── */
+function getPaymentTrackerData(provFilter) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (provFilter) {
+      var deny = _checkProvAccess(ss, provFilter);
+      if (deny) return deny;
+    }
+
+    var apptSheet = ss.getSheetByName(TAB_APPT);
+    var patSheet  = ss.getSheetByName(TAB_PATIENT);
+    if (!apptSheet || apptSheet.getLastRow() < 2) return JSON.stringify([]);
+
+    // ── Forward cutoff: today + 5 calendar days, per Dean 2026-08-02 ──
+    // ("today is August 2, display through August 7, nothing beyond that").
+    // No lower bound — all past dates are in scope, only the future side
+    // is capped, since a not-yet-happened visit can't have anything
+    // collected against it yet.
+    var tz        = Session.getScriptTimeZone();
+    var cutoffStr = Utilities.formatDate(new Date(Date.now() + 5 * 86400000), tz, 'yyyy-MM-dd');
+
+    // ── Patient lookup: fullName (lowercase) → insurance carrier ──
+    var patLookup = {};
+    if (patSheet && patSheet.getLastRow() >= 2) {
+      patSheet.getDataRange().getValues().slice(1).forEach(function(r) {
+        var fname = String(r[0] || '').trim();
+        var lname = String(r[1] || '').trim();
+        if (!fname && !lname) return;
+        var key = (fname + ' ' + lname).toLowerCase().replace(/\s+/g, ' ').trim();
+        patLookup[key] = { insurance: String(r[3] || '').trim() };
+      });
+    }
+
+    var rows   = apptSheet.getDataRange().getValues();
+    var out    = [];
+
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+
+      var rowProv = String(r[0] || '');
+      if (provFilter && provFilter !== '*' && rowProv !== provFilter) continue;
+
+      var appt = rowToAppt(r);
+
+      // Only Clinic Submit (direct) appointments carry a Cost-Share
+      // Collection entry — same rule Claims Ledger uses for claims.
+      if (appt.method !== 'direct') continue;
+      if (!appt.paymentType) continue;  // no Cost-Share Class set — nothing to track
+      if (appt.date && appt.date > cutoffStr) continue;  // more than 5 days out
+      if (_isZeroRate(appt.paymentRate)) continue;       // $0 copay — nothing to collect
+
+      var ptKey  = _normName(appt.patient);
+      var ptInfo = patLookup[ptKey] || {};
+      var insurance = appt.directIns || ptInfo.insurance || '';
+
+      out.push({
+        source:            'SolBoard Auto',
+        provID:            appt.provID,
+        id:                appt.id,
+        date:              appt.date,
+        time:              appt.time,
+        patient:           appt.patient,
+        patientState:      appt.patientState,
+        insurance:         insurance,
+        cpt:               appt.cpt,
+        paymentType:       appt.paymentType,       // Cost-Share Class
+        paymentRate:       appt.paymentRate,        // expected
+        paymentAmount:     appt.paymentAmount,       // collected amount
+        paymentCollected:  appt.paymentCollected,
+        paymentFailed:     appt.paymentFailed,
+        paymentDate:       appt.paymentDate,
+        paymentPlatform:   appt.paymentPlatform,    // Payment Processing Channel
+        comments:          String(r[PAYMENT_COMMENTS_COL - 1] || ''),
+      });
+    }
+
+    // Most recently collected first
+    out.sort(function(a, b) {
+      if (a.date < b.date) return 1;
+      if (a.date > b.date) return -1;
+      return _normName(a.patient) < _normName(b.patient) ? -1 : 1;
+    });
+
+    return JSON.stringify(out);
+  } catch (e) {
+    Logger.log('getPaymentTrackerData error: ' + e.message);
     return JSON.stringify({ error: e.message });
   }
 }
