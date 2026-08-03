@@ -2284,6 +2284,21 @@ function savePaymentComment(provId, dateStr, apptId, comment) {
   }
 }
 
+// Sort key for Payment Tracker's `date` field. Most rows are clean ISO
+// 'YYYY-MM-DD' strings and compare correctly against each other as plain
+// strings — but PaymentTrackerManual has real rows where that field is
+// "N/A", "payment plan", or even a comma-separated list of dates (a
+// multi-appointment payment plan entry). Plain string comparison sorts
+// those ABOVE every real date (letters/digits > any ISO date's leading
+// "2...") or scatters them unpredictably (a date list starting "11/" sorts
+// as if from 2011, not the actual — much more recent — dates it lists).
+// Reducing anything non-ISO to '' means real dates sort correctly among
+// themselves, and everything else groups predictably at the bottom
+// instead of landing wherever string comparison accidentally puts it.
+function _ptSortKey(dateStr) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(dateStr || '') ? dateStr : '';
+}
+
 /* ── getPaymentTrackerData — "SolBoard Auto" rows only ────────────────────
    Same read pattern as getClaimsLedger: full sheet scan, rowToAppt() per
    row, filter, enrich, return JSON. Mirrors Claims Ledger's "direct-pay
@@ -2371,8 +2386,9 @@ function getPaymentTrackerData(provFilter) {
 
     // Most recently collected first
     out.sort(function(a, b) {
-      if (a.date < b.date) return 1;
-      if (a.date > b.date) return -1;
+      var ka = _ptSortKey(a.date), kb = _ptSortKey(b.date);
+      if (ka < kb) return 1;
+      if (ka > kb) return -1;
       return _normName(a.patient) < _normName(b.patient) ? -1 : 1;
     });
 
@@ -2461,14 +2477,47 @@ function getPaymentTrackerManualData(provFilter) {
     }
 
     out.sort(function(a, b) {
-      if (a.date < b.date) return 1;
-      if (a.date > b.date) return -1;
+      var ka = _ptSortKey(a.date), kb = _ptSortKey(b.date);
+      if (ka < kb) return 1;
+      if (ka > kb) return -1;
       return _normName(a.patient) < _normName(b.patient) ? -1 : 1;
     });
 
     return JSON.stringify(out);
   } catch (e) {
     Logger.log('getPaymentTrackerManualData error: ' + e.message);
+    return JSON.stringify({ error: e.message });
+  }
+}
+
+/* ── getPaymentTrackerAll — combined ledger, both sources ─────────────────
+   Calls getPaymentTrackerData (SolBoard Auto) and getPaymentTrackerManualData
+   (Legacy Import / Manual Entry), concatenates, re-sorts. Both already
+   apply _checkProvAccess with the same provFilter, so if a caller isn't
+   allowed to see one source they aren't allowed to see the other either —
+   if either sub-call comes back as a non-array (an access-denied or error
+   object), that's propagated as-is rather than silently dropping half the
+   ledger.
+──────────────────────────────────────────────────────────────────────── */
+function getPaymentTrackerAll(provFilter) {
+  try {
+    var autoData   = JSON.parse(getPaymentTrackerData(provFilter));
+    var manualData = JSON.parse(getPaymentTrackerManualData(provFilter));
+
+    if (!Array.isArray(autoData))   return JSON.stringify(autoData);
+    if (!Array.isArray(manualData)) return JSON.stringify(manualData);
+
+    var out = autoData.concat(manualData);
+    out.sort(function(a, b) {
+      var ka = _ptSortKey(a.date), kb = _ptSortKey(b.date);
+      if (ka < kb) return 1;
+      if (ka > kb) return -1;
+      return _normName(a.patient) < _normName(b.patient) ? -1 : 1;
+    });
+
+    return JSON.stringify(out);
+  } catch (e) {
+    Logger.log('getPaymentTrackerAll error: ' + e.message);
     return JSON.stringify({ error: e.message });
   }
 }
