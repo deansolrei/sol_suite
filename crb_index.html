@@ -10503,6 +10503,19 @@
       background: #F2EDDB
     }
 
+    /* Future-dated appointments (within the 5-day forward window) — a
+       quiet Teal wash, distinct from every status color already in use
+       here (green/red/gold/grey), so it reads as "not yet happened" not
+       as another status. Marks where past data ends and scrolling should
+       stop. */
+    .pt-table tbody tr.pt-future-row {
+      background: rgba(61, 118, 138, .07)
+    }
+
+    .pt-table tbody tr.pt-future-row:hover {
+      background: rgba(61, 118, 138, .14)
+    }
+
     .pt-table tbody td {
       padding: 9px 10px;
       vertical-align: top;
@@ -10598,6 +10611,14 @@
 
     body.dark .pt-table tbody tr:hover {
       background: #09371F
+    }
+
+    body.dark .pt-table tbody tr.pt-future-row {
+      background: rgba(125, 178, 199, .12)
+    }
+
+    body.dark .pt-table tbody tr.pt-future-row:hover {
+      background: rgba(125, 178, 199, .2)
     }
 
     body.dark .pt-table tbody td {
@@ -13653,6 +13674,13 @@
       return /^\d{4}-\d{2}-\d{2}$/.test(ds || '') ? ds : '';
     }
 
+    // True for a real appointment date strictly after today — the same
+    // "hasn't happened yet" rows the backend's 5-day forward cutoff lets
+    // through. Non-ISO junk ("N/A", etc.) never counts as future.
+    function ptIsFuture(ds) {
+      return /^\d{4}-\d{2}-\d{2}$/.test(ds || '') && ds > TODAY;
+    }
+
     // Comments is editable regardless of source, but the two sources save to
     // different sheets via different backend calls — this key just needs to
     // be stable and unique per row for the local-draft buffer below.
@@ -14141,7 +14169,8 @@
                       const tagCls = r.source === 'SolBoard Auto' ? 'auto' : r.source === 'Legacy Import' ? 'legacy' : 'manual';
                       const provName = (PROVIDERS.find(p => p.id === r.provID) || {}).name || r.provID;
                       return (
-                        <tr key={(r.id || '') + '|' + r.patient + '|' + r.date + '|' + i}>
+                        <tr key={(r.id || '') + '|' + r.patient + '|' + r.date + '|' + i}
+                          className={ptIsFuture(r.date) ? 'pt-future-row' : undefined}>
                           <td className="pt-mono">{ptFmtDate(r.paymentDate || r.date)}</td>
                           <td>{provName}</td>
                           <td>
