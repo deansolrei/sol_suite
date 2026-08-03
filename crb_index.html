@@ -2028,13 +2028,18 @@
       font-weight: 700
     }
 
+    /* This is the primary input control on the Provider Day View — sized
+       and weighted well above the other row-level buttons on purpose.
+       Colors unchanged from before (Dean: "the current color is nice"),
+       just made bigger and bolder. */
     .cpt-edit-btn {
       background: none;
-      border: 1px dashed #FBFBF3;
+      border: 2px dashed #FBFBF3;
       color: #777355;
-      padding: 2px 8px;
+      padding: 8px 16px;
       border-radius: 0;
-      font-size: 12px;
+      font-size: 16px;
+      font-weight: 800;
       cursor: pointer;
       font-family: inherit;
       transition: all .15s
@@ -2043,6 +2048,12 @@
     .cpt-edit-btn:hover {
       border-color: #09371F;
       color: #09371F
+    }
+
+    /* Scoped to just the CPT column's label (not the shared .pv-strip-label
+       used by Rx too) — CPT is the primary field on this row, Rx isn't. */
+    .pv-strip-label.pv-cpt-label {
+      font-size: 12px
     }
 
     /* ── Rx Modal ────────────────────────────────────────────── */
@@ -5041,25 +5052,30 @@
       margin: 10px 0
     }
 
+    /* All CPT tiles (Primary, Add-on, New Patient, BCBS Alternative) share
+       this one look — same border color in every state, only the fill
+       changes: Teal 05 default → Teal 20 on hover → Forest 20 once
+       selected. Per Dean 2026-08-03: previously each tile group had its
+       own border/background scheme (new-pt was teal-tinted, rare was
+       grey-tinted); those per-group overrides are removed below so
+       nothing but this one style applies anywhere in the modal. */
     .cpt-tile {
       padding: 9px 7px;
-      border: 2px solid #FBFBF3;
+      border: 2px solid #6FA0B2;
       border-radius: 7px;
-      background: #FBFBF3;
+      background: #EAF1F1;
       cursor: pointer;
       text-align: center;
-      transition: all .15s;
+      transition: background .15s;
       user-select: none
     }
 
     .cpt-tile:hover {
-      border-color: #09371F;
-      background: #F2EDDB
+      background: #B9D1DA
     }
 
     .cpt-tile.on {
-      border-color: #09371F;
-      background: #F0FDF4
+      background: #B9CEC0
     }
 
     .cpt-code {
@@ -5239,43 +5255,6 @@
     .cpt-sec-tiles .cpt-tile {
       flex: 1;
       min-width: 60px
-    }
-
-    .cpt-tile.new-pt {
-      border-color: #E9F1F4
-    }
-
-    .cpt-tile.new-pt .cpt-code {
-      color: #3D768A
-    }
-
-    .cpt-tile.new-pt:hover {
-      border-color: #3D768A;
-      background: #E9F1F4
-    }
-
-    .cpt-tile.new-pt.on {
-      border-color: #3D768A;
-      background: #E9F1F4
-    }
-
-    .cpt-tile.rare {
-      border-color: #F8EFD8;
-      background: #F0FDF4
-    }
-
-    .cpt-tile.rare .cpt-code {
-      color: #777355
-    }
-
-    .cpt-tile.rare:hover {
-      border-color: #777355;
-      background: #E9F1F4
-    }
-
-    .cpt-tile.rare.on {
-      border-color: #777355;
-      background: #FBFBF3
     }
 
     .cpt-bh-toggle {
@@ -6259,48 +6238,6 @@
 
     body.dark .cpt-sec-hd {
       color: #BE992A
-    }
-
-    body.dark .cpt-tile.new-pt {
-      border-color: #1C6FA3;
-      background: #1C6FA3
-    }
-
-    body.dark .cpt-tile.new-pt .cpt-code {
-      color: #6FA0B2
-    }
-
-    body.dark .cpt-tile.new-pt:hover {
-      border-color: #6FA0B2;
-      background: #1C6FA3
-    }
-
-    body.dark .cpt-tile.new-pt.on {
-      border-color: #6FA0B2;
-      background: #1C6FA3
-    }
-
-    body.dark .cpt-tile.rare {
-      border-color: #2B2716;
-      background: #2B2716
-    }
-
-    body.dark .cpt-tile.rare .cpt-code {
-      color: #2B2716
-    }
-
-    body.dark .cpt-tile.rare:hover {
-      border-color: #2B2716;
-      background: #2B2716
-    }
-
-    body.dark .cpt-tile.rare.on {
-      border-color: #2B2716;
-      background: #2B2716
-    }
-
-    body.dark .cpt-tile.rare.on .cpt-code {
-      color: #D8D3BF
     }
 
     body.dark .cpt-bh-toggle {
@@ -14913,7 +14850,7 @@
                           </span>
                         </div>
                         <div className="pv-strip-col">
-                          <div className="pv-strip-label">CPT</div>
+                          <div className="pv-strip-label pv-cpt-label">CPT</div>
                           <span className="cpt-wrap">
                             {normCpt(a.cpt).map(c => <span key={c} className="cpt-chip">{c}</span>)}
                             <button className="cpt-edit-btn" onClick={() => setCptModal(a)}>
