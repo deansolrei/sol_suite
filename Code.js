@@ -30,6 +30,7 @@ const TAB_AUDIT         = 'Audit Log';
 const TAB_STAFF         = 'Staff';
 const TAB_RATE_ANALYSIS      = 'Rate Analysis';
 const TAB_RATE_ANALYSIS_PROV = 'Rate Analysis - By Provider';
+const TAB_PAYMENT_MANUAL     = 'PaymentTrackerManual';
 
 // ── Appointment sheet columns (order matters — do not rearrange) ─
 // ── Terminology note (Solrei OS naming cleanup) ──────────────────────────
@@ -2331,8 +2332,8 @@ function getPaymentTrackerData(provFilter) {
     for (var i = 1; i < rows.length; i++) {
       var r = rows[i];
 
-      var rowProv = String(r[0] || '');
-      if (provFilter && provFilter !== '*' && rowProv !== provFilter) continue;
+      var rowProv = String(r[0] || '').trim().toLowerCase();
+      if (provFilter && provFilter !== '*' && rowProv !== String(provFilter).toLowerCase()) continue;
 
       var appt = rowToAppt(r);
 
@@ -2378,6 +2379,96 @@ function getPaymentTrackerData(provFilter) {
     return JSON.stringify(out);
   } catch (e) {
     Logger.log('getPaymentTrackerData error: ' + e.message);
+    return JSON.stringify({ error: e.message });
+  }
+}
+
+/* ── getPaymentTrackerManualData — PaymentTrackerManual tab ────────────────
+   Legacy-import + hand-entered-exception rows. Column order (fixed, per
+   the tab's own header row, confirmed 2026-08-02):
+     0 PaymentDate    1 ProvID          2 Patient          3 ApptDate
+     4 CPTCodes       5 CostShareClass  6 CostShareRate    7 CostShareCollectedAmt
+     8 PaymentCollected  9 PaymentFailed  10 PaymentProcessingChannel
+     11 PaymentPlan   12 Status         13 Comments        14 Source
+     15 ImportNotes
+
+   Output field names deliberately match getPaymentTrackerData()'s shape
+   (patient, cpt, paymentType, paymentRate, paymentAmount, paymentPlatform,
+   comments, ...) so the eventual merge is a straight concat, not a
+   translation step. `source` is read from the tab's own Source column
+   (Legacy Import / Manual Entry) rather than hardcoded, since both values
+   already live there. No forward-date cutoff or $0-rate exclusion applied
+   here yet — this tab is historical/exception data, not live scheduling,
+   so neither of those main-tab rules obviously applies; holding off until
+   we've seen real rows rather than guessing.
+──────────────────────────────────────────────────────────────────────── */
+function getPaymentTrackerManualData(provFilter) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (provFilter) {
+      var deny = _checkProvAccess(ss, provFilter);
+      if (deny) return deny;
+    }
+
+    var sheet = ss.getSheetByName(TAB_PAYMENT_MANUAL);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify([]);
+
+    var rows = sheet.getDataRange().getValues();
+    var out  = [];
+
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r[2]) continue; // no Patient — skip blank rows
+
+      // ── ProvID normalization ──────────────────────────────────────────
+      // This tab stores "Jodene"/"Katie" (capitalized first names, per
+      // Dean's original brief); the main tab and every other part of the
+      // app (STAFF_SEED, PROVIDERS, _checkProvAccess) use lowercase
+      // short strings ('jodene'/'katie'). Confirmed via live test
+      // 2026-08-02. Normalize output to lowercase so both sources speak
+      // the same convention downstream, and compare case-insensitively
+      // so filtering isn't silently broken by the mismatch.
+      var rowProv = String(r[1] || '').trim().toLowerCase();
+      if (provFilter && provFilter !== '*' && rowProv !== String(provFilter).toLowerCase()) continue;
+
+      var collectedRaw = r[8];
+      var failedRaw    = r[9];
+
+      // Cost-Share Class here is stored as the display label ("Copay",
+      // "Cash Pay") rather than the main tab's internal key
+      // ('copay','cash-pay'). Normalize so both sources use the same
+      // lowercase-hyphenated key (CSC_LABELS-style) for filtering/display.
+      var paymentTypeRaw = String(r[5] || '').trim().toLowerCase().replace(/\s+/g, '-');
+
+      out.push({
+        source:           String(r[14] || '').trim() || 'Manual Entry',
+        provID:           rowProv,
+        patient:          String(r[2] || '').trim(),
+        date:             _fmtDate(r[3]),   // ApptDate — same semantic as main-tab `date`
+        cpt:              r[4] ? String(r[4]).split(/[|,;]/).map(function(s){return s.trim();}).filter(Boolean) : [],
+        paymentType:      paymentTypeRaw,   // Cost-Share Class
+        paymentRate:      _sv(r[6]),                    // expected
+        paymentAmount:    _sv(r[7]),                    // collected amount
+        paymentCollected: collectedRaw === true || String(collectedRaw).trim().toUpperCase() === 'TRUE',
+        paymentFailed:    failedRaw === true || String(failedRaw).trim().toUpperCase() === 'TRUE',
+        paymentDate:      _fmtDate(r[0]),
+        paymentPlatform:  String(r[10] || '').trim(),   // Payment Processing Channel
+        paymentPlan:      String(r[11] || '').trim(),
+        status:           String(r[12] || '').trim(),   // Paid / Declined / Reversed
+        comments:         String(r[13] || ''),
+        importNotes:      String(r[15] || ''),
+      });
+    }
+
+    out.sort(function(a, b) {
+      if (a.date < b.date) return 1;
+      if (a.date > b.date) return -1;
+      return _normName(a.patient) < _normName(b.patient) ? -1 : 1;
+    });
+
+    return JSON.stringify(out);
+  } catch (e) {
+    Logger.log('getPaymentTrackerManualData error: ' + e.message);
     return JSON.stringify({ error: e.message });
   }
 }
