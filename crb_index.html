@@ -10470,6 +10470,31 @@
       border-right: none
     }
 
+    .pt-th-sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: color .12s;
+    }
+
+    .pt-th-sortable:hover {
+      color: #09371F
+    }
+
+    .pt-sort-arrow {
+      display: inline-block;
+      margin-left: 4px;
+      font-size: 8px;
+    }
+
+    .pt-sort-arrow.idle {
+      opacity: .35
+    }
+
+    .pt-sort-arrow.active {
+      opacity: 1;
+      color: #3D768A
+    }
+
     .pt-table tbody tr {
       transition: background .1s
     }
@@ -10489,30 +10514,26 @@
     }
 
     .pt-tag {
-      display: inline-block;
+      display: block;
       font-size: 8px;
-      font-weight: 900;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: .5px;
-      padding: 2px 6px;
-      border: 1px solid;
-      margin-bottom: 3px;
+      letter-spacing: .4px;
+      margin-top: 2px;
+      opacity: .55;
       white-space: nowrap;
     }
 
     .pt-tag.auto {
-      color: #3D768A;
-      border-color: #3D768A
+      color: #3D768A
     }
 
     .pt-tag.legacy {
-      color: #BE992A;
-      border-color: #BE992A
+      color: #BE992A
     }
 
     .pt-tag.manual {
-      color: #09371F;
-      border-color: #09371F
+      color: #09371F
     }
 
     .pt-patient {
@@ -10593,8 +10614,7 @@
        a lighter dark-mode color the same way every other Forest-on-light
        pairing in this file gets one. */
     body.dark .pt-tag.manual {
-      color: #F2EDDB;
-      border-color: #F2EDDB
+      color: #F2EDDB
     }
   </style>
 </head>
@@ -13609,14 +13629,28 @@
       return 'Pending';
     }
 
+    // Date-first display (YY/MM/DD, then weekday) per Dean's request — the
+    // rest of the app's fmtShort() puts the weekday first ("Mon 8/3/26"),
+    // which reads fine but doesn't sort correctly as plain text. This column
+    // needs to visually sort the same way its underlying value does.
+    //
     // PaymentTrackerManual has real rows where the date field is "N/A",
     // "payment plan", or a comma-separated list of dates — same non-ISO
-    // values the backend's _ptSortKey() already has to account for.
-    // fmtShort() assumes a clean 'YYYY-MM-DD' string and would render
-    // garbage on anything else, so guard it here too.
+    // values the backend's _ptSortKey() already has to account for — so
+    // anything that isn't a clean 'YYYY-MM-DD' just passes through as-is.
     function ptFmtDate(ds) {
       if (!ds) return '—';
-      return /^\d{4}-\d{2}-\d{2}$/.test(ds) ? fmtShort(ds) : ds;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) return ds;
+      const [y, m, d] = ds.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      return `${String(y).slice(-2)}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')} ${DAYS[dt.getDay()].slice(0, 3)}`;
+    }
+
+    // Sort key mirroring the backend's _ptSortKey() — real ISO dates sort as
+    // themselves; "N/A"/"payment plan"/multi-date junk all collapse to ''
+    // (sorts to one end) rather than scattering unpredictably.
+    function ptDateSortKey(ds) {
+      return /^\d{4}-\d{2}-\d{2}$/.test(ds || '') ? ds : '';
     }
 
     // Comments is editable regardless of source, but the two sources save to
@@ -13624,6 +13658,39 @@
     // be stable and unique per row for the local-draft buffer below.
     function ptCommentKey(r) {
       return r.source === 'SolBoard Auto' ? ('auto:' + r.id) : ('manual:' + r.rowIndex);
+    }
+
+    // Sortable columns — each accessor returns the same value the cell
+    // itself displays, so sort order always matches what's on screen.
+    // Date/Appointment go through ptDateSortKey since their raw value can be
+    // "N/A" or similar non-ISO text; everything else sorts as plain text.
+    const PT_SORT_ACCESSORS = {
+      date: r => r.paymentDate || r.date || '',
+      provider: r => (PROVIDERS.find(p => p.id === r.provID) || {}).name || r.provID || '',
+      patient: r => r.patient || '',
+      appointment: r => r.date || '',
+      costshare: r => PT_CSC_LABELS[r.paymentType] || r.paymentType || '',
+      paid: r => ptRowStatus(r) || '',
+      platform: r => r.paymentPlatform || '',
+    };
+    const PT_DATE_SORT_COLS = { date: true, appointment: true };
+
+    function ptCompare(a, b, col) {
+      const acc = PT_SORT_ACCESSORS[col];
+      let av = acc(a), bv = acc(b);
+      if (PT_DATE_SORT_COLS[col]) {
+        av = ptDateSortKey(av); bv = ptDateSortKey(bv);
+      } else {
+        av = String(av).toLowerCase(); bv = String(bv).toLowerCase();
+      }
+      if (av < bv) return -1;
+      if (av > bv) return 1;
+      return 0;
+    }
+
+    function PtSortArrow({ active, dir }) {
+      if (!active) return <span className="pt-sort-arrow idle">⇅</span>;
+      return <span className="pt-sort-arrow active">{dir === 'asc' ? '▲' : '▼'}</span>;
     }
 
     // Display labels as stored raw in the PaymentTrackerManual sheet (matches
@@ -13823,6 +13890,17 @@
       const [fPlatform, setFPlatform] = useState('');
       const [localComments, setLocalComments] = useState({});
       const [showAddModal, setShowAddModal] = useState(false);
+      const [sortCol, setSortCol] = useState(null);
+      const [sortDir, setSortDir] = useState('asc');
+
+      function handleSort(col) {
+        if (sortCol === col) {
+          setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        } else {
+          setSortCol(col);
+          setSortDir('asc');
+        }
+      }
 
       useEffect(() => {
         setLoading(true);
@@ -13854,6 +13932,10 @@
         }
         return true;
       });
+
+      const sorted = sortCol
+        ? [...filtered].sort((a, b) => sortDir === 'asc' ? ptCompare(a, b, sortCol) : -ptCompare(a, b, sortCol))
+        : filtered;
 
       const totalCount = allRows.length;
       const paidRows = allRows.filter(r => ptRowStatus(r) === 'Paid');
@@ -14015,12 +14097,33 @@
                 <table className="pt-table">
                   <thead>
                     <tr>
-                      <th>Date</th><th>Provider</th><th>Patient</th><th>Appointment</th>
-                      <th>Billing Codes</th><th>Cost Share</th><th>Paid</th><th>Platform</th><th>Comments</th>
+                      <th className="pt-th-sortable" onClick={() => handleSort('date')}>
+                        Date <PtSortArrow active={sortCol === 'date'} dir={sortDir} />
+                      </th>
+                      <th className="pt-th-sortable" onClick={() => handleSort('provider')}>
+                        Provider <PtSortArrow active={sortCol === 'provider'} dir={sortDir} />
+                      </th>
+                      <th className="pt-th-sortable" onClick={() => handleSort('patient')}>
+                        Patient <PtSortArrow active={sortCol === 'patient'} dir={sortDir} />
+                      </th>
+                      <th className="pt-th-sortable" onClick={() => handleSort('appointment')}>
+                        Appointment <PtSortArrow active={sortCol === 'appointment'} dir={sortDir} />
+                      </th>
+                      <th>Billing Codes</th>
+                      <th className="pt-th-sortable" onClick={() => handleSort('costshare')}>
+                        Cost Share <PtSortArrow active={sortCol === 'costshare'} dir={sortDir} />
+                      </th>
+                      <th className="pt-th-sortable" onClick={() => handleSort('paid')}>
+                        Paid <PtSortArrow active={sortCol === 'paid'} dir={sortDir} />
+                      </th>
+                      <th className="pt-th-sortable" onClick={() => handleSort('platform')}>
+                        Platform <PtSortArrow active={sortCol === 'platform'} dir={sortDir} />
+                      </th>
+                      <th>Comments</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((r, i) => {
+                    {sorted.map((r, i) => {
                       const st = ptRowStatus(r);
                       const stCls = st === 'Paid' ? 'paid' : st === 'Declined' ? 'declined' : st === 'Reversed' ? 'reversed' : 'pending';
                       const tagCls = r.source === 'SolBoard Auto' ? 'auto' : r.source === 'Legacy Import' ? 'legacy' : 'manual';
@@ -14030,8 +14133,8 @@
                           <td className="pt-mono">{ptFmtDate(r.paymentDate || r.date)}</td>
                           <td>{provName}</td>
                           <td>
-                            <div className={`pt-tag ${tagCls}`}>{r.source}</div>
                             <div className="pt-patient"><PatientName name={r.patient} state={r.patientState} /></div>
+                            <div className={`pt-tag ${tagCls}`}>{r.source}</div>
                           </td>
                           <td className="pt-mono">{ptFmtDate(r.date)}</td>
                           <td className="pt-mono">{(r.cpt || []).join(', ') || '—'}</td>
