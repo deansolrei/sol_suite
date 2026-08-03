@@ -10317,6 +10317,270 @@
         font-size: 12px
       }
     }
+
+    /* ══════════════════════════════════════════════════════════════
+       PAYMENT TRACKER — reuses .cl-overlay/.cl-panel/.cl-hdr/
+       .cl-search-input/-icon/-wrap/.cl-close-btn/.cl-stats/.cl-body/.cl-loading/
+       .cl-empty from Claims Ledger for shell consistency. Classes
+       below cover only what's genuinely new: the collapsible filter
+       row, the ledger table (different columns from Claims Ledger),
+       source tags, and status badges.
+       ══════════════════════════════════════════════════════════════ */
+    .pt-filters-btn {
+      background: rgba(242, 237, 219, .15);
+      border: 1px solid rgba(242, 237, 219, .3);
+      color: #FFFFFF;
+      border-radius: 0;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .12s;
+    }
+
+    .pt-filters-btn:hover {
+      background: rgba(242, 237, 219, .3)
+    }
+
+    .pt-filters-btn.active {
+      background: #BE992A;
+      border-color: #BE992A;
+      color: #09371F
+    }
+
+    .pt-filters-row {
+      background: #F2EDDB;
+      border-bottom: 1px solid #FBFBF3;
+      padding: 12px 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+
+    .pt-field label {
+      display: block;
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: #777355;
+      margin-bottom: 3px;
+    }
+
+    .pt-field input,
+    .pt-field select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #D8D3BF;
+      background: #FBFBF3;
+      color: #2B2716;
+      border-radius: 0;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .pt-field input:focus,
+    .pt-field select:focus {
+      border-color: #3D768A
+    }
+
+    .pt-filters-clear {
+      align-self: center;
+      background: none;
+      border: none;
+      color: #3D768A;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 6px 0;
+      white-space: nowrap;
+    }
+
+    .pt-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 12px;
+      table-layout: fixed;
+    }
+
+    .pt-table thead th {
+      background: #FBFBF3;
+      color: #777355;
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      padding: 7px 10px;
+      text-align: left;
+      height: 36px;
+      border-right: 1px solid rgba(30, 41, 59, .13);
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      box-shadow: 0 1.5px 0 #F2EDDB, 0 2px 6px rgba(9, 55, 31, .07);
+    }
+
+    .pt-table thead th:last-child {
+      border-right: none
+    }
+
+    .pt-table tbody tr {
+      transition: background .1s
+    }
+
+    .pt-table tbody tr:hover {
+      background: #F2EDDB
+    }
+
+    .pt-table tbody td {
+      padding: 9px 10px;
+      vertical-align: top;
+      border-bottom: 1px solid #E9F1F4;
+    }
+
+    .pt-mono {
+      font-family: 'Courier New', monospace
+    }
+
+    .pt-tag {
+      display: inline-block;
+      font-size: 8px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: 2px 6px;
+      border: 1px solid;
+      margin-bottom: 3px;
+      white-space: nowrap;
+    }
+
+    .pt-tag.auto {
+      color: #3D768A;
+      border-color: #3D768A
+    }
+
+    .pt-tag.legacy {
+      color: #BE992A;
+      border-color: #BE992A
+    }
+
+    .pt-tag.manual {
+      color: #09371F;
+      border-color: #09371F
+    }
+
+    .pt-patient {
+      font-weight: 800;
+      color: #2B2716
+    }
+
+    .pt-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+
+    .pt-badge.paid {
+      color: #16A34A;
+      border-color: #16A34A
+    }
+
+    .pt-badge.declined {
+      color: #DC2626;
+      border-color: #DC2626
+    }
+
+    .pt-badge.reversed {
+      color: #BE992A;
+      border-color: #BE992A
+    }
+
+    .pt-badge.pending {
+      color: #777355;
+      border-color: #D8D3BF
+    }
+
+    .pt-lock {
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
+      color: #777355;
+      margin-bottom: 2px;
+    }
+
+    .pt-comments-ro {
+      font-size: 12px;
+      color: #2B2716;
+      max-width: 180px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    body.dark .pt-filters-row {
+      background: #051F11;
+      border-bottom-color: #09371F
+    }
+
+    body.dark .pt-field label {
+      color: #F2EDDB;
+      opacity: .65
+    }
+
+    body.dark .pt-field input,
+    body.dark .pt-field select {
+      background: #09371F;
+      border-color: #3D768A;
+      color: #F2EDDB;
+    }
+
+    body.dark .pt-table thead th {
+      background: #051F11;
+      color: #F2EDDB;
+      opacity: .85;
+      box-shadow: 0 1.5px 0 #051F11, 0 2px 6px rgba(0, 0, 0, .25)
+    }
+
+    body.dark .pt-table tbody tr:hover {
+      background: #09371F
+    }
+
+    body.dark .pt-table tbody td {
+      border-bottom-color: #09371F;
+      color: #F2EDDB
+    }
+
+    body.dark .pt-patient {
+      color: #F2EDDB
+    }
+
+    body.dark .pt-comments-ro {
+      color: #F2EDDB
+    }
+
+    body.dark .pt-lock {
+      color: #F2EDDB;
+      opacity: .6
+    }
+
+    /* .pt-tag.auto (Teal) and .pt-tag.legacy (Gold) stay legible against a
+       dark background as-is; Forest is nearly black-on-black here and needs
+       a lighter dark-mode color the same way every other Forest-on-light
+       pairing in this file gets one. */
+    body.dark .pt-tag.manual {
+      color: #F2EDDB;
+      border-color: #F2EDDB
+    }
   </style>
 </head>
 
@@ -13299,6 +13563,275 @@
               <span>View-only · Edit claims via Billing window</span>
             </div>
 
+          </div>
+        </div>
+      );
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────
+       PaymentTracker — Cost-Share Collection ledger (Phase 1: read-only).
+       Merges two backend sources via getPaymentTrackerAll: "SolBoard Auto"
+       (live, off the main Appointments tab) and PaymentTrackerManual's
+       "Legacy Import"/"Manual Entry" rows. Search/filter only in this
+       phase — no editing, no Add Manual Entry, no Sync yet; those are
+       separate follow-up steps per Dean's "one change at a time" rule.
+
+       Reuses Claims Ledger's shell classes (.cl-overlay/.cl-panel/.cl-hdr/
+       .cl-search-input/-icon/-wrap/.cl-close-btn/.cl-stats/.cl-body/.cl-loading/.cl-empty)
+       for visual consistency; .pt-* classes cover what's genuinely new
+       (collapsible filter row, ledger table, source tags, status badges).
+    ───────────────────────────────────────────────────────────────────── */
+    const PT_CSC_LABELS = { copay: 'Copay', coinsurance: 'Coinsurance', 'cash-pay': 'Cash Pay', deductible: 'Deductible' };
+
+    // Unified status across both sources — Legacy/Manual rows carry an
+    // explicit Status column; SolBoard Auto rows only have the
+    // paymentCollected/paymentFailed booleans, so derive the same
+    // Paid/Declined/Pending vocabulary from those when Status is absent.
+    function ptRowStatus(r) {
+      if (r.status) return r.status;
+      if (r.paymentCollected) return 'Paid';
+      if (r.paymentFailed) return 'Declined';
+      return 'Pending';
+    }
+
+    // PaymentTrackerManual has real rows where the date field is "N/A",
+    // "payment plan", or a comma-separated list of dates — same non-ISO
+    // values the backend's _ptSortKey() already has to account for.
+    // fmtShort() assumes a clean 'YYYY-MM-DD' string and would render
+    // garbage on anything else, so guard it here too.
+    function ptFmtDate(ds) {
+      if (!ds) return '—';
+      return /^\d{4}-\d{2}-\d{2}$/.test(ds) ? fmtShort(ds) : ds;
+    }
+
+    function PaymentTracker({ onClose, provFilter }) {
+      const [rows, setRows] = useState(null);   // null = loading
+      const [loading, setLoading] = useState(true);
+      const [search, setSearch] = useState('');
+      const [filtersOpen, setFiltersOpen] = useState(false);
+      const [fPaymentDate, setFPaymentDate] = useState('');
+      const [fProvider, setFProvider] = useState('');
+      const [fApptDate, setFApptDate] = useState('');
+      const [fAmount, setFAmount] = useState('');
+      const [fPlatform, setFPlatform] = useState('');
+
+      useEffect(() => {
+        setLoading(true);
+        gsr('getPaymentTrackerAll', provFilter || '')
+          .then(json => {
+            try { const d = JSON.parse(json); setRows(Array.isArray(d) ? d : []); }
+            catch (e) { setRows([]); }
+            setLoading(false);
+          })
+          .catch(() => { setRows([]); setLoading(false); });
+      }, [provFilter]);
+
+      const allRows = rows || [];
+
+      const filtered = allRows.filter(r => {
+        if (fPaymentDate && r.paymentDate !== fPaymentDate) return false;
+        if (fProvider && r.provID !== fProvider) return false;
+        if (fApptDate && r.date !== fApptDate) return false;
+        if (fAmount) {
+          const want = parseFloat(fAmount);
+          const got = parseFloat(r.paymentAmount);
+          if (isNaN(want) || isNaN(got) || want !== got) return false;
+        }
+        if (fPlatform && (r.paymentPlatform || '').toLowerCase() !== fPlatform.toLowerCase()) return false;
+        if (search) {
+          const hay = [r.patient, r.comments, r.paymentType, r.paymentPlatform, r.insurance, ptRowStatus(r)]
+            .join(' ').toLowerCase();
+          if (!hay.includes(search.toLowerCase())) return false;
+        }
+        return true;
+      });
+
+      const totalCount = allRows.length;
+      const paidRows = allRows.filter(r => ptRowStatus(r) === 'Paid');
+      const totalPaid = paidRows.reduce((s, r) => s + (parseFloat(r.paymentAmount) || 0), 0);
+      const declinedCount = allRows.filter(r => ptRowStatus(r) === 'Declined').length;
+      const reversedCount = allRows.filter(r => ptRowStatus(r) === 'Reversed').length;
+
+      const anyFilterActive = !!(fPaymentDate || fProvider || fApptDate || fAmount || fPlatform);
+      function clearFilters() {
+        setFPaymentDate(''); setFProvider(''); setFApptDate(''); setFAmount(''); setFPlatform('');
+      }
+
+      return (
+        <div className="cl-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+          <div className="cl-panel">
+
+            {/* ── Header ── */}
+            <div className="cl-hdr">
+              <div>
+                <div className="cl-hdr-title">💳 Payment Tracker</div>
+                <div className="cl-hdr-sub">
+                  {provFilter
+                    ? `Provider: ${provFilter.charAt(0).toUpperCase() + provFilter.slice(1)}`
+                    : 'All Providers'}
+                  {' · '}Cost-Share Collections · View-Only
+                </div>
+              </div>
+              <div className="cl-hdr-controls">
+                <div className="cl-search-wrap">
+                  <span className="cl-search-icon">🔍</span>
+                  <input
+                    type="text"
+                    className="cl-search-input"
+                    placeholder="Search…"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                  />
+                  {search && (
+                    <button className="cl-search-clear" onClick={() => setSearch('')} title="Clear search">✕</button>
+                  )}
+                </div>
+                <button
+                  className={`pt-filters-btn${filtersOpen ? ' active' : ''}`}
+                  onClick={() => setFiltersOpen(o => !o)}>
+                  {filtersOpen ? '▴' : '▾'} Filters{anyFilterActive ? ' •' : ''}
+                </button>
+                <button className="cl-close-btn" onClick={onClose}>✕ Close</button>
+              </div>
+            </div>
+
+            {/* ── Collapsible filter row ── */}
+            {filtersOpen && (
+              <div className="pt-filters-row">
+                <div className="pt-field">
+                  <label>Payment Date</label>
+                  <input type="text" placeholder="YYYY-MM-DD" value={fPaymentDate}
+                    onChange={e => setFPaymentDate(e.target.value)} />
+                </div>
+                <div className="pt-field">
+                  <label>Provider</label>
+                  <select value={fProvider} onChange={e => setFProvider(e.target.value)}>
+                    <option value="">All Providers</option>
+                    {PROVIDERS.filter(p => p.id !== 'megan').map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="pt-field">
+                  <label>Appointment Date</label>
+                  <input type="text" placeholder="YYYY-MM-DD" value={fApptDate}
+                    onChange={e => setFApptDate(e.target.value)} />
+                </div>
+                <div className="pt-field">
+                  <label>Payment Amount</label>
+                  <input type="text" placeholder="Exact match" value={fAmount}
+                    onChange={e => setFAmount(e.target.value)} />
+                </div>
+                <div className="pt-field">
+                  <label>Platform</label>
+                  <select value={fPlatform} onChange={e => setFPlatform(e.target.value)}>
+                    <option value="">All Platforms</option>
+                    <option value="Tebra">Tebra</option>
+                    <option value="Chase">Chase</option>
+                    <option value="5/3">5/3</option>
+                    <option value="Alma">Alma</option>
+                    <option value="Headway">Headway</option>
+                    <option value="Grow">Grow</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                {anyFilterActive && (
+                  <button className="pt-filters-clear" onClick={clearFilters}>Clear all filters</button>
+                )}
+              </div>
+            )}
+
+            {/* ── Stats bar ── */}
+            {!loading && totalCount > 0 && (
+              <div className="cl-stats">
+                <div className="cl-stat-item"><span className="cl-stat-num">{filtered.length}</span>&nbsp;of {totalCount}</div>
+                <span className="cl-stat-sep">|</span>
+                <div className="cl-stat-item" style={{ color: '#16A34A' }}>
+                  <span className="cl-stat-num" style={{ color: '#16A34A' }}>{paidRows.length}</span>&nbsp;Paid
+                </div>
+                <span className="cl-stat-sep">|</span>
+                <div className="cl-stat-item" style={{ color: '#16A34A' }}>
+                  <span className="cl-stat-num" style={{ color: '#16A34A' }}>${totalPaid.toFixed(2)}</span>&nbsp;Total Paid
+                </div>
+                {declinedCount > 0 && <>
+                  <span className="cl-stat-sep">|</span>
+                  <div className="cl-stat-item" style={{ color: '#DC2626' }}>
+                    <span className="cl-stat-num" style={{ color: '#DC2626' }}>{declinedCount}</span>&nbsp;Declined
+                  </div>
+                </>}
+                {reversedCount > 0 && <>
+                  <span className="cl-stat-sep">|</span>
+                  <div className="cl-stat-item" style={{ color: '#BE992A' }}>
+                    <span className="cl-stat-num" style={{ color: '#BE992A' }}>{reversedCount}</span>&nbsp;Reversed
+                  </div>
+                </>}
+              </div>
+            )}
+
+            {/* ── Body ── */}
+            <div className="cl-body">
+              {loading && (
+                <div className="cl-loading">
+                  <div className="spinner" style={{ width: 20, height: 20 }} />
+                  Loading payment data…
+                </div>
+              )}
+              {!loading && totalCount === 0 && (
+                <div className="cl-empty">
+                  <span style={{ fontSize: 32 }}>💳</span>
+                  No cost-share collections found
+                </div>
+              )}
+              {!loading && totalCount > 0 && filtered.length === 0 && (
+                <div className="cl-empty">
+                  <span style={{ fontSize: 28 }}>🔍</span>
+                  No results match the current filters
+                </div>
+              )}
+
+              {!loading && filtered.length > 0 && (
+                <table className="pt-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th><th>Provider</th><th>Patient</th><th>Appointment</th>
+                      <th>Billing Codes</th><th>Cost Share</th><th>Paid</th><th>Platform</th><th>Comments</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((r, i) => {
+                      const st = ptRowStatus(r);
+                      const stCls = st === 'Paid' ? 'paid' : st === 'Declined' ? 'declined' : st === 'Reversed' ? 'reversed' : 'pending';
+                      const tagCls = r.source === 'SolBoard Auto' ? 'auto' : r.source === 'Legacy Import' ? 'legacy' : 'manual';
+                      const provName = (PROVIDERS.find(p => p.id === r.provID) || {}).name || r.provID;
+                      return (
+                        <tr key={(r.id || '') + '|' + r.patient + '|' + r.date + '|' + i}>
+                          <td className="pt-mono">{ptFmtDate(r.paymentDate || r.date)}</td>
+                          <td>{provName}</td>
+                          <td>
+                            <div className={`pt-tag ${tagCls}`}>{r.source}</div>
+                            <div className="pt-patient"><PatientName name={r.patient} state={r.patientState} /></div>
+                          </td>
+                          <td className="pt-mono">{ptFmtDate(r.date)}</td>
+                          <td className="pt-mono">{(r.cpt || []).join(', ') || '—'}</td>
+                          <td>{PT_CSC_LABELS[r.paymentType] || r.paymentType || '—'}</td>
+                          <td>
+                            <span className={`pt-badge ${stCls}`}>{st}</span>
+                            {r.paymentAmount !== '' && r.paymentAmount != null && (
+                              <div className="pt-mono" style={{ marginTop: 3 }}>${parseFloat(r.paymentAmount).toFixed(2)}</div>
+                            )}
+                          </td>
+                          <td>{r.paymentPlatform || '—'}</td>
+                          <td>
+                            <span className="pt-lock">🔒 read-only</span>
+                            <div className="pt-comments-ro">{r.comments || '—'}</div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
       );
