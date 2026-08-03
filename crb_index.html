@@ -1664,6 +1664,73 @@
       border-color: #BE992A
     }
 
+    /* ── Save-failure banner — CPT Codes / Mark Note Signed background
+       saves that didn't land. Fixed bottom-right, stacks if more than one
+       is outstanding, deliberately NOT a full-screen overlay — the whole
+       point of the background-save change is that the provider keeps
+       working, so a failure shouldn't block the rest of the screen either. */
+    .pv-fail-stack {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 250;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 8px;
+      max-width: 340px;
+    }
+
+    .pv-fail-card {
+      background: #FBFBF3;
+      border: 1px solid #DC2626;
+      border-left: 6px solid #DC2626;
+      border-radius: 0;
+      padding: 12px 14px;
+      box-shadow: 0 8px 28px rgba(43, 39, 22, .25);
+    }
+
+    .pv-fail-hd {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .pv-fail-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #791F1F;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .pv-fail-close {
+      background: none;
+      border: none;
+      color: #777355;
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      padding: 0 0 0 8px;
+      flex-shrink: 0;
+    }
+
+    .pv-fail-close:hover {
+      color: #2B2716;
+    }
+
+    .pv-fail-body {
+      font-size: 13px;
+      color: #2B2716;
+      margin: 5px 0 10px;
+      line-height: 1.4;
+    }
+
+    .pv-fail-actions {
+      display: flex;
+      gap: 8px;
+    }
+
     /* Cream backdrop strip so scrolling content doesn't peek around the pill */
     .day-date-banner {
       display: inline-flex;
@@ -11787,21 +11854,14 @@
       const [custom, setCustom] = useState('');
       const [bhOpen, setBhOpen] = useState(false);
       const [addonSel, setAddonSel] = useState('');
-      // Guards against double-submit (e.g. an impatient double-click) and
-      // gives the provider a clear "still working" signal instead of the
-      // modal appearing to do nothing while the sequenced save is in flight.
-      const [saving, setSaving] = useState(false);
-      async function handleSave() {
-        if (saving) return;
-        setSaving(true);
-        try {
-          await onSave(sel);
-          // On success the parent closes this modal (setCptModal(null)),
-          // which unmounts this component — no need to reset `saving` here.
-        } catch (e) {
-          console.error('[CRB] CPT save failed:', e);
-          setSaving(false);
-        }
+      // Closes immediately — the save (and any auto-sign-note that follows)
+      // runs in the background so the provider can move to the next patient
+      // right away, instead of sitting here waiting for the round-trip.
+      // If it fails, ProviderView's save-failure banner catches it and
+      // offers a retry — see saveCpt().
+      function handleSave() {
+        onSave(sel);
+        onClose();
       }
 
       function toggle(code) {
@@ -11849,14 +11909,14 @@
       ];
 
       return (
-        <div className="overlay" onClick={saving ? undefined : onClose}>
+        <div className="overlay" onClick={onClose}>
           <div className="modal cpt-modal" onClick={e => e.stopPropagation()}>
             <div className="m-hdr">
               <div>
                 <div className="m-title">CPT Codes</div>
                 <div className="m-sub"><PatientName name={appt.patient} state={appt.patientState} /> · {fmtTime(appt.time)}</div>
               </div>
-              <button className="m-close" onClick={onClose} disabled={saving} style={saving ? { opacity: .4, cursor: 'not-allowed' } : undefined}>×</button>
+              <button className="m-close" onClick={onClose}>×</button>
             </div>
             <div className="m-body">
 
@@ -11994,10 +12054,8 @@
             </div>
 
             <div className="m-foot">
-              <button className="btn btn-s" onClick={onClose} disabled={saving}>Cancel</button>
-              <button className="btn btn-p" onClick={handleSave} disabled={saving} style={saving ? { opacity: .7, cursor: 'wait' } : undefined}>
-                {saving ? '⏳ Saving…' : 'Save CPT Codes'}
-              </button>
+              <button className="btn btn-s" onClick={onClose}>Cancel</button>
+              <button className="btn btn-p" onClick={handleSave}>Save CPT Codes</button>
             </div>
           </div>
         </div>
@@ -14485,18 +14543,55 @@
       // this one call; only the signed status was at risk of being clobbered.
       // Fix: await the CPT-codes write fully before firing the sign-note
       // write, so the sign-note write always lands last and can never be
-      // overwritten. Also await the sign-note write itself, and only close
-      // the modal once both are confirmed done, so a provider can't
-      // navigate away mid-sequence without at least seeing a "Saving…" state.
+      // overwritten.
+      //
+      // ── Background save, not a blocking wait (2026-08-03) ──────────────
+      // This used to run inside CPTModal's own await, keeping the modal open
+      // (Cancel/close disabled) until both writes confirmed — a "trap" that
+      // guaranteed correctness but left the provider stuck watching a
+      // spinner for a few seconds on every save. CPTModal now closes the
+      // instant Save is clicked; this function runs the same two-write
+      // sequence in the background afterward. The ONE thing that can't be
+      // silently dropped is a failed write — if either step fails, it's
+      // logged into saveFailures so the banner below can alert the provider
+      // and offer a retry, instead of the provider wrongly believing a
+      // signed note is safely recorded when the save never actually landed.
       async function saveCpt(appt, codes) {
         const updated = { ...appt, cpt: codes, billing: codes.length > 0 ? 'ready' : 'pending' };
-        await onUpdate(updated);
-        // Auto-sign the note when CPT codes are saved (reduces clicks for providers)
-        if (codes.length > 0 && !appt.out) {
-          if (onSignNote) await onSignNote(updated);
-          else await onUpdate({ ...updated, out: true });
+        const shouldAutoSign = codes.length > 0 && !appt.out;
+
+        const cptResult = await onUpdate(updated);
+        if (cptResult && cptResult.ok === false) {
+          addSaveFailure(appt, codes, { needsCpt: true, needsSign: shouldAutoSign });
+          return;
         }
-        setCptModal(null);
+        // Auto-sign the note when CPT codes are saved (reduces clicks for providers)
+        if (shouldAutoSign) {
+          const signResult = onSignNote ? await onSignNote(updated) : await onUpdate({ ...updated, out: true });
+          if (signResult && signResult.ok === false) {
+            addSaveFailure(appt, codes, { needsCpt: false, needsSign: true });
+          }
+        }
+      }
+
+      // ── Save-failure tracking (Save CPT Codes / Mark Note Signed) ──────
+      // One entry per appointment that failed to save in the background;
+      // re-saving is idempotent (same CPT codes, same sign-note call) so
+      // retry always just re-runs the same sequence rather than tracking
+      // exactly which half succeeded.
+      const [saveFailures, setSaveFailures] = useState([]);
+      function addSaveFailure(appt, codes, { needsCpt, needsSign }) {
+        setSaveFailures(prev => [
+          ...prev.filter(f => f.appt.id !== appt.id),
+          { key: appt.id + ':' + Date.now(), appt, codes, needsCpt, needsSign },
+        ]);
+      }
+      function dismissSaveFailure(key) {
+        setSaveFailures(prev => prev.filter(f => f.key !== key));
+      }
+      function retrySaveFailure(f) {
+        dismissSaveFailure(f.key);
+        saveCpt(f.appt, f.codes);
       }
       function saveRx(appt, meds) {
         // Clear biller alert when Provider explicitly saves — they've reviewed and acted
@@ -14834,7 +14929,14 @@
                             </>
                           ) : (
                             <button className="pv-sign-btn unsigned"
-                              onClick={() => onSignNote ? onSignNote(a) : onUpdate({ ...a, out: true })}>
+                              onClick={() => {
+                                const p = onSignNote ? onSignNote(a) : onUpdate({ ...a, out: true });
+                                if (p && p.then) {
+                                  p.then(res => {
+                                    if (res && res.ok === false) addSaveFailure(a, a.cpt, { needsCpt: false, needsSign: true });
+                                  });
+                                }
+                              }}>
                               Mark Note Signed
                             </button>
                           )}
@@ -14881,6 +14983,32 @@
           </div>
           {cptModal && <CPTModal appt={cptModal} onSave={codes => saveCpt(cptModal, codes)} onClose={() => setCptModal(null)} />}
           {rxModal && <RxMedModal appt={rxModal} onSave={meds => saveRx(rxModal, meds)} onClose={() => setRxModal(null)} />}
+
+          {/* ── Save-failure banner (CPT Codes / Mark Note Signed background saves) ── */}
+          {saveFailures.length > 0 && (
+            <div className="pv-fail-stack">
+              {saveFailures.map(f => {
+                const what = f.needsCpt && f.needsSign ? 'CPT codes and note signature'
+                  : f.needsCpt ? 'CPT codes'
+                    : 'note signature';
+                return (
+                  <div key={f.key} className="pv-fail-card">
+                    <div className="pv-fail-hd">
+                      <div className="pv-fail-title">⚠ Save Failed</div>
+                      <button className="pv-fail-close" onClick={() => dismissSaveFailure(f.key)} title="Dismiss">×</button>
+                    </div>
+                    <div className="pv-fail-body">
+                      <strong><PatientName name={f.appt.patient} state={f.appt.patientState} /></strong> — {what} didn't save. Try again when ready.
+                    </div>
+                    <div className="pv-fail-actions">
+                      <button className="btn btn-p btn-sm" onClick={() => retrySaveFailure(f)}>Retry</button>
+                      <button className="btn btn-s btn-sm" onClick={() => dismissSaveFailure(f.key)}>Dismiss</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* ── Patient Info Modal — live lookup by ID so it always shows fresh data ── */}
           {infoModalId && (() => {
@@ -18898,6 +19026,12 @@
         // per-appointment (see queueApptSave above) so it can't land out of
         // order relative to any OTHER pending save for the same appointment,
         // regardless of which UI action triggered either one.
+        // Resolves { ok: true } or { ok: false, error } rather than plain
+        // undefined either way — callers that only fire-and-forget (the vast
+        // majority) can keep ignoring the resolved value exactly as before;
+        // callers that need to know whether it actually landed (e.g.
+        // ProviderView's saveCpt, which shows a retry banner on failure
+        // instead of just the transient header indicator) now can.
         return queueApptSave(updated && updated.id, () =>
           gsr('saveAppointment', effectivePr, dt, JSON.stringify(updated))
             .then(raw => {
@@ -18906,15 +19040,17 @@
                 if (r && r.error) {
                   console.error('[CRB] saveAppointment error:', r.error, '| prov:', pr, '| date:', dt, '| id:', updated && updated.id);
                   setSaveStatus('error');
-                  return;
+                  return { ok: false, error: r.error };
                 }
               } catch (e) { /* non-JSON response — treat as ok */ }
               setSaveStatus('saved');
               setTimeout(() => setSaveStatus('idle'), 2200);
+              return { ok: true };
             })
             .catch(err => {
               console.error('[CRB] saveAppointment GAS failure:', err);
               setSaveStatus('error');
+              return { ok: false, error: String(err && err.message || err) };
             })
         );
       }
@@ -19066,7 +19202,7 @@
                 rollback();
                 setSaveStatus('error');
                 setTimeout(() => setSaveStatus('idle'), 3000);
-                return;
+                return { ok: false, error: (res && res.error) || 'Unknown error' };
               }
 
               // Merge authoritative affected[] list into our caches.
@@ -19107,12 +19243,14 @@
 
               // ── 3. Belt-and-suspenders cache clear ──
               fetchedRef.current.clear();
+              return { ok: true };
             })
-            .catch(() => {
+            .catch(err => {
               // Network/transport failure → undo optimistic update
               rollback();
               setSaveStatus('error');
               setTimeout(() => setSaveStatus('idle'), 3000);
+              return { ok: false, error: String(err && err.message || err) };
             })
         );
       }
