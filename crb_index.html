@@ -14432,7 +14432,7 @@
       );
     }
 
-    function ProviderView({ appts, date, prov, onUpdate, onSignNote, totalUnsigned, onClearPhantom, userRole, userProvID, onForceRefresh, patientDb }) {
+    function ProviderView({ appts, date, prov, onUpdate, onSignNote, totalUnsigned, onClearPhantom, userRole, userProvID, onForceRefresh, patientDb, dayMode, setDayMode }) {
       const [cptModal, setCptModal] = useState(null);
       const [rxModal, setRxModal] = useState(null);
       const [notesDraft, setNotesDraft] = useState({});
@@ -14458,7 +14458,8 @@
       // into Pre-visit / Post-visit workflows (functionality below is 100%
       // unchanged — this only controls which fields render primary vs. tucked
       // behind a per-row "Details" toggle).
-      const [dayMode, setDayMode] = useState('pre');
+      // dayMode/setDayMode are now owned by App (see providerDayMode there)
+      // so they survive this component unmounting/remounting on date changes.
       const [expandedDetail, setExpandedDetail] = useState({});
       const [expandedUnsigned, setExpandedUnsigned] = useState({});
       // Void appointments (No-show / Rescheduled / Cancelled) and placeholder
@@ -18558,6 +18559,15 @@
       const [date, setDate] = useState(TODAY);
       const [view, setView] = useState('provider');
       const [period, setPeriod] = useState('day');
+      // Lifted out of ProviderView (2026-08-03): the {apptLoading ? spinner :
+      // <ProviderView/>} swap below unmounts/remounts ProviderView on every
+      // date navigation that needs a fetch, which was silently resetting
+      // Pre-visit/Post-visit back to 'pre' each time. Living here instead
+      // means it survives that remount — it only ever changes via the
+      // Pre-visit/Post-visit tab buttons themselves (or the Issues/Pending
+      // banner-stat jump, which deliberately forces Pre-visit since those
+      // are Pre-visit-only concepts).
+      const [providerDayMode, setProviderDayMode] = useState('pre');
 
       const [initLoading, setInitLoading] = useState(true);
       const [initErr, setInitErr] = useState('');
@@ -19771,7 +19781,7 @@
               <div className="page-loading"><div className="spinner" /><span>Loading appointments…</span></div>
             ) : (
               <>
-                {view === 'provider' && period === 'day' && <ProviderView appts={appts} date={date} prov={prov} onUpdate={updateAppt} onSignNote={signNote} totalUnsigned={totalUnsigned} onClearPhantom={clearPhantom} userRole={userRole} userProvID={userProvID} onForceRefresh={forceRefreshDay} patientDb={patientDb} />}
+                {view === 'provider' && period === 'day' && <ProviderView appts={appts} date={date} prov={prov} onUpdate={updateAppt} onSignNote={signNote} totalUnsigned={totalUnsigned} onClearPhantom={clearPhantom} userRole={userRole} userProvID={userProvID} onForceRefresh={forceRefreshDay} patientDb={patientDb} dayMode={providerDayMode} setDayMode={setProviderDayMode} />}
                 {view === 'provider' && period === 'week' && <WeekView prov={prov} date={date} data={data} onUpdateForDate={updateApptForDate} onSwitchToDay={switchToDay} onDeleteForDate={deleteApptForDate} totalUnsigned={totalUnsigned} />}
                 {view === 'assistant' && period === 'day' && <AssistantView appts={appts} date={date} onUpdate={updateAppt} onAdd={addAppt} onDelete={deleteAppt} patientDb={patientDb} />}
                 {view === 'assistant' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} onUpdateForDate={updateApptForDate} />}
