@@ -2247,11 +2247,15 @@ function saveClaimNotes(provId, dateStr, apptId, notes) {
 /* ════════════════════════════════════════════════════════════════
    PAYMENT TRACKER
    ════════════════════════════════════════════════════════════════
-   Phase 1, "SolBoard Auto" source only — main Appointments tab rows
-   with a Cost-Share Collection entry. The PaymentTrackerManual tab
-   merge is a separate follow-up step, not yet wired in here.
+   Merges two sources: "SolBoard Auto" (main Appointments tab rows
+   with a Cost-Share Collection entry) and "Legacy Import"/"Manual
+   Entry" (PaymentTrackerManual tab). Comments is the one field
+   that's editable regardless of source — savePaymentComment below
+   writes the Appointments tab's own Comments column (BL) for
+   SolBoard Auto rows; savePaymentManualComment further down writes
+   PaymentTrackerManual's own Comments column for the other two.
 
-   Comments field lives at column BL (index 64), intentionally
+   SolBoard Auto's comments field lives at column BL (index 64), intentionally
    standalone and NOT part of APPT_COLS. Columns 60-63 (BH-BK) hold
    3 dead duplicate headers (ScrData/ScrNote/ChecklistNote —
    confirmed empty, see auditColumnAlignment() run 2026-08-02) and a
@@ -2280,6 +2284,38 @@ function savePaymentComment(provId, dateStr, apptId, comment) {
     return JSON.stringify({ error: 'Appointment not found' });
   } catch (e) {
     Logger.log('savePaymentComment error: ' + e.message);
+    return JSON.stringify({ error: e.message });
+  }
+}
+
+/* ── savePaymentManualComment — Comments column for PaymentTrackerManual
+   (Legacy Import / Manual Entry rows) ────────────────────────────────────
+   This tab has no ID column, so getPaymentTrackerManualData hands back
+   each row's own sheet row number as `rowIndex` for the frontend to send
+   back here. That number can drift if someone else inserts/deletes a row
+   in this tab between load and save, so it's re-checked against the row's
+   Patient (column C) before writing — a mismatch means the position moved
+   and the save is rejected rather than risking a comment landing on the
+   wrong patient's row.
+──────────────────────────────────────────────────────────────────────── */
+function savePaymentManualComment(rowIndex, patient, comment) {
+  try {
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_PAYMENT_MANUAL);
+    if (!sheet) return JSON.stringify({ error: 'PaymentTrackerManual sheet not found' });
+
+    var row = parseInt(rowIndex, 10);
+    if (!row || row < 2 || row > sheet.getLastRow()) return JSON.stringify({ error: 'Invalid row' });
+
+    var rowPatient = String(sheet.getRange(row, 3).getValue() || '').trim();
+    if (rowPatient.toLowerCase() !== String(patient || '').trim().toLowerCase()) {
+      return JSON.stringify({ error: 'Row has moved — refresh and try again' });
+    }
+
+    sheet.getRange(row, 14).setValue(comment || ''); // Comments column
+    return JSON.stringify({ ok: true });
+  } catch (e) {
+    Logger.log('savePaymentManualComment error: ' + e.message);
     return JSON.stringify({ error: e.message });
   }
 }
@@ -2459,6 +2495,7 @@ function getPaymentTrackerManualData(provFilter) {
       out.push({
         source:           String(r[14] || '').trim() || 'Manual Entry',
         provID:           rowProv,
+        rowIndex:         i + 1,   // 1-based sheet row — this tab has no ID column, used by savePaymentManualComment
         patient:          String(r[2] || '').trim(),
         date:             _fmtDate(r[3]),   // ApptDate — same semantic as main-tab `date`
         cpt:              r[4] ? String(r[4]).split(/[|,;]/).map(function(s){return s.trim();}).filter(Boolean) : [],

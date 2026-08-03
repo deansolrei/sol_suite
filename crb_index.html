@@ -10551,22 +10551,6 @@
       border-color: #D8D3BF
     }
 
-    .pt-lock {
-      display: block;
-      font-size: 9px;
-      font-weight: 700;
-      color: #777355;
-      margin-bottom: 2px;
-    }
-
-    .pt-comments-ro {
-      font-size: 12px;
-      color: #2B2716;
-      max-width: 180px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
     body.dark .pt-filters-row {
       background: #051F11;
       border-bottom-color: #09371F
@@ -10602,15 +10586,6 @@
 
     body.dark .pt-patient {
       color: #F2EDDB
-    }
-
-    body.dark .pt-comments-ro {
-      color: #F2EDDB
-    }
-
-    body.dark .pt-lock {
-      color: #F2EDDB;
-      opacity: .6
     }
 
     /* .pt-tag.auto (Teal) and .pt-tag.legacy (Gold) stay legible against a
@@ -13644,6 +13619,13 @@
       return /^\d{4}-\d{2}-\d{2}$/.test(ds) ? fmtShort(ds) : ds;
     }
 
+    // Comments is editable regardless of source, but the two sources save to
+    // different sheets via different backend calls — this key just needs to
+    // be stable and unique per row for the local-draft buffer below.
+    function ptCommentKey(r) {
+      return r.source === 'SolBoard Auto' ? ('auto:' + r.id) : ('manual:' + r.rowIndex);
+    }
+
     function PaymentTracker({ onClose, provFilter }) {
       const [rows, setRows] = useState(null);   // null = loading
       const [loading, setLoading] = useState(true);
@@ -13654,6 +13636,7 @@
       const [fApptDate, setFApptDate] = useState('');
       const [fAmount, setFAmount] = useState('');
       const [fPlatform, setFPlatform] = useState('');
+      const [localComments, setLocalComments] = useState({});
 
       useEffect(() => {
         setLoading(true);
@@ -13862,8 +13845,36 @@
                           </td>
                           <td>{r.paymentPlatform || '—'}</td>
                           <td>
-                            <span className="pt-lock">🔒 read-only</span>
-                            <div className="pt-comments-ro">{r.comments || '—'}</div>
+                            {(() => {
+                              const ck = ptCommentKey(r);
+                              const curVal = localComments[ck] !== undefined ? localComments[ck] : (r.comments || '');
+                              return (
+                                <textarea
+                                  className="cl-notes-input"
+                                  value={curVal}
+                                  onChange={e => setLocalComments(prev => ({ ...prev, [ck]: e.target.value }))}
+                                  onBlur={e => {
+                                    const val = e.target.value;
+                                    if (val === (r.comments || '')) return;
+                                    const save = r.source === 'SolBoard Auto'
+                                      ? gsr('savePaymentComment', r.provID, r.date, r.id, val)
+                                      : gsr('savePaymentManualComment', r.rowIndex, r.patient, val);
+                                    save
+                                      .then(json => {
+                                        let res = null;
+                                        try { res = JSON.parse(json); } catch (e2) { }
+                                        if (res && res.error) { alert(res.error); return; }
+                                        setRows(prev => (prev || []).map(row =>
+                                          ptCommentKey(row) === ck ? { ...row, comments: val } : row
+                                        ));
+                                      })
+                                      .catch(() => { });
+                                  }}
+                                  placeholder="Add comment…"
+                                  rows={1}
+                                />
+                              );
+                            })()}
                           </td>
                         </tr>
                       );
