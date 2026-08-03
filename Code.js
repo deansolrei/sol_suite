@@ -24,13 +24,13 @@
 const LOGO_FILE_ID = '1chGqD9IBx5UcTM9lqnptWpQKYgUlg17S';
 
 // ── Tab names ────────────────────────────────────────────────────
-const TAB_APPT          = 'Appointments';
-const TAB_PATIENT       = 'Patients';
-const TAB_AUDIT         = 'Audit Log';
-const TAB_STAFF         = 'Staff';
-const TAB_RATE_ANALYSIS      = 'Rate Analysis';
+const TAB_APPT = 'Appointments';
+const TAB_PATIENT = 'Patients';
+const TAB_AUDIT = 'Audit Log';
+const TAB_STAFF = 'Staff';
+const TAB_RATE_ANALYSIS = 'Rate Analysis';
 const TAB_RATE_ANALYSIS_PROV = 'Rate Analysis - By Provider';
-const TAB_PAYMENT_MANUAL     = 'PaymentTrackerManual';
+const TAB_PAYMENT_MANUAL = 'PaymentTrackerManual';
 
 // ── Appointment sheet columns (order matters — do not rearrange) ─
 // ── Terminology note (Solrei OS naming cleanup) ──────────────────────────
@@ -114,15 +114,15 @@ const PATIENT_COLS = [
 const STAFF_COLS = ['Email', 'Role', 'ProvID', 'DisplayName'];
 
 const STAFF_SEED = [
-  ['jodene@solreibehavioralhealth.com',    'provider',  'jodene',   'Jodene'],
-  ['katie@solreibehavioralhealth.com',     'provider',  'katie',    'Katie'],
-  ['megan@solreibehavioralhealth.com',     'provider',  'megan',    'Megan'],
-  ['lori@solreibehavioralhealth.com',      'provider',  'lori',     'Lori'],
-  ['jeloah@solreibehavioralhealth.com',    'assistant', '*',        'Jeloah'],
-  ['jemaica@solreibehavioralhealth.com',   'assistant', '*',        'Jemaica'],
-  ['marianne@solreibehavioralhealth.com',  'assistant', '*',        'Marianne'],
-  ['cassandra@solreibehavioralhealth.com', 'assistant', '*',        'Cassandra'],
-  ['dean@solreibehavioralhealth.com',      'biller',    '*',        'Dean'],
+  ['jodene@solreibehavioralhealth.com', 'provider', 'jodene', 'Jodene'],
+  ['katie@solreibehavioralhealth.com', 'provider', 'katie', 'Katie'],
+  ['megan@solreibehavioralhealth.com', 'provider', 'megan', 'Megan'],
+  ['lori@solreibehavioralhealth.com', 'provider', 'lori', 'Lori'],
+  ['jeloah@solreibehavioralhealth.com', 'assistant', '*', 'Jeloah'],
+  ['jemaica@solreibehavioralhealth.com', 'assistant', '*', 'Jemaica'],
+  ['marianne@solreibehavioralhealth.com', 'assistant', '*', 'Marianne'],
+  ['cassandra@solreibehavioralhealth.com', 'assistant', '*', 'Cassandra'],
+  ['dean@solreibehavioralhealth.com', 'biller', '*', 'Dean'],
 ];
 
 // ── PLACEHOLDER_PATIENT_NAMES (2026-07-27) ──────────────────────────────
@@ -283,12 +283,12 @@ function styleHeaderRow(sheet, numCols, bg, fg) {
 
 function getAppointments(prov, date) {
   try {
-    const ss    = SpreadsheetApp.getActiveSpreadsheet();
-    const deny  = _checkProvAccess(ss, prov);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const deny = _checkProvAccess(ss, prov);
     if (deny) return deny;
     const sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify([]);
-    const rows  = sheet.getDataRange().getValues().slice(1);
+    const rows = sheet.getDataRange().getValues().slice(1);
 
     // ── Day's appointments (raw, before unsigned override) ──────────
     const dayAppts = rows
@@ -316,15 +316,15 @@ function getAppointments(prov, date) {
 
     // Collect normalised patient names present today
     const patientSet = {};
-    dayAppts.forEach(function(a) {
+    dayAppts.forEach(function (a) {
       patientSet[_normName(a.patient)] = true;
     });
 
     // Build: normName → Set<MM/DD/YY> of unsigned dates
     const patientUnsigned = {};  // key: normName, value: Set of date strings
 
-    rows.forEach(function(r) {
-      var rProv    = String(r[0] || '');
+    rows.forEach(function (r) {
+      var rProv = String(r[0] || '');
       var rPatNorm = _normName(String(r[4] || ''));
       if (rProv !== prov) return;                          // different provider
       if (!patientSet[rPatNorm]) return;                   // not in today's list
@@ -349,7 +349,7 @@ function getAppointments(prov, date) {
     // Override unsigned[] on each appointment using the freshly computed set.
     // No merge with column V — the stored UnsignedDates text is inert now,
     // this dynamic scan is the only source of truth.
-    dayAppts.forEach(function(a) {
+    dayAppts.forEach(function (a) {
       var norm = _normName(a.patient);
       a.unsigned = patientUnsigned[norm] ? Object.keys(patientUnsigned[norm]) : [];
     });
@@ -363,7 +363,7 @@ function getAppointments(prov, date) {
 
 function getWeekAppointments(prov, weekStartDate) {
   try {
-    const ss   = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
     const deny = _checkProvAccess(ss, prov);
     if (deny) return deny;
     const sheet = ss.getSheetByName(TAB_APPT);
@@ -396,12 +396,12 @@ function getWeekAppointments(prov, weekStartDate) {
     // Same logic as getAppointments — ensures week banner shows correct
     // unsigned counts even for Tebra-synced rows with empty col V.
     const weekStart = dates[0];
-    const weekEnd   = dates[dates.length - 1];
+    const weekEnd = dates[dates.length - 1];
 
     // Collect all patients in this week's appointments (for this provider)
     const patientSet = {};
-    dates.forEach(function(ds) {
-      (result[prov + '||' + ds] || []).forEach(function(a) {
+    dates.forEach(function (ds) {
+      (result[prov + '||' + ds] || []).forEach(function (a) {
         patientSet[_normName(a.patient)] = true;
       });
     });
@@ -410,8 +410,8 @@ function getWeekAppointments(prov, weekStartDate) {
     // Only rows where the visit actually occurred (_visitOccurred — Confirmed
     // or Checked Out) count; "Scheduled" and void statuses never contribute.
     const patientUnsigned = {};
-    allRows.forEach(function(r) {
-      var rProv    = String(r[0] || '');
+    allRows.forEach(function (r) {
+      var rProv = String(r[0] || '');
       var rPatNorm = _normName(String(r[4] || ''));
       if (rProv !== prov) return;
       if (!patientSet[rPatNorm]) return;
@@ -437,8 +437,8 @@ function getWeekAppointments(prov, weekStartDate) {
     // Override unsigned[] on all week appointments — freshly computed only,
     // no merge with column V (inert now; Signed + TebraStatus are the source
     // of truth).
-    dates.forEach(function(ds) {
-      (result[prov + '||' + ds] || []).forEach(function(a) {
+    dates.forEach(function (ds) {
+      (result[prov + '||' + ds] || []).forEach(function (a) {
         var norm = _normName(a.patient);
         a.unsigned = patientUnsigned[norm] ? Object.keys(patientUnsigned[norm]) : [];
       });
@@ -454,7 +454,7 @@ function getWeekAppointments(prov, weekStartDate) {
 
 function getAllWeekAppointments(weekStartDate) {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({});
 
@@ -470,17 +470,17 @@ function getAllWeekAppointments(weekStartDate) {
       ].join('-'));
     }
     var dateSet = {};
-    dates.forEach(function(ds) { dateSet[ds] = true; });
+    dates.forEach(function (ds) { dateSet[ds] = true; });
 
     var result = {};
-    dates.forEach(function(ds) { result[ds] = []; });
+    dates.forEach(function (ds) { result[ds] = []; });
 
     var allRows = sheet.getDataRange().getValues().slice(1);
-    var weekEnd  = dates[dates.length - 1];
+    var weekEnd = dates[dates.length - 1];
 
     allRows
-      .filter(function(r) { return !!dateSet[_fmtDate(r[1])]; })
-      .forEach(function(r) {
+      .filter(function (r) { return !!dateSet[_fmtDate(r[1])]; })
+      .forEach(function (r) {
         var ds = _fmtDate(r[1]);
         if (result[ds]) {
           var appt = rowToAppt(r);
@@ -492,8 +492,8 @@ function getAllWeekAppointments(weekStartDate) {
     // ── Dynamically rebuild unsigned[] from actual Signed=FALSE rows ──
     // Collect all patients present in this week across all providers
     var patientSet = {};
-    dates.forEach(function(ds) {
-      (result[ds] || []).forEach(function(a) {
+    dates.forEach(function (ds) {
+      (result[ds] || []).forEach(function (a) {
         var key = (a.provID || '') + '||' + _normName(a.patient);
         patientSet[key] = true;
       });
@@ -503,14 +503,14 @@ function getAllWeekAppointments(weekStartDate) {
     // where the visit actually occurred (_visitOccurred — Confirmed or
     // Checked Out) count; "Scheduled" and void statuses never contribute.
     var patientUnsigned = {};
-    allRows.forEach(function(r) {
-      var rProv    = String(r[0] || '');
+    allRows.forEach(function (r) {
+      var rProv = String(r[0] || '');
       var rPatNorm = _normName(String(r[4] || ''));
-      var key      = rProv + '||' + rPatNorm;
+      var key = rProv + '||' + rPatNorm;
       if (!patientSet[key]) return;
       if (!_visitOccurred(String(r[34] || ''))) return;
 
-      var signed   = r[25];
+      var signed = r[25];
       var isSigned = (signed === true || String(signed).toUpperCase() === 'TRUE');
       if (isSigned) return;
 
@@ -527,10 +527,10 @@ function getAllWeekAppointments(weekStartDate) {
     // Override unsigned[] on all week appointments — freshly computed only,
     // no merge with column V (inert now; Signed + TebraStatus are the source
     // of truth).
-    dates.forEach(function(ds) {
-      (result[ds] || []).forEach(function(a) {
-        var key      = (a.provID || '') + '||' + _normName(a.patient);
-        a.unsigned   = patientUnsigned[key] ? Object.keys(patientUnsigned[key]) : [];
+    dates.forEach(function (ds) {
+      (result[ds] || []).forEach(function (a) {
+        var key = (a.provID || '') + '||' + _normName(a.patient);
+        a.unsigned = patientUnsigned[key] ? Object.keys(patientUnsigned[key]) : [];
       });
     });
 
@@ -551,36 +551,36 @@ function searchPatient(query) {
     var q = String(query || '').trim().toLowerCase();
     if (q.length < 2) return JSON.stringify([]);
 
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify([]);
 
-    var today  = _fmtDate(new Date());
+    var today = _fmtDate(new Date());
     var values = sheet.getDataRange().getValues().slice(1);
     var matches = [];
 
-    values.forEach(function(r) {
+    values.forEach(function (r) {
       var patient = String(r[4] || '').trim();
       if (patient.toLowerCase().indexOf(q) === -1) return;
       var date = _fmtDate(r[1]);
       if (!date) return;
       matches.push({
-        provID:  String(r[0] || ''),
-        date:    date,
-        time:    _fmtTime(r[3]),
+        provID: String(r[0] || ''),
+        date: date,
+        time: _fmtTime(r[3]),
         patient: patient,
-        method:  String(r[5]  || ''),
-        status:  String(r[24] || 'pending'),
-        out:     r[25] === true || r[25] === 'TRUE',
+        method: String(r[5] || ''),
+        status: String(r[24] || 'pending'),
+        out: r[25] === true || r[25] === 'TRUE',
         billing: String(r[23] || 'pending'),
       });
     });
 
-    matches.sort(function(a, b) {
+    matches.sort(function (a, b) {
       var aUp = a.date >= today, bUp = b.date >= today;
       if (aUp && !bUp) return -1;
-      if (!aUp && bUp) return  1;
-      if (aUp)  return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+      if (!aUp && bUp) return 1;
+      if (aUp) return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
       return a.date > b.date ? -1 : a.date < b.date ? 1 : 0;
     });
 
@@ -610,17 +610,17 @@ function getLastCodedAppointment(patientName, provID) {
     var target = String(patientName || '').trim().toLowerCase();
     if (!target || !provID) return [];
 
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return [];
 
     var COL_PATIENT = APPT_COLS.indexOf('Patient');
     var COL_PROV_ID = APPT_COLS.indexOf('ProvID');
-    var COL_DATE    = APPT_COLS.indexOf('Date');
-    var COL_CPT     = APPT_COLS.indexOf('CPTCodes');
+    var COL_DATE = APPT_COLS.indexOf('Date');
+    var COL_CPT = APPT_COLS.indexOf('CPTCodes');
 
     var today = _fmtDate(new Date());
-    var rows  = sheet.getDataRange().getValues();
+    var rows = sheet.getDataRange().getValues();
     var matches = [];
 
     for (var i = 1; i < rows.length; i++) {
@@ -641,11 +641,11 @@ function getLastCodedAppointment(patientName, provID) {
 
     if (!matches.length) return [];
 
-    matches.sort(function(a, b) {
+    matches.sort(function (a, b) {
       return a.date > b.date ? -1 : a.date < b.date ? 1 : 0;
     });
 
-    return String(matches[0].cptRaw).split(/[|,;]/).map(function(s) { return s.trim(); }).filter(Boolean);
+    return String(matches[0].cptRaw).split(/[|,;]/).map(function (s) { return s.trim(); }).filter(Boolean);
   } catch (e) {
     Logger.log('getLastCodedAppointment error: ' + e.message);
     return [];
@@ -660,7 +660,7 @@ function getLastCodedAppointment(patientName, provID) {
  */
 function runGetLastCodedAppointment() {
   var patientName = 'Jane Smith';   // ← CHANGE THIS NAME
-  var provID      = 'jodene';       // ← CHANGE THIS PROVIDER ID
+  var provID = 'jodene';       // ← CHANGE THIS PROVIDER ID
   var cpts = getLastCodedAppointment(patientName, provID);
   Logger.log('getLastCodedAppointment("' + patientName + '", "' + provID + '") → ' + JSON.stringify(cpts));
 }
@@ -672,9 +672,9 @@ function runGetLastCodedAppointment() {
 
 function saveAppointment(prov, date, apptJson) {
   try {
-    const appt  = JSON.parse(apptJson);
-    const ss    = SpreadsheetApp.getActiveSpreadsheet();
-    const deny  = _checkProvAccess(ss, prov);
+    const appt = JSON.parse(apptJson);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const deny = _checkProvAccess(ss, prov);
     if (deny) return deny;
     const sheet = ss.getSheetByName(TAB_APPT);
 
@@ -687,7 +687,7 @@ function saveAppointment(prov, date, apptJson) {
       }
     }
 
-    const TIME_COL     = APPT_COLS.indexOf('Time') + 1;
+    const TIME_COL = APPT_COLS.indexOf('Time') + 1;
     const UNSIGNED_COL = APPT_COLS.indexOf('UnsignedDates') + 1;
 
     // ── Ensure the sheet has enough columns for the full row data ──────────
@@ -700,7 +700,7 @@ function saveAppointment(prov, date, apptJson) {
       const hdrRange = sheet.getRange(1, 1, 1, requiredCols);
       const existingHdrs = hdrRange.getValues()[0];
       const newHdrs = existingHdrs.slice();
-      APPT_COLS.forEach(function(col, i) {
+      APPT_COLS.forEach(function (col, i) {
         if (!newHdrs[i]) newHdrs[i] = col;
       });
       hdrRange.setValues([newHdrs]);
@@ -736,7 +736,7 @@ function saveAppointment(prov, date, apptJson) {
       // is already in the sheet so we don't silently overwrite it.
       const TS_IDX = APPT_COLS.indexOf('TebraStatus'); // 0-based
       if (TS_IDX >= 0 && !apptData.tebraStatus) {
-        const sheetRow   = values[targetRow - 1];  // values[] was read above
+        const sheetRow = values[targetRow - 1];  // values[] was read above
         const sheetTebra = sheetRow && sheetRow.length > TS_IDX
           ? String(sheetRow[TS_IDX] || '') : '';
         if (sheetTebra) rowData[TS_IDX] = sheetTebra;
@@ -746,7 +746,7 @@ function saveAppointment(prov, date, apptJson) {
       sheet.getRange(targetRow, UNSIGNED_COL).setNumberFormat('@');
       // Force plain-text format on date fields to prevent Sheets auto-converting
       // ISO strings ('2026-03-16') back to Date objects on next read.
-      [36, 40, 44, 48].forEach(function(c) { sheet.getRange(targetRow, c).setNumberFormat('@'); });
+      [36, 40, 44, 48].forEach(function (c) { sheet.getRange(targetRow, c).setNumberFormat('@'); });
       sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
       _audit(ss, 'UPDATE', `${apptData.patient} | ${apptData.time} | ${date} | ${prov}`);
     } else {
@@ -770,12 +770,12 @@ function saveAppointment(prov, date, apptJson) {
 
       // Write the new row.
       const rowData = apptToRow(appt, prov, date);
-      const newRow  = sheet.getLastRow() + 1;
+      const newRow = sheet.getLastRow() + 1;
       sheet.getRange(newRow, TIME_COL).setNumberFormat('@');
       sheet.getRange(newRow, UNSIGNED_COL).setNumberFormat('@');
       // Force plain-text format on date fields to prevent Sheets auto-converting
       // ISO strings ('2026-03-16') back to Date objects on next read.
-      [36, 40, 44, 48].forEach(function(c) { sheet.getRange(newRow, c).setNumberFormat('@'); });
+      [36, 40, 44, 48].forEach(function (c) { sheet.getRange(newRow, c).setNumberFormat('@'); });
       sheet.getRange(newRow, 1, 1, rowData.length).setValues([rowData]);
 
       _audit(ss, 'CREATE', `${appt.patient} | ${appt.time} | ${date} | ${prov}`);
@@ -798,7 +798,7 @@ function _toUnsignedDateStr(d) {
   const slash = s.split('/');
   if (slash.length === 3 && slash.every(x => /^\d+$/.test(x.trim()))) {
     const yr = slash[2].trim().length === 4 ? slash[2].trim().slice(2) : slash[2].trim();
-    return `${slash[0].trim().padStart(2,'0')}/${slash[1].trim().padStart(2,'0')}/${yr.padStart(2,'0')}`;
+    return `${slash[0].trim().padStart(2, '0')}/${slash[1].trim().padStart(2, '0')}/${yr.padStart(2, '0')}`;
   }
 
   // ISO YYYY-MM-DD — parse manually, NO Date() (avoids UTC → local shift).
@@ -859,11 +859,11 @@ function signNoteAndClearUnsigned(apptId, signedISO, patient) {
       return JSON.stringify({ ok: true, signed: 0, cleared: 0, affected: [] });
     }
 
-    var COL_ID     = APPT_COLS.indexOf('ApptID') + 1;  // C = 3
+    var COL_ID = APPT_COLS.indexOf('ApptID') + 1;  // C = 3
     var COL_SIGNED = APPT_COLS.indexOf('Signed') + 1;  // Z = 26
 
     var data = sheet.getDataRange().getValues();
-    var idN  = String(apptId || '').trim();
+    var idN = String(apptId || '').trim();
 
     var signed = 0;
     for (var i = 1; i < data.length; i++) {
@@ -872,7 +872,7 @@ function signNoteAndClearUnsigned(apptId, signedISO, patient) {
       sheet.getRange(i + 1, COL_SIGNED).setValue(true);
       signed++;
       Logger.log('signNoteAndClearUnsigned: row ' + (i + 1) + ' marked Signed=TRUE ' +
-                 '(ApptID=' + idN + ', patient="' + patient + '", date=' + signedISO + ')');
+        '(ApptID=' + idN + ', patient="' + patient + '", date=' + signedISO + ')');
       break; // ApptID is unique — no need to keep scanning once found
     }
 
@@ -901,7 +901,7 @@ function signNoteAndClearUnsigned(apptId, signedISO, patient) {
  */
 function clearPhantomUnsignedDate(apptId, dateStr) {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: true, cleared: 0 });
 
@@ -911,19 +911,19 @@ function clearPhantomUnsignedDate(apptId, dateStr) {
       return JSON.stringify({ ok: false, error: 'Access denied.' });
     }
 
-    var ID_IDX       = APPT_COLS.indexOf('ApptID');         // 0-based
-    var DATE_IDX     = APPT_COLS.indexOf('Date');           // 0-based
-    var PATIENT_IDX  = APPT_COLS.indexOf('Patient');        // 0-based
+    var ID_IDX = APPT_COLS.indexOf('ApptID');         // 0-based
+    var DATE_IDX = APPT_COLS.indexOf('Date');           // 0-based
+    var PATIENT_IDX = APPT_COLS.indexOf('Patient');        // 0-based
     var UNSIGNED_IDX = APPT_COLS.indexOf('UnsignedDates');  // 0-based
     var COL_UNSIGNED = UNSIGNED_IDX + 1;                    // 1-based for getRange
 
-    var idN       = String(apptId  || '').trim();
+    var idN = String(apptId || '').trim();
     var targetISO = _normalizeDateStr(dateStr);
     if (!idN || !targetISO) {
       return JSON.stringify({ ok: false, error: 'apptId and dateStr are required.' });
     }
 
-    var values   = sheet.getDataRange().getValues();
+    var values = sheet.getDataRange().getValues();
     var patientN = null;
 
     // ── Step 1: Resolve the patient's normalized name from the appointment row ──
@@ -949,9 +949,9 @@ function clearPhantomUnsignedDate(apptId, dateStr) {
     // it is a legitimate unsigned note; don't touch it.
     if (apptDateSet[targetISO]) {
       return JSON.stringify({
-        ok:    false,
+        ok: false,
         error: 'Patient has an appointment on ' + targetISO +
-               '. Use Note Signed to clear this — it is a real unsigned note.',
+          '. Use Note Signed to clear this — it is a real unsigned note.',
       });
     }
 
@@ -961,8 +961,8 @@ function clearPhantomUnsignedDate(apptId, dateStr) {
       if (_normName(String(values[k][PATIENT_IDX] || '')) !== patientN) continue;
       var rawCell = String(values[k][UNSIGNED_IDX] || '').trim();
       if (!rawCell) continue;
-      var dates    = rawCell.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
-      var filtered = dates.filter(function(d) { return _normalizeDateStr(d) !== targetISO; });
+      var dates = rawCell.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      var filtered = dates.filter(function (d) { return _normalizeDateStr(d) !== targetISO; });
       if (filtered.length < dates.length) {
         var cell = sheet.getRange(k + 1, COL_UNSIGNED);
         cell.setNumberFormat('@');
@@ -1000,11 +1000,11 @@ function clearPhantomUnsignedDate(apptId, dateStr) {
 function _isVoidStatus(tebraStatus) {
   if (!tebraStatus) return false;
   var s = String(tebraStatus).toLowerCase().trim();
-  return s === 'no show'      || s === 'noshow'           || s === 'no-show'         ||
-         s === 'rescheduled'  || s === 'needsreschedule'  || s === 'needs reschedule' ||
-         s === 'cancelled'    || s === 'canceled'         ||
-         s === 'deleted in tebra'; // row's Tebra ID vanished from the sync feed —
-                                   // see importFromTebraApi's _findStaleRows fix (2026-07-26)
+  return s === 'no show' || s === 'noshow' || s === 'no-show' ||
+    s === 'rescheduled' || s === 'needsreschedule' || s === 'needs reschedule' ||
+    s === 'cancelled' || s === 'canceled' ||
+    s === 'deleted in tebra'; // row's Tebra ID vanished from the sync feed —
+  // see importFromTebraApi's _findStaleRows fix (2026-07-26)
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1046,18 +1046,18 @@ function _visitOccurred(tebraStatus) {
 
 function getTotalUnsignedCount(prov) {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ count: 0 });
 
-    var PROV_IDX   = APPT_COLS.indexOf('ProvID');        // 0  (col A)
-    var DATE_IDX   = APPT_COLS.indexOf('Date');          // 1  (col B)
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');        // 0  (col A)
+    var DATE_IDX = APPT_COLS.indexOf('Date');          // 1  (col B)
     var SIGNED_IDX = APPT_COLS.indexOf('Signed');        // 25 (col Z)
-    var TEBRA_IDX  = APPT_COLS.indexOf('TebraStatus');   // 34 (col AI)
+    var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');   // 34 (col AI)
 
-    var tz    = Session.getScriptTimeZone();
+    var tz = Session.getScriptTimeZone();
     var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
-    var rows  = sheet.getDataRange().getValues();
+    var rows = sheet.getDataRange().getValues();
     var count = 0;
 
     // Placeholder patients are calendar-block entries (personal day holds, room
@@ -1092,8 +1092,8 @@ function getTotalUnsignedCount(prov) {
 
       // Count if the note has NOT been signed
       var signedVal = r[SIGNED_IDX];
-      var isSigned  = signedVal === true ||
-                      String(signedVal).trim().toUpperCase() === 'TRUE';
+      var isSigned = signedVal === true ||
+        String(signedVal).trim().toUpperCase() === 'TRUE';
       if (!isSigned) count++;
     }
 
@@ -1123,23 +1123,23 @@ function getTotalUnsignedCount(prov) {
    ════════════════════════════════════════════════════════════════════ */
 function getOverdueDirectPay() {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ items: [] });
 
-    var PROV_IDX      = APPT_COLS.indexOf('ProvID');
-    var DATE_IDX      = APPT_COLS.indexOf('Date');
-    var PATIENT_IDX   = APPT_COLS.indexOf('Patient');
-    var METHOD_IDX    = APPT_COLS.indexOf('BillingChannel');
-    var TYPE_IDX      = APPT_COLS.indexOf('CostShareClass');
-    var RATE_IDX      = APPT_COLS.indexOf('CostShareRate');
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');
+    var DATE_IDX = APPT_COLS.indexOf('Date');
+    var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+    var METHOD_IDX = APPT_COLS.indexOf('BillingChannel');
+    var TYPE_IDX = APPT_COLS.indexOf('CostShareClass');
+    var RATE_IDX = APPT_COLS.indexOf('CostShareRate');
     var COLLECTED_IDX = APPT_COLS.indexOf('PaymentCollected');
-    var TEBRA_IDX     = APPT_COLS.indexOf('TebraStatus');
-    var STATE_IDX     = APPT_COLS.indexOf('PatientState');
+    var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+    var STATE_IDX = APPT_COLS.indexOf('PatientState');
 
-    var tz    = Session.getScriptTimeZone();
+    var tz = Session.getScriptTimeZone();
     var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
-    var rows  = sheet.getDataRange().getValues();
+    var rows = sheet.getDataRange().getValues();
     var items = [];
     var PLACEHOLDER_NAMES = PLACEHOLDER_PATIENT_NAMES;
 
@@ -1171,13 +1171,13 @@ function getOverdueDirectPay() {
       if (ageDays < 30) continue;
 
       items.push({
-        provID:       String(r[PROV_IDX] || ''),
-        patient:      patName,
+        provID: String(r[PROV_IDX] || ''),
+        patient: patName,
         patientState: STATE_IDX >= 0 ? String(r[STATE_IDX] || '') : '',
-        date:         rowDate,
-        paymentType:  String(r[TYPE_IDX] || ''),
-        rate:         String(rawRate),
-        daysSince:    ageDays,
+        date: rowDate,
+        paymentType: String(r[TYPE_IDX] || ''),
+        rate: String(rawRate),
+        daysSince: ageDays,
       });
     }
 
@@ -1226,32 +1226,32 @@ function getOverdueDirectPay() {
      3. Open the "UnsignedNotesAudit" tab on the spreadsheet.
 ════════════════════════════════════════════════════════════════════ */
 function auditUnsignedNotes() {
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(TAB_APPT);
   if (!sheet || sheet.getLastRow() < 2) {
     Logger.log('No appointment data found.');
     return;
   }
 
-  var PROV_IDX     = APPT_COLS.indexOf('ProvID');
-  var DATE_IDX     = APPT_COLS.indexOf('Date');
-  var APPTID_IDX   = APPT_COLS.indexOf('ApptID');
-  var PATIENT_IDX  = APPT_COLS.indexOf('Patient');
-  var INTAKE_IDX   = APPT_COLS.indexOf('Intake');
-  var INSVER_IDX   = APPT_COLS.indexOf('InsVerified');
-  var AUTOPAY_IDX  = APPT_COLS.indexOf('Autopay');
-  var CPT_IDX      = APPT_COLS.indexOf('CPTCodes');
-  var SIGNED_IDX   = APPT_COLS.indexOf('Signed');
-  var TEBRA_IDX    = APPT_COLS.indexOf('TebraStatus');
+  var PROV_IDX = APPT_COLS.indexOf('ProvID');
+  var DATE_IDX = APPT_COLS.indexOf('Date');
+  var APPTID_IDX = APPT_COLS.indexOf('ApptID');
+  var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+  var INTAKE_IDX = APPT_COLS.indexOf('Intake');
+  var INSVER_IDX = APPT_COLS.indexOf('InsVerified');
+  var AUTOPAY_IDX = APPT_COLS.indexOf('Autopay');
+  var CPT_IDX = APPT_COLS.indexOf('CPTCodes');
+  var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+  var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
   var NOTESTAT_IDX = APPT_COLS.indexOf('NoteStatus');
 
   // Same placeholder list as getTotalUnsignedCount — calendar blocks /
   // personal-day holds, never real patients.
   var PLACEHOLDER_NAMES = PLACEHOLDER_PATIENT_NAMES;  // shared list — see top of file
 
-  var tz    = Session.getScriptTimeZone();
+  var tz = Session.getScriptTimeZone();
   var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
-  var rows  = sheet.getDataRange().getValues();
+  var rows = sheet.getDataRange().getValues();
 
   // ── Pass 1: collect every row that counts, exactly like getTotalUnsignedCount ──
   var counted = [];
@@ -1269,38 +1269,38 @@ function auditUnsignedNotes() {
     if (PLACEHOLDER_NAMES.indexOf(patName) !== -1) continue;
 
     var signedVal = r[SIGNED_IDX];
-    var isSigned  = signedVal === true || String(signedVal).trim().toUpperCase() === 'TRUE';
+    var isSigned = signedVal === true || String(signedVal).trim().toUpperCase() === 'TRUE';
     if (isSigned) continue;
 
     var ageDays = Math.floor((new Date(today) - new Date(rowDate)) / 86400000);
-    var everWorked = !!(String(r[INTAKE_IDX]   || '').trim() ||
-                         String(r[INSVER_IDX]  || '').trim() ||
-                         String(r[AUTOPAY_IDX] || '').trim() ||
-                         String(r[NOTESTAT_IDX] || '').trim() ||
-                         String(r[CPT_IDX]     || '').trim());
+    var everWorked = !!(String(r[INTAKE_IDX] || '').trim() ||
+      String(r[INSVER_IDX] || '').trim() ||
+      String(r[AUTOPAY_IDX] || '').trim() ||
+      String(r[NOTESTAT_IDX] || '').trim() ||
+      String(r[CPT_IDX] || '').trim());
 
     counted.push({
-      row:         i + 1,
-      prov:        rowProv,
-      date:        rowDate,
-      apptId:      String(r[APPTID_IDX] || ''),
-      patient:     String(r[PATIENT_IDX] || '').trim(),
-      ageDays:     ageDays,
-      everWorked:  everWorked,
-      noteStatus:  String(r[NOTESTAT_IDX] || '').trim() || '(blank)',
+      row: i + 1,
+      prov: rowProv,
+      date: rowDate,
+      apptId: String(r[APPTID_IDX] || ''),
+      patient: String(r[PATIENT_IDX] || '').trim(),
+      ageDays: ageDays,
+      everWorked: everWorked,
+      noteStatus: String(r[NOTESTAT_IDX] || '').trim() || '(blank)',
       tebraStatus: tebraStatus.trim() || '(blank)',
     });
   }
 
   // ── Pass 2: aggregate ──
-  var byProv         = {};
-  var ageBuckets      = { '0-30 days': 0, '31-90 days': 0, '91-180 days': 0, '181-365 days': 0, '365+ days': 0 };
-  var workedSplit     = { 'Ever touched in SolBoard': 0, 'Never touched (pure sync artifact?)': 0 };
-  var noteStatusFreq  = {};
+  var byProv = {};
+  var ageBuckets = { '0-30 days': 0, '31-90 days': 0, '91-180 days': 0, '181-365 days': 0, '365+ days': 0 };
+  var workedSplit = { 'Ever touched in SolBoard': 0, 'Never touched (pure sync artifact?)': 0 };
+  var noteStatusFreq = {};
   var tebraStatusFreq = {};
-  var dupKeys         = {};   // "normName|date" -> array of counted entries
+  var dupKeys = {};   // "normName|date" -> array of counted entries
 
-  counted.forEach(function(c) {
+  counted.forEach(function (c) {
     byProv[c.prov] = (byProv[c.prov] || 0) + 1;
 
     if (c.ageDays <= 30) ageBuckets['0-30 days']++;
@@ -1311,7 +1311,7 @@ function auditUnsignedNotes() {
 
     workedSplit[c.everWorked ? 'Ever touched in SolBoard' : 'Never touched (pure sync artifact?)']++;
 
-    noteStatusFreq[c.noteStatus]   = (noteStatusFreq[c.noteStatus]   || 0) + 1;
+    noteStatusFreq[c.noteStatus] = (noteStatusFreq[c.noteStatus] || 0) + 1;
     tebraStatusFreq[c.tebraStatus] = (tebraStatusFreq[c.tebraStatus] || 0) + 1;
 
     var dk = _normName(c.patient) + '|' + c.date;
@@ -1320,9 +1320,9 @@ function auditUnsignedNotes() {
   });
 
   var dupGroups = Object.keys(dupKeys)
-    .map(function(k) { return dupKeys[k]; })
-    .filter(function(arr) { return arr.length > 1; })
-    .sort(function(a, b) { return b.length - a.length; });
+    .map(function (k) { return dupKeys[k]; })
+    .filter(function (arr) { return arr.length > 1; })
+    .sort(function (a, b) { return b.length - a.length; });
 
   // ── Write report to a fresh 'UnsignedNotesAudit' tab ──
   var reportName = 'UnsignedNotesAudit';
@@ -1347,31 +1347,31 @@ function auditUnsignedNotes() {
   out.push([]);
 
   pushHeader('By Provider');
-  Object.keys(byProv).sort().forEach(function(p) { out.push([p, byProv[p]]); });
+  Object.keys(byProv).sort().forEach(function (p) { out.push([p, byProv[p]]); });
   out.push([]);
 
   pushHeader('By Age of Appointment Date');
-  Object.keys(ageBuckets).forEach(function(b) { out.push([b, ageBuckets[b]]); });
+  Object.keys(ageBuckets).forEach(function (b) { out.push([b, ageBuckets[b]]); });
   out.push([]);
 
   pushHeader('Ever Worked in SolBoard? (Intake/InsVerified/Autopay/NoteStatus/CPTCodes all blank = likely a pure sync artifact nobody opened)');
-  Object.keys(workedSplit).forEach(function(k) { out.push([k, workedSplit[k]]); });
+  Object.keys(workedSplit).forEach(function (k) { out.push([k, workedSplit[k]]); });
   out.push([]);
 
   pushHeader('NoteStatus Value Distribution');
-  Object.keys(noteStatusFreq).sort().forEach(function(k) { out.push([k, noteStatusFreq[k]]); });
+  Object.keys(noteStatusFreq).sort().forEach(function (k) { out.push([k, noteStatusFreq[k]]); });
   out.push([]);
 
   pushHeader('TebraStatus Value Distribution (check for cancel/reschedule wording _isVoidStatus might be missing)');
-  Object.keys(tebraStatusFreq).sort().forEach(function(k) { out.push([k, tebraStatusFreq[k]]); });
+  Object.keys(tebraStatusFreq).sort().forEach(function (k) { out.push([k, tebraStatusFreq[k]]); });
   out.push([]);
 
   pushHeader('Possible Duplicate Rows (same patient + same date, counted more than once — possible reschedule artifact)');
   out.push(['Duplicate groups found', dupGroups.length]);
   if (dupGroups.length) {
     out.push(['Patient', 'Date', 'ApptID', 'Provider', 'NoteStatus', 'TebraStatus']);
-    dupGroups.forEach(function(group) {
-      group.forEach(function(c) {
+    dupGroups.forEach(function (group) {
+      group.forEach(function (c) {
         out.push([c.patient, c.date, c.apptId, c.prov, c.noteStatus, c.tebraStatus]);
       });
       out.push([]);
@@ -1383,17 +1383,17 @@ function auditUnsignedNotes() {
   out.push(['Patient', 'Date', 'Age (days)', 'Provider', 'ApptID', 'Ever Worked?', 'NoteStatus', 'TebraStatus']);
   counted
     .slice()
-    .sort(function(a, b) { return b.ageDays - a.ageDays; })
+    .sort(function (a, b) { return b.ageDays - a.ageDays; })
     .slice(0, 30)
-    .forEach(function(c) {
+    .forEach(function (c) {
       out.push([c.patient, c.date, c.ageDays, c.prov, c.apptId, c.everWorked ? 'Yes' : 'No', c.noteStatus, c.tebraStatus]);
     });
 
-  var maxCols = out.reduce(function(m, row) { return Math.max(m, row.length); }, 1);
-  out.forEach(function(row) { while (row.length < maxCols) row.push(''); });
+  var maxCols = out.reduce(function (m, row) { return Math.max(m, row.length); }, 1);
+  out.forEach(function (row) { while (row.length < maxCols) row.push(''); });
 
   report.getRange(1, 1, out.length, maxCols).setValues(out);
-  boldRows.forEach(function(idx) {
+  boldRows.forEach(function (idx) {
     report.getRange(idx + 1, 1, 1, maxCols).setFontWeight('bold').setBackground('#F2EDDB');
   });
   report.getRange(1, 1, 1, maxCols).setFontSize(13);
@@ -1401,7 +1401,7 @@ function auditUnsignedNotes() {
   report.autoResizeColumns(1, maxCols);
 
   Logger.log('auditUnsignedNotes: done. Grand total = ' + counted.length +
-             ' (compare against the live "outstanding notes" badge). See the "UnsignedNotesAudit" tab.');
+    ' (compare against the live "outstanding notes" badge). See the "UnsignedNotesAudit" tab.');
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1431,25 +1431,25 @@ function auditUnsignedNotes() {
      3. Open the "UnsignedNotesAudit2" tab on the spreadsheet.
 ════════════════════════════════════════════════════════════════════ */
 function auditUnsignedNotesV2() {
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(TAB_APPT);
   if (!sheet || sheet.getLastRow() < 2) {
     Logger.log('No appointment data found.');
     return;
   }
 
-  var PROV_IDX    = APPT_COLS.indexOf('ProvID');
-  var DATE_IDX    = APPT_COLS.indexOf('Date');
-  var APPTID_IDX  = APPT_COLS.indexOf('ApptID');
+  var PROV_IDX = APPT_COLS.indexOf('ProvID');
+  var DATE_IDX = APPT_COLS.indexOf('Date');
+  var APPTID_IDX = APPT_COLS.indexOf('ApptID');
   var PATIENT_IDX = APPT_COLS.indexOf('Patient');
-  var SIGNED_IDX  = APPT_COLS.indexOf('Signed');
-  var TEBRA_IDX   = APPT_COLS.indexOf('TebraStatus');
+  var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+  var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
 
   var PLACEHOLDER_NAMES = PLACEHOLDER_PATIENT_NAMES;  // shared list — see top of file
 
-  var tz    = Session.getScriptTimeZone();
+  var tz = Session.getScriptTimeZone();
   var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
-  var rows  = sheet.getDataRange().getValues();
+  var rows = sheet.getDataRange().getValues();
 
   // ── Pass 1: collect every row that counts, exactly like getTotalUnsignedCount ──
   var counted = [];
@@ -1467,36 +1467,36 @@ function auditUnsignedNotesV2() {
     if (PLACEHOLDER_NAMES.indexOf(patName) !== -1) continue;
 
     var signedVal = r[SIGNED_IDX];
-    var isSigned  = signedVal === true || String(signedVal).trim().toUpperCase() === 'TRUE';
+    var isSigned = signedVal === true || String(signedVal).trim().toUpperCase() === 'TRUE';
     if (isSigned) continue;
 
     var ageDays = Math.floor((new Date(today) - new Date(rowDate)) / 86400000);
     var statusBucket = _isCheckedOutStatus(tebraStatus) ? 'Checked Out' :
-                        _isConfirmedStatus(tebraStatus)  ? 'Confirmed'   : 'Other';
-    var syncReach = ageDays <= 14  ? 'Within nightly (≤14d)' :
-                     ageDays <= 90 ? 'Within Full Sync only (15-90d)' :
-                                      'Beyond Full Sync (90d+)';
+      _isConfirmedStatus(tebraStatus) ? 'Confirmed' : 'Other';
+    var syncReach = ageDays <= 14 ? 'Within nightly (≤14d)' :
+      ageDays <= 90 ? 'Within Full Sync only (15-90d)' :
+        'Beyond Full Sync (90d+)';
 
     counted.push({
-      row:          i + 1,
-      prov:         rowProv,
-      date:         rowDate,
-      apptId:       String(r[APPTID_IDX] || ''),
-      patient:      String(r[PATIENT_IDX] || '').trim(),
-      ageDays:      ageDays,
-      tebraStatus:  tebraStatus.trim() || '(blank)',
+      row: i + 1,
+      prov: rowProv,
+      date: rowDate,
+      apptId: String(r[APPTID_IDX] || ''),
+      patient: String(r[PATIENT_IDX] || '').trim(),
+      ageDays: ageDays,
+      tebraStatus: tebraStatus.trim() || '(blank)',
       statusBucket: statusBucket,
-      syncReach:    syncReach,
+      syncReach: syncReach,
     });
   }
 
   // ── Pass 2: aggregate ──
-  var byProv           = {};
-  var byStatusBucket    = { 'Confirmed': 0, 'Checked Out': 0, 'Other': 0 };
-  var byProvAndStatus   = {}; // "prov|statusBucket" -> count
-  var byStatusAndReach  = {}; // "statusBucket|syncReach" -> count
+  var byProv = {};
+  var byStatusBucket = { 'Confirmed': 0, 'Checked Out': 0, 'Other': 0 };
+  var byProvAndStatus = {}; // "prov|statusBucket" -> count
+  var byStatusAndReach = {}; // "statusBucket|syncReach" -> count
 
-  counted.forEach(function(c) {
+  counted.forEach(function (c) {
     byProv[c.prov] = (byProv[c.prov] || 0) + 1;
     byStatusBucket[c.statusBucket] = (byStatusBucket[c.statusBucket] || 0) + 1;
 
@@ -1530,16 +1530,16 @@ function auditUnsignedNotesV2() {
   out.push([]);
 
   pushHeader('By Provider');
-  Object.keys(byProv).sort().forEach(function(p) { out.push([p, byProv[p]]); });
+  Object.keys(byProv).sort().forEach(function (p) { out.push([p, byProv[p]]); });
   out.push([]);
 
   pushHeader('By Status Bucket — Confirmed = real current backlog. Checked Out = should have been auto-signed; if nonzero, auto-reconciliation has not reached these rows yet.');
-  Object.keys(byStatusBucket).forEach(function(k) { out.push([k, byStatusBucket[k]]); });
+  Object.keys(byStatusBucket).forEach(function (k) { out.push([k, byStatusBucket[k]]); });
   out.push([]);
 
   pushHeader('By Provider × Status Bucket');
   out.push(['Provider', 'Status Bucket', 'Count']);
-  Object.keys(byProvAndStatus).sort().forEach(function(k) {
+  Object.keys(byProvAndStatus).sort().forEach(function (k) {
     var parts = k.split('|');
     out.push([parts[0], parts[1], byProvAndStatus[k]]);
   });
@@ -1547,7 +1547,7 @@ function auditUnsignedNotesV2() {
 
   pushHeader('Checked Out rows by Sync Reach — tells us whether Full Sync (90d back) would fix these, or whether they need a dedicated one-time reconciliation pass regardless of sync window');
   out.push(['Sync Reach', 'Confirmed', 'Checked Out']);
-  ['Within nightly (≤14d)', 'Within Full Sync only (15-90d)', 'Beyond Full Sync (90d+)'].forEach(function(reach) {
+  ['Within nightly (≤14d)', 'Within Full Sync only (15-90d)', 'Beyond Full Sync (90d+)'].forEach(function (reach) {
     out.push([
       reach,
       byStatusAndReach['Confirmed|' + reach] || 0,
@@ -1559,17 +1559,17 @@ function auditUnsignedNotesV2() {
   pushHeader('All Checked-Out-but-Unsigned rows (spot-check these — these should be Signed=TRUE)');
   out.push(['Patient', 'Date', 'Age (days)', 'Provider', 'ApptID', 'TebraStatus', 'Sync Reach']);
   counted
-    .filter(function(c) { return c.statusBucket === 'Checked Out'; })
-    .sort(function(a, b) { return b.ageDays - a.ageDays; })
-    .forEach(function(c) {
+    .filter(function (c) { return c.statusBucket === 'Checked Out'; })
+    .sort(function (a, b) { return b.ageDays - a.ageDays; })
+    .forEach(function (c) {
       out.push([c.patient, c.date, c.ageDays, c.prov, c.apptId, c.tebraStatus, c.syncReach]);
     });
 
-  var maxCols = out.reduce(function(m, row) { return Math.max(m, row.length); }, 1);
-  out.forEach(function(row) { while (row.length < maxCols) row.push(''); });
+  var maxCols = out.reduce(function (m, row) { return Math.max(m, row.length); }, 1);
+  out.forEach(function (row) { while (row.length < maxCols) row.push(''); });
 
   report.getRange(1, 1, out.length, maxCols).setValues(out);
-  boldRows.forEach(function(idx) {
+  boldRows.forEach(function (idx) {
     report.getRange(idx + 1, 1, 1, maxCols).setFontWeight('bold').setBackground('#F2EDDB');
   });
   report.getRange(1, 1, 1, maxCols).setFontSize(13);
@@ -1577,10 +1577,10 @@ function auditUnsignedNotesV2() {
   report.autoResizeColumns(1, maxCols);
 
   Logger.log('auditUnsignedNotesV2: done. Grand total = ' + counted.length +
-             ' | Confirmed = ' + byStatusBucket['Confirmed'] +
-             ' | Checked Out (should be 0!) = ' + byStatusBucket['Checked Out'] +
-             ' | Other = ' + byStatusBucket['Other'] +
-             '. See the "UnsignedNotesAudit2" tab.');
+    ' | Confirmed = ' + byStatusBucket['Confirmed'] +
+    ' | Checked Out (should be 0!) = ' + byStatusBucket['Checked Out'] +
+    ' | Other = ' + byStatusBucket['Other'] +
+    '. See the "UnsignedNotesAudit2" tab.');
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1606,7 +1606,7 @@ function auditUnsignedNotesV2() {
 ════════════════════════════════════════════════════════════════════ */
 function reconcileAllCheckedOutSigned() {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) {
       Logger.log('reconcileAllCheckedOutSigned: no appointment data found.');
@@ -1614,36 +1614,36 @@ function reconcileAllCheckedOutSigned() {
     }
 
     var COL_SIGNED = APPT_COLS.indexOf('Signed') + 1;       // 1-based
-    var COL_TEBRA  = APPT_COLS.indexOf('TebraStatus') + 1;  // 1-based
+    var COL_TEBRA = APPT_COLS.indexOf('TebraStatus') + 1;  // 1-based
     if (COL_SIGNED <= 0 || COL_TEBRA <= 0) {
       Logger.log('reconcileAllCheckedOutSigned: Signed or TebraStatus column not found.');
       return JSON.stringify({ ok: false, error: 'Signed or TebraStatus column not found.' });
     }
 
     var PATIENT_IDX = APPT_COLS.indexOf('Patient');
-    var DATE_IDX    = APPT_COLS.indexOf('Date');
-    var lastRow     = sheet.getLastRow();
-    var readCols    = Math.max(COL_SIGNED, COL_TEBRA);
-    var data        = sheet.getRange(2, 1, lastRow - 1, readCols).getValues();
+    var DATE_IDX = APPT_COLS.indexOf('Date');
+    var lastRow = sheet.getLastRow();
+    var readCols = Math.max(COL_SIGNED, COL_TEBRA);
+    var data = sheet.getRange(2, 1, lastRow - 1, readCols).getValues();
 
     var updates = []; // { row, patient, date }
 
-    data.forEach(function(r, i) {
+    data.forEach(function (r, i) {
       var tebraStatus = String(r[COL_TEBRA - 1] || '');
       if (!_isCheckedOutStatus(tebraStatus)) return;
 
       var signedVal = r[COL_SIGNED - 1];
-      var isSigned  = signedVal === true || String(signedVal).trim().toUpperCase() === 'TRUE';
+      var isSigned = signedVal === true || String(signedVal).trim().toUpperCase() === 'TRUE';
       if (isSigned) return;
 
       updates.push({
-        row:     i + 2,
+        row: i + 2,
         patient: String(r[PATIENT_IDX] || '').trim(),
-        date:    _fmtDate(r[DATE_IDX]),
+        date: _fmtDate(r[DATE_IDX]),
       });
     });
 
-    updates.forEach(function(u) {
+    updates.forEach(function (u) {
       sheet.getRange(u.row, COL_SIGNED).setValue(true);
     });
 
@@ -1657,8 +1657,8 @@ function reconcileAllCheckedOutSigned() {
     }
 
     Logger.log('reconcileAllCheckedOutSigned: done. ' + updates.length +
-               ' row(s) updated to Signed=TRUE.');
-    updates.forEach(function(u) {
+      ' row(s) updated to Signed=TRUE.');
+    updates.forEach(function (u) {
       Logger.log('  ✓ ' + u.patient + ' (' + u.date + ') — row ' + u.row);
     });
 
@@ -1694,7 +1694,7 @@ function reconcileAllCheckedOutSigned() {
  */
 function cleanupCorruptedStatusColumn() {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) {
       Logger.log('cleanupCorruptedStatusColumn: no appointment data found.');
@@ -1708,27 +1708,27 @@ function cleanupCorruptedStatusColumn() {
     }
 
     var PATIENT_IDX = APPT_COLS.indexOf('Patient');
-    var DATE_IDX    = APPT_COLS.indexOf('Date');
-    var TEBRA_IDX   = APPT_COLS.indexOf('TebraStatus');
-    var lastRow     = sheet.getLastRow();
-    var readCols    = Math.max(COL_STATUS_1, PATIENT_IDX + 1, DATE_IDX + 1, TEBRA_IDX + 1);
-    var data        = sheet.getRange(2, 1, lastRow - 1, readCols).getValues();
+    var DATE_IDX = APPT_COLS.indexOf('Date');
+    var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+    var lastRow = sheet.getLastRow();
+    var readCols = Math.max(COL_STATUS_1, PATIENT_IDX + 1, DATE_IDX + 1, TEBRA_IDX + 1);
+    var data = sheet.getRange(2, 1, lastRow - 1, readCols).getValues();
 
     var cleaned = []; // { row, patient, date, tebraStatus }
 
-    data.forEach(function(r, i) {
+    data.forEach(function (r, i) {
       var statusVal = String(r[COL_STATUS_1 - 1] || '').toLowerCase().trim();
       if (statusVal !== 'cancelled in tebra') return;
 
       cleaned.push({
-        row:         i + 2,
-        patient:     String(r[PATIENT_IDX] || '').trim(),
-        date:        _fmtDate(r[DATE_IDX]),
+        row: i + 2,
+        patient: String(r[PATIENT_IDX] || '').trim(),
+        date: _fmtDate(r[DATE_IDX]),
         tebraStatus: String(r[TEBRA_IDX] || '').trim(),
       });
     });
 
-    cleaned.forEach(function(c) {
+    cleaned.forEach(function (c) {
       sheet.getRange(c.row, COL_STATUS_1).setValue('');
     });
 
@@ -1742,9 +1742,9 @@ function cleanupCorruptedStatusColumn() {
     }
 
     Logger.log('cleanupCorruptedStatusColumn: done. ' + cleaned.length + ' row(s) cleared.');
-    cleaned.forEach(function(c) {
+    cleaned.forEach(function (c) {
       Logger.log('  ✓ ' + c.patient + ' (' + c.date + ') — row ' + c.row +
-                 ' — TebraStatus was "' + c.tebraStatus + '"');
+        ' — TebraStatus was "' + c.tebraStatus + '"');
     });
 
     return JSON.stringify({ ok: true, cleaned: cleaned.length, rows: cleaned });
@@ -1785,7 +1785,7 @@ function _normalizeDateStr(d) {
   try {
     var dt = new Date(s);
     if (!isNaN(dt.getTime())) return _fmtDate(dt);
-  } catch (e) {}
+  } catch (e) { }
 
   return s;
 }
@@ -1797,19 +1797,19 @@ function _normalizeDateStr(d) {
 
 function deleteAppointment(apptId) {
   try {
-    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ error: 'No appointments found' });
 
     const values = sheet.getDataRange().getValues();
-    let targetRow   = -1;
+    let targetRow = -1;
     let patientName = '';
-    let apptDate    = '';
+    let apptDate = '';
     for (let i = 1; i < values.length; i++) {
       if (String(values[i][2]) === String(apptId)) {
-        targetRow   = i + 1;
+        targetRow = i + 1;
         patientName = values[i][4] || '';
-        apptDate    = _fmtDate(values[i][1]);
+        apptDate = _fmtDate(values[i][1]);
         break;
       }
     }
@@ -1838,27 +1838,27 @@ function getPatients() {
     return JSON.stringify(
       sheet.getDataRange().getValues().slice(1)
         .map(r => ({
-          firstName:      String(r[0] || '').trim(),
-          lastName:       String(r[1] || '').trim(),
-          platform:           String(r[2]  || '').trim(),
-          insurance:          String(r[3]  || '').trim(),
-          patientPortion:     String(r[4]  || '').trim(),
-          rate:               _sv(r[5]).trim(),   // _sv preserves numeric 0 ($0 copay)
-          claimPlatform:      String(r[6]  || '').trim(),
-          memberID:           String(r[7]  || '').trim(),
+          firstName: String(r[0] || '').trim(),
+          lastName: String(r[1] || '').trim(),
+          platform: String(r[2] || '').trim(),
+          insurance: String(r[3] || '').trim(),
+          patientPortion: String(r[4] || '').trim(),
+          rate: _sv(r[5]).trim(),   // _sv preserves numeric 0 ($0 copay)
+          claimPlatform: String(r[6] || '').trim(),
+          memberID: String(r[7] || '').trim(),
           // Sheets stores manually-entered dates as Date objects; convert to YYYY-MM-DD
-          memberDOB:          r[8] instanceof Date
-                                ? Utilities.formatDate(r[8], Session.getScriptTimeZone(), 'yyyy-MM-dd')
-                                : String(r[8]  || '').trim(),
-          pcn:                String(r[9]  || '').trim(),
-          groupNumber:        String(r[10] || '').trim(),
-          primarySubscriber:  String(r[11] || '').trim(),
-          patientState:       String(r[12] || '').trim(),
-          renderingNPI:       String(r[13] || '').trim(),
-          billingNPI:         String(r[14] || '').trim(),
-          xCode:              String(r[15] || '').trim(),
-          paymentPlatform:    String(r[16] || '').trim(),  // default collection platform
-          bestChannel:        String(r[17] || '').trim(),  // saved rate recommendation JSON
+          memberDOB: r[8] instanceof Date
+            ? Utilities.formatDate(r[8], Session.getScriptTimeZone(), 'yyyy-MM-dd')
+            : String(r[8] || '').trim(),
+          pcn: String(r[9] || '').trim(),
+          groupNumber: String(r[10] || '').trim(),
+          primarySubscriber: String(r[11] || '').trim(),
+          patientState: String(r[12] || '').trim(),
+          renderingNPI: String(r[13] || '').trim(),
+          billingNPI: String(r[14] || '').trim(),
+          xCode: String(r[15] || '').trim(),
+          paymentPlatform: String(r[16] || '').trim(),  // default collection platform
+          bestChannel: String(r[17] || '').trim(),  // saved rate recommendation JSON
         }))
         .filter(p => p.firstName || p.lastName)
     );
@@ -1885,7 +1885,7 @@ function getPatientCountsByProvider() {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({});
 
-    var colProv    = APPT_COLS.indexOf('ProvID');
+    var colProv = APPT_COLS.indexOf('ProvID');
     var colPatient = APPT_COLS.indexOf('Patient');
     if (colProv === -1 || colPatient === -1) {
       return JSON.stringify({ error: 'ProvID/Patient not found in APPT_COLS' });
@@ -1897,7 +1897,7 @@ function getPatientCountsByProvider() {
     // seen[provID] = Set-like object of patient names already counted for that provider
     var seen = {};
     data.forEach(function (row) {
-      var provID  = String(row[colProv] || '').trim().toLowerCase();
+      var provID = String(row[colProv] || '').trim().toLowerCase();
       var patient = String(row[colPatient] || '').trim().toLowerCase();
       if (!provID || !patient) return;
       if (!seen[provID]) seen[provID] = {};
@@ -1965,9 +1965,9 @@ function cleanupPlaceholderPatients() {
 
   var summary = {
     appointmentsRemoved: removedAppts.length,
-    appointmentRows:     removedAppts,
-    patientsRemoved:     removedPatients.length,
-    patientRows:         removedPatients,
+    appointmentRows: removedAppts,
+    patientsRemoved: removedPatients.length,
+    patientRows: removedPatients,
   };
   Logger.log('cleanupPlaceholderPatients: ' + JSON.stringify(summary, null, 2));
   return JSON.stringify(summary);
@@ -1985,7 +1985,7 @@ function _cleanupPlaceholdersFromSheet(tabName, matchCol, labelFn, isMatchFn) {
 
   var lastRow = sheet.getLastRow();
   var lastCol = sheet.getLastColumn();
-  var data    = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
 
   var isMatch = isMatchFn || function (row) {
     return PLACEHOLDER_PATIENT_NAMES.indexOf(String(row[matchCol] || '').trim().toUpperCase()) !== -1;
@@ -2006,7 +2006,7 @@ function _cleanupPlaceholdersFromSheet(tabName, matchCol, labelFn, isMatchFn) {
   if (kept.length) {
     sheet.getRange(2, 1, kept.length, lastCol).setValues(kept);
   }
-  var clearFrom  = 2 + kept.length;
+  var clearFrom = 2 + kept.length;
   var clearCount = lastRow - clearFrom + 1;
   if (clearCount > 0) {
     sheet.deleteRows(clearFrom, clearCount); // one bulk structural op, not one per row
@@ -2026,23 +2026,23 @@ function _cleanupPlaceholdersFromSheet(tabName, matchCol, labelFn, isMatchFn) {
 ════════════════════════════════════════════════════════════════ */
 function getNoteBoard(provFilter) {
   try {
-    var ss     = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet  = ss.getSheetByName(TAB_APPT);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify([]);
-    var data   = sheet.getDataRange().getValues();
-    var hdr    = data[0];
+    var data = sheet.getDataRange().getValues();
+    var hdr = data[0];
 
-    var tz       = Session.getScriptTimeZone();
-    var today    = new Date();
-    var start    = new Date(today); start.setDate(today.getDate() - 60); // 2 months back
+    var tz = Session.getScriptTimeZone();
+    var today = new Date();
+    var start = new Date(today); start.setDate(today.getDate() - 60); // 2 months back
     var startStr = Utilities.formatDate(start, tz, 'yyyy-MM-dd');
-    var endStr   = Utilities.formatDate(today, tz, 'yyyy-MM-dd');        // today only — no future
+    var endStr = Utilities.formatDate(today, tz, 'yyyy-MM-dd');        // today only — no future
 
     var PLACEHOLDER_NAMES_NB = PLACEHOLDER_PATIENT_NAMES;  // shared list — see top of file
 
     var out = [];
     for (var i = 1; i < data.length; i++) {
-      var r   = data[i];
+      var r = data[i];
       var appt = rowToAppt(r);
       if (!appt.id || !appt.date) continue;
       if (appt.date < startStr || appt.date > endStr) continue;
@@ -2050,22 +2050,22 @@ function getNoteBoard(provFilter) {
       // Skip placeholder patients (calendar blocks / personal day holds)
       if (PLACEHOLDER_NAMES_NB.indexOf(String(appt.patient || '').trim().toUpperCase()) !== -1) continue;
       out.push({
-        id:         appt.id,
-        date:       appt.date,
-        time:       appt.time,
-        patient:    appt.patient,
-        provID:     appt.provID,
+        id: appt.id,
+        date: appt.date,
+        time: appt.time,
+        patient: appt.patient,
+        provID: appt.provID,
         noteStatus: appt.noteStatus || '',
-        signed:     appt.out || false,
+        signed: appt.out || false,
       });
     }
     // Sort by date then time
-    out.sort(function(a, b) {
+    out.sort(function (a, b) {
       if (a.date !== b.date) return a.date < b.date ? -1 : 1;
       return a.time < b.time ? -1 : 1;
     });
     return JSON.stringify(out);
-  } catch(e) {
+  } catch (e) {
     Logger.log('getNoteBoard ERROR: ' + e.message);
     return JSON.stringify([]);
   }
@@ -2079,10 +2079,10 @@ function getNoteBoard(provFilter) {
 ────────────────────────────────────────────────────────────────── */
 function saveNoteStatus(apptId, noteStatus) {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
-    var data  = sheet.getDataRange().getValues();
+    var data = sheet.getDataRange().getValues();
     var ID_IDX = APPT_COLS.indexOf('ApptID');     // column C (index 2)
     var NS_IDX = APPT_COLS.indexOf('NoteStatus'); // column index 55
     if (NS_IDX < 0) return JSON.stringify({ ok: false, err: 'NoteStatus column not found' });
@@ -2090,12 +2090,12 @@ function saveNoteStatus(apptId, noteStatus) {
       if (String(data[i][ID_IDX] || '').trim() === String(apptId).trim()) {
         sheet.getRange(i + 1, NS_IDX + 1).setValue(noteStatus || '');
         _audit(ss, 'NOTE_STATUS_UPDATED',
-               'Appt ' + apptId + ' → noteStatus=' + (noteStatus || '(cleared)'));
+          'Appt ' + apptId + ' → noteStatus=' + (noteStatus || '(cleared)'));
         return JSON.stringify({ ok: true });
       }
     }
     return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
-  } catch(e) {
+  } catch (e) {
     Logger.log('saveNoteStatus ERROR: ' + e.message);
     return JSON.stringify({ ok: false, err: e.message });
   }
@@ -2111,32 +2111,32 @@ function saveNoteStatus(apptId, noteStatus) {
 ════════════════════════════════════════════════════════════════ */
 function getClaimsLedger(provFilter) {
   try {
-    var ss        = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var apptSheet = ss.getSheetByName(TAB_APPT);
-    var patSheet  = ss.getSheetByName(TAB_PATIENT);
+    var patSheet = ss.getSheetByName(TAB_PATIENT);
     if (!apptSheet || apptSheet.getLastRow() < 2) return JSON.stringify([]);
 
     // ── Build patient lookup: fullName (lowercase) → { memberID, insurance, claimPlatform }
     var patLookup = {};
     if (patSheet && patSheet.getLastRow() >= 2) {
-      patSheet.getDataRange().getValues().slice(1).forEach(function(r) {
+      patSheet.getDataRange().getValues().slice(1).forEach(function (r) {
         var fname = String(r[0] || '').trim();
         var lname = String(r[1] || '').trim();
         if (!fname && !lname) return;
-        var key = (fname + ' ' + lname).toLowerCase().replace(/\s+/g,' ').trim();
+        var key = (fname + ' ' + lname).toLowerCase().replace(/\s+/g, ' ').trim();
         patLookup[key] = {
-          memberID:      String(r[7]  || '').trim(),
-          insurance:     String(r[3]  || '').trim(),
-          claimPlatform: String(r[6]  || '').trim(),
+          memberID: String(r[7] || '').trim(),
+          insurance: String(r[3] || '').trim(),
+          claimPlatform: String(r[6] || '').trim(),
         };
       });
     }
 
     // ── Filter and enrich appointment rows
-    var rows   = apptSheet.getDataRange().getValues().slice(1);
+    var rows = apptSheet.getDataRange().getValues().slice(1);
     var claims = [];
 
-    rows.forEach(function(r) {
+    rows.forEach(function (r) {
       // Only include rows where a claim has been submitted
       var submittedDate = String(r[39] || '').trim();
       if (!submittedDate) return;
@@ -2144,58 +2144,58 @@ function getClaimsLedger(provFilter) {
       var rowProv = String(r[0] || '');
       if (provFilter && provFilter !== '*' && rowProv !== provFilter) return;
 
-      var appt    = rowToAppt(r);
+      var appt = rowToAppt(r);
 
       // ── Only Clinic Submit (direct) appointments belong in the Claims Ledger ──
       // Source of truth: Method column (col F, index 5). Platform-billed appointments
       // (Alma, Headway, Grow) are excluded regardless of whether they have a submitted date.
       if (appt.method !== 'direct') return;
 
-      var ptKey   = _normName(appt.patient);
-      var ptInfo  = patLookup[ptKey] || {};
+      var ptKey = _normName(appt.patient);
+      var ptInfo = patLookup[ptKey] || {};
 
       // Insurance carrier: appointment's directIns takes priority, then patient record
       var carrier = appt.directIns || ptInfo.insurance || 'Other';
 
       claims.push({
-        provID:            appt.provID,
-        id:                appt.id,
-        patient:           appt.patient,
-        patientState:      appt.patientState,
-        memberID:          ptInfo.memberID || '',
-        carrier:           carrier,
-        date:              appt.date,
-        cpt:               appt.cpt,
+        provID: appt.provID,
+        id: appt.id,
+        patient: appt.patient,
+        patientState: appt.patientState,
+        memberID: ptInfo.memberID || '',
+        carrier: carrier,
+        date: appt.date,
+        cpt: appt.cpt,
         claimSubmittedDate: appt.claimSubmittedDate,
-        claimPlatform:     ptInfo.claimPlatform || '',
-        claimID:           appt.claimID,
-        claimStatus:       appt.claimStatus,
-        claimStatusNotes:  appt.claimStatusNotes,
-        claimPaidDate:     appt.claimPaidDate,
-        claimPaidAmount:   appt.claimPaidAmount,
-        claimCheckID:      appt.claimCheckID,
-        claimERA:          appt.claimERA,
-        claimBundled:      appt.claimBundled,
+        claimPlatform: ptInfo.claimPlatform || '',
+        claimID: appt.claimID,
+        claimStatus: appt.claimStatus,
+        claimStatusNotes: appt.claimStatusNotes,
+        claimPaidDate: appt.claimPaidDate,
+        claimPaidAmount: appt.claimPaidAmount,
+        claimCheckID: appt.claimCheckID,
+        claimERA: appt.claimERA,
+        claimBundled: appt.claimBundled,
         claimBundledAmount: appt.claimBundledAmount,
-        claimDepositBank:  appt.claimDepositBank,
-        claimDepositDate:  appt.claimDepositDate,
+        claimDepositBank: appt.claimDepositBank,
+        claimDepositDate: appt.claimDepositDate,
         claimDepositAmount: appt.claimDepositAmount,
         // Copay info for Copay/Notes column
-        paymentType:       appt.paymentType,
-        paymentRate:       appt.paymentRate,
-        paymentCollected:  appt.paymentCollected,
-        paymentFailed:     appt.paymentFailed,
-        paymentAmount:     appt.paymentAmount,
-        paymentDate:       appt.paymentDate,
+        paymentType: appt.paymentType,
+        paymentRate: appt.paymentRate,
+        paymentCollected: appt.paymentCollected,
+        paymentFailed: appt.paymentFailed,
+        paymentAmount: appt.paymentAmount,
+        paymentDate: appt.paymentDate,
         // PPC (Payment Processing Channel) — added for the Copay/Notes column
         // rebuild; already stored per-appointment via rowToAppt, just wasn't
         // surfaced to the Claims Ledger before.
-        paymentPlatform:   appt.paymentPlatform,
+        paymentPlatform: appt.paymentPlatform,
       });
     });
 
     // Sort: by carrier, then patient name, then appointment date ascending
-    claims.sort(function(a, b) {
+    claims.sort(function (a, b) {
       if (a.carrier < b.carrier) return -1;
       if (a.carrier > b.carrier) return 1;
       var pA = _normName(a.patient), pB = _normName(b.patient);
@@ -2221,7 +2221,7 @@ function getClaimsLedger(provFilter) {
 ════════════════════════════════════════════════════════════════ */
 function saveClaimNotes(provId, dateStr, apptId, notes) {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet) return JSON.stringify({ error: 'Appointments sheet not found' });
 
@@ -2232,12 +2232,12 @@ function saveClaimNotes(provId, dateStr, apptId, notes) {
       if (String(r[2]) === String(apptId) && String(r[0]) === String(provId)) {
         // ClaimStatusNotes is APPT_COLS index 42 → spreadsheet column 43 (1-based)
         sheet.getRange(i + 1, APPT_COLS.indexOf('ClaimStatusNotes') + 1)
-             .setValue(notes || '');
+          .setValue(notes || '');
         return JSON.stringify({ ok: true });
       }
     }
     return JSON.stringify({ error: 'Appointment not found' });
-  } catch(e) {
+  } catch (e) {
     Logger.log('saveClaimNotes error: ' + e.message);
     return JSON.stringify({ error: e.message });
   }
@@ -2269,7 +2269,7 @@ var PAYMENT_COMMENTS_COL = 64;
 
 function savePaymentComment(provId, dateStr, apptId, comment) {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet) return JSON.stringify({ error: 'Appointments sheet not found' });
 
@@ -2300,7 +2300,7 @@ function savePaymentComment(provId, dateStr, apptId, comment) {
 ──────────────────────────────────────────────────────────────────────── */
 function savePaymentManualComment(rowIndex, patient, comment) {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_PAYMENT_MANUAL);
     if (!sheet) return JSON.stringify({ error: 'PaymentTrackerManual sheet not found' });
 
@@ -2341,11 +2341,11 @@ function addPaymentManualEntry(entryJson) {
   try {
     var entry = JSON.parse(entryJson);
     var patient = String((entry && entry.patient) || '').trim();
-    var provID  = String((entry && entry.provID) || '').trim().toLowerCase();
+    var provID = String((entry && entry.provID) || '').trim().toLowerCase();
     if (!patient) return JSON.stringify({ error: 'Patient name is required' });
-    if (!provID)  return JSON.stringify({ error: 'Provider is required' });
+    if (!provID) return JSON.stringify({ error: 'Provider is required' });
 
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_PAYMENT_MANUAL);
     if (!sheet) return JSON.stringify({ error: 'PaymentTrackerManual sheet not found' });
 
@@ -2372,23 +2372,23 @@ function addPaymentManualEntry(entryJson) {
     return JSON.stringify({
       ok: true,
       row: {
-        source:           'Manual Entry',
-        provID:           provID,
-        rowIndex:         rowIndex,
-        patient:          patient,
-        date:             entry.date || 'N/A',
-        cpt:              entry.cpt ? String(entry.cpt).split(/[|,;]/).map(function(s){return s.trim();}).filter(Boolean) : [],
-        paymentType:      String(entry.paymentType || '').trim().toLowerCase().replace(/\s+/g, '-'),
-        paymentRate:      entry.paymentRate || '',
-        paymentAmount:    entry.paymentAmount || '',
+        source: 'Manual Entry',
+        provID: provID,
+        rowIndex: rowIndex,
+        patient: patient,
+        date: entry.date || 'N/A',
+        cpt: entry.cpt ? String(entry.cpt).split(/[|,;]/).map(function (s) { return s.trim(); }).filter(Boolean) : [],
+        paymentType: String(entry.paymentType || '').trim().toLowerCase().replace(/\s+/g, '-'),
+        paymentRate: entry.paymentRate || '',
+        paymentAmount: entry.paymentAmount || '',
         paymentCollected: !!entry.paymentCollected,
-        paymentFailed:    !!entry.paymentFailed,
-        paymentDate:      entry.paymentDate || '',
-        paymentPlatform:  entry.paymentPlatform || '',
-        paymentPlan:      entry.paymentPlan ? 'TRUE' : '',
-        status:           entry.status || '',
-        comments:         entry.comments || '',
-        importNotes:      '',
+        paymentFailed: !!entry.paymentFailed,
+        paymentDate: entry.paymentDate || '',
+        paymentPlatform: entry.paymentPlatform || '',
+        paymentPlan: entry.paymentPlan ? 'TRUE' : '',
+        status: entry.status || '',
+        comments: entry.comments || '',
+        importNotes: '',
       }
     });
   } catch (e) {
@@ -2431,7 +2431,7 @@ function getPaymentTrackerData(provFilter) {
     }
 
     var apptSheet = ss.getSheetByName(TAB_APPT);
-    var patSheet  = ss.getSheetByName(TAB_PATIENT);
+    var patSheet = ss.getSheetByName(TAB_PATIENT);
     if (!apptSheet || apptSheet.getLastRow() < 2) return JSON.stringify([]);
 
     // ── Forward cutoff: today + 5 calendar days, per Dean 2026-08-02 ──
@@ -2439,13 +2439,13 @@ function getPaymentTrackerData(provFilter) {
     // No lower bound — all past dates are in scope, only the future side
     // is capped, since a not-yet-happened visit can't have anything
     // collected against it yet.
-    var tz        = Session.getScriptTimeZone();
+    var tz = Session.getScriptTimeZone();
     var cutoffStr = Utilities.formatDate(new Date(Date.now() + 5 * 86400000), tz, 'yyyy-MM-dd');
 
     // ── Patient lookup: fullName (lowercase) → insurance carrier ──
     var patLookup = {};
     if (patSheet && patSheet.getLastRow() >= 2) {
-      patSheet.getDataRange().getValues().slice(1).forEach(function(r) {
+      patSheet.getDataRange().getValues().slice(1).forEach(function (r) {
         var fname = String(r[0] || '').trim();
         var lname = String(r[1] || '').trim();
         if (!fname && !lname) return;
@@ -2454,8 +2454,8 @@ function getPaymentTrackerData(provFilter) {
       });
     }
 
-    var rows   = apptSheet.getDataRange().getValues();
-    var out    = [];
+    var rows = apptSheet.getDataRange().getValues();
+    var out = [];
 
     for (var i = 1; i < rows.length; i++) {
       var r = rows[i];
@@ -2472,33 +2472,33 @@ function getPaymentTrackerData(provFilter) {
       if (appt.date && appt.date > cutoffStr) continue;  // more than 5 days out
       if (_isZeroRate(appt.paymentRate)) continue;       // $0 copay — nothing to collect
 
-      var ptKey  = _normName(appt.patient);
+      var ptKey = _normName(appt.patient);
       var ptInfo = patLookup[ptKey] || {};
       var insurance = appt.directIns || ptInfo.insurance || '';
 
       out.push({
-        source:            'SolBoard Auto',
-        provID:            appt.provID,
-        id:                appt.id,
-        date:              appt.date,
-        time:              appt.time,
-        patient:           appt.patient,
-        patientState:      appt.patientState,
-        insurance:         insurance,
-        cpt:               appt.cpt,
-        paymentType:       appt.paymentType,       // Cost-Share Class
-        paymentRate:       appt.paymentRate,        // expected
-        paymentAmount:     appt.paymentAmount,       // collected amount
-        paymentCollected:  appt.paymentCollected,
-        paymentFailed:     appt.paymentFailed,
-        paymentDate:       appt.paymentDate,
-        paymentPlatform:   appt.paymentPlatform,    // Payment Processing Channel
-        comments:          String(r[PAYMENT_COMMENTS_COL - 1] || ''),
+        source: 'SolBoard Auto',
+        provID: appt.provID,
+        id: appt.id,
+        date: appt.date,
+        time: appt.time,
+        patient: appt.patient,
+        patientState: appt.patientState,
+        insurance: insurance,
+        cpt: appt.cpt,
+        paymentType: appt.paymentType,       // Cost-Share Class
+        paymentRate: appt.paymentRate,        // expected
+        paymentAmount: appt.paymentAmount,       // collected amount
+        paymentCollected: appt.paymentCollected,
+        paymentFailed: appt.paymentFailed,
+        paymentDate: appt.paymentDate,
+        paymentPlatform: appt.paymentPlatform,    // Payment Processing Channel
+        comments: String(r[PAYMENT_COMMENTS_COL - 1] || ''),
       });
     }
 
     // Most recently collected first
-    out.sort(function(a, b) {
+    out.sort(function (a, b) {
       var ka = _ptSortKey(a.date), kb = _ptSortKey(b.date);
       if (ka < kb) return 1;
       if (ka > kb) return -1;
@@ -2543,7 +2543,7 @@ function getPaymentTrackerManualData(provFilter) {
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify([]);
 
     var rows = sheet.getDataRange().getValues();
-    var out  = [];
+    var out = [];
 
     for (var i = 1; i < rows.length; i++) {
       var r = rows[i];
@@ -2561,7 +2561,7 @@ function getPaymentTrackerManualData(provFilter) {
       if (provFilter && provFilter !== '*' && rowProv !== String(provFilter).toLowerCase()) continue;
 
       var collectedRaw = r[8];
-      var failedRaw    = r[9];
+      var failedRaw = r[9];
 
       // Cost-Share Class here is stored as the display label ("Copay",
       // "Cash Pay") rather than the main tab's internal key
@@ -2570,27 +2570,27 @@ function getPaymentTrackerManualData(provFilter) {
       var paymentTypeRaw = String(r[5] || '').trim().toLowerCase().replace(/\s+/g, '-');
 
       out.push({
-        source:           String(r[14] || '').trim() || 'Manual Entry',
-        provID:           rowProv,
-        rowIndex:         i + 1,   // 1-based sheet row — this tab has no ID column, used by savePaymentManualComment
-        patient:          String(r[2] || '').trim(),
-        date:             _fmtDate(r[3]),   // ApptDate — same semantic as main-tab `date`
-        cpt:              r[4] ? String(r[4]).split(/[|,;]/).map(function(s){return s.trim();}).filter(Boolean) : [],
-        paymentType:      paymentTypeRaw,   // Cost-Share Class
-        paymentRate:      _sv(r[6]),                    // expected
-        paymentAmount:    _sv(r[7]),                    // collected amount
+        source: String(r[14] || '').trim() || 'Manual Entry',
+        provID: rowProv,
+        rowIndex: i + 1,   // 1-based sheet row — this tab has no ID column, used by savePaymentManualComment
+        patient: String(r[2] || '').trim(),
+        date: _fmtDate(r[3]),   // ApptDate — same semantic as main-tab `date`
+        cpt: r[4] ? String(r[4]).split(/[|,;]/).map(function (s) { return s.trim(); }).filter(Boolean) : [],
+        paymentType: paymentTypeRaw,   // Cost-Share Class
+        paymentRate: _sv(r[6]),                    // expected
+        paymentAmount: _sv(r[7]),                    // collected amount
         paymentCollected: collectedRaw === true || String(collectedRaw).trim().toUpperCase() === 'TRUE',
-        paymentFailed:    failedRaw === true || String(failedRaw).trim().toUpperCase() === 'TRUE',
-        paymentDate:      _fmtDate(r[0]),
-        paymentPlatform:  String(r[10] || '').trim(),   // Payment Processing Channel
-        paymentPlan:      String(r[11] || '').trim(),
-        status:           String(r[12] || '').trim(),   // Paid / Declined / Reversed
-        comments:         String(r[13] || ''),
-        importNotes:      String(r[15] || ''),
+        paymentFailed: failedRaw === true || String(failedRaw).trim().toUpperCase() === 'TRUE',
+        paymentDate: _fmtDate(r[0]),
+        paymentPlatform: String(r[10] || '').trim(),   // Payment Processing Channel
+        paymentPlan: String(r[11] || '').trim(),
+        status: String(r[12] || '').trim(),   // Paid / Declined / Reversed
+        comments: String(r[13] || ''),
+        importNotes: String(r[15] || ''),
       });
     }
 
-    out.sort(function(a, b) {
+    out.sort(function (a, b) {
       var ka = _ptSortKey(a.date), kb = _ptSortKey(b.date);
       if (ka < kb) return 1;
       if (ka > kb) return -1;
@@ -2615,14 +2615,14 @@ function getPaymentTrackerManualData(provFilter) {
 ──────────────────────────────────────────────────────────────────────── */
 function getPaymentTrackerAll(provFilter) {
   try {
-    var autoData   = JSON.parse(getPaymentTrackerData(provFilter));
+    var autoData = JSON.parse(getPaymentTrackerData(provFilter));
     var manualData = JSON.parse(getPaymentTrackerManualData(provFilter));
 
-    if (!Array.isArray(autoData))   return JSON.stringify(autoData);
+    if (!Array.isArray(autoData)) return JSON.stringify(autoData);
     if (!Array.isArray(manualData)) return JSON.stringify(manualData);
 
     var out = autoData.concat(manualData);
-    out.sort(function(a, b) {
+    out.sort(function (a, b) {
       var ka = _ptSortKey(a.date), kb = _ptSortKey(b.date);
       if (ka < kb) return 1;
       if (ka > kb) return -1;
@@ -2636,6 +2636,146 @@ function getPaymentTrackerAll(provFilter) {
   }
 }
 
+/* ── auditPaymentTrackerDuplicates — READ-ONLY diagnostic ─────────────────
+   Dean's invariant: 1 patient + 1 provider + 1 appointment date = 1
+   payment. Groups every row from both sources by normalized
+   Patient+ProvID+ApptDate and logs any group with more than one row.
+   Writes nothing — run manually (Apps Script editor ▶ Run) whenever
+   duplicates are suspected, e.g. after a fresh legacy-sheet import.
+──────────────────────────────────────────────────────────────────────── */
+function auditPaymentTrackerDuplicates() {
+  var autoRows   = JSON.parse(getPaymentTrackerData(''));
+  var manualRows = JSON.parse(getPaymentTrackerManualData(''));
+
+  if (!Array.isArray(autoRows))   { Logger.log('getPaymentTrackerData error: ' + JSON.stringify(autoRows)); return; }
+  if (!Array.isArray(manualRows)) { Logger.log('getPaymentTrackerManualData error: ' + JSON.stringify(manualRows)); return; }
+
+  var all = autoRows.concat(manualRows);
+
+  // Only real, single ISO dates carry meaning for this check — "N/A",
+  // "payment plan", and multi-date payment-plan entries would otherwise
+  // false-match every other row sharing the same non-date value.
+  var groups = {};
+  all.forEach(function(r) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(r.date || '')) return;
+    var key = _normName(r.patient) + '|' + String(r.provID || '').toLowerCase() + '|' + r.date;
+    (groups[key] = groups[key] || []).push(r);
+  });
+
+  var dupGroupCount = 0, dupRowCount = 0;
+  Object.keys(groups).forEach(function(key) {
+    var g = groups[key];
+    if (g.length < 2) return;
+    dupGroupCount++;
+    dupRowCount += g.length;
+    Logger.log('── DUPLICATE: ' + key + ' (' + g.length + ' rows) ──');
+    g.forEach(function(r) {
+      Logger.log(
+        '  source=' + r.source +
+        ' id=' + (r.id || '') +
+        ' rowIndex=' + (r.rowIndex || '') +
+        ' amount=' + r.paymentAmount +
+        ' collected=' + r.paymentCollected +
+        ' failed=' + r.paymentFailed +
+        ' status=' + (r.status || '') +
+        ' paymentDate=' + r.paymentDate +
+        ' comments=' + JSON.stringify(r.comments || '')
+      );
+    });
+  });
+
+  Logger.log('=== SUMMARY: ' + dupGroupCount + ' duplicate group(s), ' + dupRowCount + ' total rows involved ===');
+}
+
+/* ── cleanupPaymentTrackerDuplicates — deletes ONLY unambiguous duplicates
+   ──────────────────────────────────────────────────────────────────────
+   Investigated 2026-08-02 via auditPaymentTrackerDuplicates(): 105
+   duplicate groups, 92 of them a clean pattern — SolBoard Auto (the main
+   Appointments tab's own live Cost-Share Collection) and a Legacy Import
+   row (PaymentTrackerManual, from the pre-Payment-Tracker manual tracking
+   sheet) both recording the SAME real payment: same patient+provider+
+   appointment-date, same collected amount, Legacy Import's Status='Paid'.
+
+   The other 13 groups are NOT duplicates — declined-then-paid sequences,
+   Reversed/refund rows, mismatched amounts, or a row where SolBoard
+   Auto's own record is blank and the Legacy Import row is the only real
+   record. This function only matches the narrow 92-pattern (exactly 2
+   rows: 1 SolBoard Auto + 1 Legacy Import/Paid, amounts equal) — those 13
+   are always left alone for manual review.
+
+   Only ever deletes from PaymentTrackerManual — never writes to or
+   deletes from the main Appointments tab, which stays the kept "live"
+   copy. Grouping is computed fresh in this same run (not from a stale
+   prior read), and each row's Patient is re-verified immediately before
+   its delete in case the sheet shifted between the read and the write.
+   Confirmed 2026-08-03: ran clean, deleted 92 of 92 candidates, second
+   audit pass afterward showed exactly the 13 non-duplicate groups left.
+──────────────────────────────────────────────────────────────────────── */
+function cleanupPaymentTrackerDuplicates() {
+  try {
+    var autoRows   = JSON.parse(getPaymentTrackerData(''));
+    var manualRows = JSON.parse(getPaymentTrackerManualData(''));
+
+    if (!Array.isArray(autoRows))   { Logger.log('getPaymentTrackerData error: ' + JSON.stringify(autoRows)); return; }
+    if (!Array.isArray(manualRows)) { Logger.log('getPaymentTrackerManualData error: ' + JSON.stringify(manualRows)); return; }
+
+    var groups = {};
+    autoRows.concat(manualRows).forEach(function(r) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(r.date || '')) return;
+      var key = _normName(r.patient) + '|' + String(r.provID || '').toLowerCase() + '|' + r.date;
+      (groups[key] = groups[key] || []).push(r);
+    });
+
+    var toDelete = [];
+    Object.keys(groups).forEach(function(key) {
+      var g = groups[key];
+      if (g.length !== 2) return;
+      var auto   = g.filter(function(r) { return r.source === 'SolBoard Auto'; });
+      var legacy = g.filter(function(r) { return r.source === 'Legacy Import'; });
+      if (auto.length !== 1 || legacy.length !== 1) return;
+      if (legacy[0].status !== 'Paid') return;
+
+      var autoAmt   = parseFloat(auto[0].paymentAmount);
+      var legacyAmt = parseFloat(legacy[0].paymentAmount);
+      if (isNaN(autoAmt) || isNaN(legacyAmt) || autoAmt !== legacyAmt) return;
+
+      if (!legacy[0].rowIndex) return; // safety — never delete without a concrete row to target
+      toDelete.push({ rowIndex: legacy[0].rowIndex, patient: legacy[0].patient, key: key, amount: legacyAmt });
+    });
+
+    if (toDelete.length === 0) {
+      Logger.log('No safe duplicates found to delete.');
+      return;
+    }
+
+    // Delete highest row index first so earlier deletions don't shift
+    // the row numbers of ones still pending.
+    toDelete.sort(function(a, b) { return b.rowIndex - a.rowIndex; });
+
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_PAYMENT_MANUAL);
+    if (!sheet) { Logger.log('PaymentTrackerManual sheet not found'); return; }
+
+    var deletedCount = 0;
+    toDelete.forEach(function(d) {
+      // Re-verify the row's Patient still matches right before deleting —
+      // same drift guard savePaymentManualComment uses.
+      var rowPatient = String(sheet.getRange(d.rowIndex, 3).getValue() || '').trim();
+      if (rowPatient.toLowerCase() !== String(d.patient || '').trim().toLowerCase()) {
+        Logger.log('SKIPPED (row moved): ' + d.key + ' — expected "' + d.patient + '" at row ' + d.rowIndex + ', found "' + rowPatient + '"');
+        return;
+      }
+      sheet.deleteRow(d.rowIndex);
+      deletedCount++;
+      Logger.log('DELETED: ' + d.key + ' — row ' + d.rowIndex + ' ($' + d.amount + ')');
+    });
+
+    Logger.log('=== DONE: deleted ' + deletedCount + ' of ' + toDelete.length + ' duplicate Legacy Import rows ===');
+  } catch (e) {
+    Logger.log('cleanupPaymentTrackerDuplicates error: ' + e.message);
+  }
+}
+
 
 /* ════════════════════════════════════════════════════════════════
    USER INFO & ROLE
@@ -2644,7 +2784,7 @@ function getPaymentTrackerAll(provFilter) {
 function getCurrentUserWithRole() {
   try {
     const email = Session.getActiveUser().getEmail();
-    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
     const staff = _getStaffRecord(ss, email);
     if (!staff) {
       Logger.log('Unrecognized user: ' + email);
@@ -2665,13 +2805,13 @@ function getCurrentUserWithRole() {
 function _getStaffRecord(ss, email) {
   const sheet = ss.getSheetByName(TAB_STAFF);
   if (!sheet || sheet.getLastRow() < 2) return null;
-  const rows  = sheet.getDataRange().getValues().slice(1);
-  const row   = rows.find(r => String(r[0]).toLowerCase().trim() === email.toLowerCase().trim());
+  const rows = sheet.getDataRange().getValues().slice(1);
+  const row = rows.find(r => String(r[0]).toLowerCase().trim() === email.toLowerCase().trim());
   if (!row) return null;
   return {
-    email:       String(row[0] || '').trim(),
-    role:        String(row[1] || 'unknown').trim(),
-    provID:      String(row[2] || '').trim(),
+    email: String(row[0] || '').trim(),
+    role: String(row[1] || 'unknown').trim(),
+    provID: String(row[2] || '').trim(),
     displayName: String(row[3] || '').trim(),
   };
 }
@@ -2691,7 +2831,7 @@ function _checkProvAccess(ss, requestedProv) {
 }
 
 function _nb(v) {
-  if (v === true  || v === 'TRUE'  || v === 'true')  return true;
+  if (v === true || v === 'TRUE' || v === 'true') return true;
   if (v === false || v === 'FALSE' || v === 'false') return false;
   return null;
 }
@@ -2712,7 +2852,7 @@ function _fmtTime(v) {
   if (!v && v !== 0) return '';
   if (v instanceof Date) {
     return String(v.getHours()).padStart(2, '0') + ':' +
-           String(v.getMinutes()).padStart(2, '0');
+      String(v.getMinutes()).padStart(2, '0');
   }
   if (typeof v === 'number') {
     var totalMins = Math.round(v * 24 * 60);
@@ -2729,9 +2869,9 @@ function _normalizeTimeKey(v) {
   var s = String(v).trim();
   var m = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
   if (!m) return s.toLowerCase();
-  var h  = parseInt(m[1], 10);
+  var h = parseInt(m[1], 10);
   var mi = m[2];
-  var p  = (m[3] || '').toUpperCase();
+  var p = (m[3] || '').toUpperCase();
   if (p === 'PM' && h !== 12) h += 12;
   if (p === 'AM' && h === 12) h = 0;
   return String(h).padStart(2, '0') + ':' + mi;
@@ -2739,75 +2879,75 @@ function _normalizeTimeKey(v) {
 
 function rowToAppt(r) {
   return {
-    provID:   String(r[0]  || ''),   // column A — needed for NPI dropdown in ClaimSubmitModal
-    id:       String(r[2]),
-    date:     _fmtDate(r[1]),
-    time:     _fmtTime(r[3]),
-    patient:  String(r[4]  || ''),
+    provID: String(r[0] || ''),   // column A — needed for NPI dropdown in ClaimSubmitModal
+    id: String(r[2]),
+    date: _fmtDate(r[1]),
+    time: _fmtTime(r[3]),
+    patient: String(r[4] || ''),
     // Unknown/blank Method cell → blank, NOT a default channel (Solrei brand rule).
-    method:   String(r[5]  || ''),
-    alma:   { text: String(r[6]  || ''), valid: _nb(r[7])  },
-    hw:     { text: String(r[8]  || ''), valid: _nb(r[9])  },
-    grow:   { text: String(r[10] || ''), valid: _nb(r[11]) },
+    method: String(r[5] || ''),
+    alma: { text: String(r[6] || ''), valid: _nb(r[7]) },
+    hw: { text: String(r[8] || ''), valid: _nb(r[9]) },
+    grow: { text: String(r[10] || ''), valid: _nb(r[11]) },
     directIns: String(r[12] || ''),
     // DirectValid (index 48) stores the explicit valid/issue/null flag for direct-pay.
     // Falls back to presence of directIns text for rows created before this column existed.
     direct: { text: String(r[12] || ''), valid: r[48] !== undefined && r[48] !== '' ? _nb(r[48]) : (r[12] ? true : null) },
-    intake:  _nb(r[13]),
-    ins:     _nb(r[14]),
+    intake: _nb(r[13]),
+    ins: _nb(r[14]),
     autopay: _nb(r[15]),
     scr: {
       'PHQ-9': _nb(r[16]),
       'GAD-7': _nb(r[17]),
       'PCL-5': _nb(r[18]),
     },
-    ccEhr:    String(r[19] || ''),
-    notes:    String(r[20] || ''),
+    ccEhr: String(r[19] || ''),
+    notes: String(r[20] || ''),
     unsigned: r[21] ? String(r[21]).split(',').map(s => s.trim()).filter(Boolean) : [],
-    cpt:      r[22] ? String(r[22]).split(/[|,;]/).map(s => s.trim()).filter(Boolean) : [],
-    billing:  String(r[23] || 'pending'),
-    status:   String(r[24] || 'pending'),
-    out:      r[25] === true || r[25] === 'TRUE',
-    paymentType:      String(r[26] || ''),
-    paymentRate:      _sv(r[27]),   // _sv preserves numeric 0 ($0 copay rate)
-    paymentAmount:    String(r[28] || ''),
+    cpt: r[22] ? String(r[22]).split(/[|,;]/).map(s => s.trim()).filter(Boolean) : [],
+    billing: String(r[23] || 'pending'),
+    status: String(r[24] || 'pending'),
+    out: r[25] === true || r[25] === 'TRUE',
+    paymentType: String(r[26] || ''),
+    paymentRate: _sv(r[27]),   // _sv preserves numeric 0 ($0 copay rate)
+    paymentAmount: String(r[28] || ''),
     paymentCollected: r[29] === true || r[29] === 'TRUE',
-    paymentFailed:    r[30] === true || r[30] === 'TRUE',
+    paymentFailed: r[30] === true || r[30] === 'TRUE',
     comms: (() => {
       try { return r[31] ? JSON.parse(String(r[31])) : []; }
       catch (e) { return []; }
     })(),
-    tebraStatus:  String(r[34] || ''),
-    paymentDate:  _fmtDate(r[35]),
-    rxMeds:          r[36] ? String(r[36]).split('|').map(s => s.trim()).filter(Boolean) : [],
-    rxBillerAlert:   r[37] === true || r[37] === 'TRUE',
+    tebraStatus: String(r[34] || ''),
+    paymentDate: _fmtDate(r[35]),
+    rxMeds: r[36] ? String(r[36]).split('|').map(s => s.trim()).filter(Boolean) : [],
+    rxBillerAlert: r[37] === true || r[37] === 'TRUE',
     paymentPlatform: String(r[38] || ''),
     // ── Claim tracking & payout (cols AN-AV, indices 39-47) ──────────────
     claimSubmittedDate: _fmtDate(r[39]),
-    claimID:            String(r[40] || ''),
-    claimStatus:        String(r[41] || ''),
-    claimStatusNotes:   String(r[42] || ''),
-    claimPaidDate:      _fmtDate(r[43]),
-    claimPaidAmount:    String(r[44] || ''),
-    claimCheckID:       String(r[45] || ''),
-    claimDepositBank:   String(r[46] || ''),
-    claimDepositDate:   _fmtDate(r[47]),
+    claimID: String(r[40] || ''),
+    claimStatus: String(r[41] || ''),
+    claimStatusNotes: String(r[42] || ''),
+    claimPaidDate: _fmtDate(r[43]),
+    claimPaidAmount: String(r[44] || ''),
+    claimCheckID: String(r[45] || ''),
+    claimDepositBank: String(r[46] || ''),
+    claimDepositDate: _fmtDate(r[47]),
     // ── Claims Ledger supplemental (indices 49-52) ────────────────────────
-    claimERA:           String(r[49] || ''),
-    claimBundled:       r[50] === true || r[50] === 'TRUE',
+    claimERA: String(r[49] || ''),
+    claimBundled: r[50] === true || r[50] === 'TRUE',
     claimBundledAmount: String(r[51] || ''),
     claimDepositAmount: String(r[52] || ''),
     // ── Patient context — denormalized from Patient DB (indices 53-54) ──────
-    insuranceCarrier:   String(r[53] || ''),
-    patientState:       String(r[54] || ''),
+    insuranceCarrier: String(r[53] || ''),
+    patientState: String(r[54] || ''),
     // ── Clinic Note Status (index 55) ────────────────────────────────────────
-    noteStatus:         String(r[55] || ''),
+    noteStatus: String(r[55] || ''),
     // ── Screener scores + assistant notes (indices 56-58) ────────────────────
     scrData: (() => {
       try { return r[56] ? JSON.parse(String(r[56])) : { 'PHQ-9': { score: '' }, 'GAD-7': { score: '' }, 'PCL-5': { score: '' } }; }
       catch (e) { return { 'PHQ-9': { score: '' }, 'GAD-7': { score: '' }, 'PCL-5': { score: '' } }; }
     })(),
-    scrNote:       String(r[57] || ''),
+    scrNote: String(r[57] || ''),
     checklistNote: String(r[58] || ''),
   };
 }
@@ -2820,66 +2960,66 @@ function apptToRow(appt, prov, date) {
     appt.time,
     appt.patient,
     appt.method,
-    appt.alma?.text   || '',
-    appt.alma?.valid  ?? '',
-    appt.hw?.text     || '',
-    appt.hw?.valid    ?? '',
-    appt.grow?.text   || '',
-    appt.grow?.valid  ?? '',
-    appt.directIns    || '',
-    appt.intake       ?? '',
-    appt.ins          ?? '',
-    appt.autopay      ?? '',
+    appt.alma?.text || '',
+    appt.alma?.valid ?? '',
+    appt.hw?.text || '',
+    appt.hw?.valid ?? '',
+    appt.grow?.text || '',
+    appt.grow?.valid ?? '',
+    appt.directIns || '',
+    appt.intake ?? '',
+    appt.ins ?? '',
+    appt.autopay ?? '',
     appt.scr?.['PHQ-9'] ?? '',
     appt.scr?.['GAD-7'] ?? '',
     appt.scr?.['PCL-5'] ?? '',
-    appt.ccEhr        || '',
-    appt.notes        || '',
+    appt.ccEhr || '',
+    appt.notes || '',
     (appt.unsigned || []).join(','),
-    (appt.cpt      || []).join('|'),
-    appt.billing   || 'pending',
-    appt.status    || 'pending',
+    (appt.cpt || []).join('|'),
+    appt.billing || 'pending',
+    appt.status || 'pending',
     appt.out ? true : false,
-    appt.paymentType   || '',
+    appt.paymentType || '',
     _sv(appt.paymentRate),    // _sv preserves '0' / numeric 0 ($0 copay)
     appt.paymentAmount || '',
     appt.paymentCollected ? true : false,
-    appt.paymentFailed    ? true : false,
+    appt.paymentFailed ? true : false,
     JSON.stringify(appt.comms || []),
     new Date(),
     Session.getActiveUser().getEmail(),
-    appt.tebraStatus    || '',
-    appt.paymentDate    || '',
+    appt.tebraStatus || '',
+    appt.paymentDate || '',
     (appt.rxMeds || []).join('|'),
-    appt.rxBillerAlert  ? true : false,
+    appt.rxBillerAlert ? true : false,
     appt.paymentPlatform || '',
     // ── Claim tracking & payout (indices 39-47) ──────────────────────────
     appt.claimSubmittedDate || '',
-    appt.claimID            || '',
-    appt.claimStatus        || '',
-    appt.claimStatusNotes   || '',
-    appt.claimPaidDate      || '',
-    appt.claimPaidAmount    || '',
-    appt.claimCheckID       || '',
-    appt.claimDepositBank   || '',
-    appt.claimDepositDate   || '',
+    appt.claimID || '',
+    appt.claimStatus || '',
+    appt.claimStatusNotes || '',
+    appt.claimPaidDate || '',
+    appt.claimPaidAmount || '',
+    appt.claimCheckID || '',
+    appt.claimDepositBank || '',
+    appt.claimDepositDate || '',
     // Index 48 — DirectValid: explicit valid/issue/null flag for direct-pay appointments.
     // Mirrors AlmaValid (idx 7), HWValid (idx 9), GrowValid (idx 11).
-    appt.direct?.valid        ?? '',
+    appt.direct?.valid ?? '',
     // Indices 49-52 — Claims Ledger supplemental fields
-    appt.claimERA             || '',
-    appt.claimBundled         ? true : false,
-    appt.claimBundledAmount   || '',
-    appt.claimDepositAmount   || '',
+    appt.claimERA || '',
+    appt.claimBundled ? true : false,
+    appt.claimBundledAmount || '',
+    appt.claimDepositAmount || '',
     // Indices 53-54 — Patient context (denormalized from Patient DB)
-    appt.insuranceCarrier     || '',
-    appt.patientState         || '',
+    appt.insuranceCarrier || '',
+    appt.patientState || '',
     // Index 55 — Clinic Note Status
-    appt.noteStatus           || '',
+    appt.noteStatus || '',
     // Indices 56-58 — Screener scores + assistant notes (added for PatientInfoModal)
     appt.scrData ? JSON.stringify(appt.scrData) : '',   // index 56 — ScrData
-    appt.scrNote        || '',                           // index 57 — ScrNote
-    appt.checklistNote  || '',                           // index 58 — ChecklistNote
+    appt.scrNote || '',                           // index 57 — ScrNote
+    appt.checklistNote || '',                           // index 58 — ChecklistNote
   ];
 }
 
@@ -2888,12 +3028,12 @@ function apptToRow(appt, prov, date) {
    data never gets written into the PatientState column.
 ────────────────────────────────────────────────────────────────────────────── */
 var VALID_US_STATES = {
-  AL:1,AK:1,AZ:1,AR:1,CA:1,CO:1,CT:1,DE:1,FL:1,GA:1,
-  HI:1,ID:1,IL:1,IN:1,IA:1,KS:1,KY:1,LA:1,ME:1,MD:1,
-  MA:1,MI:1,MN:1,MS:1,MO:1,MT:1,NE:1,NV:1,NH:1,NJ:1,
-  NM:1,NY:1,NC:1,ND:1,OH:1,OK:1,OR:1,PA:1,RI:1,SC:1,
-  SD:1,TN:1,TX:1,UT:1,VT:1,VA:1,WA:1,WV:1,WI:1,WY:1,
-  DC:1,PR:1,VI:1,GU:1,AS:1,MP:1
+  AL: 1, AK: 1, AZ: 1, AR: 1, CA: 1, CO: 1, CT: 1, DE: 1, FL: 1, GA: 1,
+  HI: 1, ID: 1, IL: 1, IN: 1, IA: 1, KS: 1, KY: 1, LA: 1, ME: 1, MD: 1,
+  MA: 1, MI: 1, MN: 1, MS: 1, MO: 1, MT: 1, NE: 1, NV: 1, NH: 1, NJ: 1,
+  NM: 1, NY: 1, NC: 1, ND: 1, OH: 1, OK: 1, OR: 1, PA: 1, RI: 1, SC: 1,
+  SD: 1, TN: 1, TX: 1, UT: 1, VT: 1, VA: 1, WA: 1, WV: 1, WI: 1, WY: 1,
+  DC: 1, PR: 1, VI: 1, GU: 1, AS: 1, MP: 1
 };
 function _isValidUSState(s) {
   return !!s && !!VALID_US_STATES[String(s).trim().toUpperCase()];
@@ -2914,11 +3054,11 @@ function _lookupPatient(ss, patientName) {
     if (!sheet || sheet.getLastRow() < 2) return { insurance: '', patientState: '' };
     var rows = sheet.getDataRange().getValues();
     // Resolve column indices from actual header row so sheet layout ≠ PATIENT_COLS is safe
-    var hdr           = rows[0].map(function(h) { return String(h || '').trim(); });
+    var hdr = rows[0].map(function (h) { return String(h || '').trim(); });
     var COL_INSURANCE = hdr.indexOf('InsuranceCarrier'); // fallback: PATIENT_COLS index 3
-    var COL_STATE     = hdr.indexOf('PatientState'); // fallback: PATIENT_COLS index 12
+    var COL_STATE = hdr.indexOf('PatientState'); // fallback: PATIENT_COLS index 12
     if (COL_INSURANCE < 0) COL_INSURANCE = 3;
-    if (COL_STATE     < 0) COL_STATE     = 12;
+    if (COL_STATE < 0) COL_STATE = 12;
     var norm = _normName(patientName);
     for (var i = 1; i < rows.length; i++) {
       var r = rows[i];
@@ -2926,7 +3066,7 @@ function _lookupPatient(ss, patientName) {
       if (fullName === norm) {
         var rawState = String(r[COL_STATE] || '').trim().toUpperCase();
         return {
-          insurance:    String(r[COL_INSURANCE] || ''),
+          insurance: String(r[COL_INSURANCE] || ''),
           patientState: _isValidUSState(rawState) ? rawState : '',
         };
       }
@@ -3002,12 +3142,12 @@ function importTebraAppointments(sheetId, dryRun) {
     const allRows = tebraSheet.getRange(1, 1, lastRow, lastCol).getValues();
 
     const PROVIDER_MAP = {
-      'jodene':  'jodene',
-      'jensen':  'jodene',
-      'katie':   'katie',
-      'robins':  'katie',
-      'megan':   'megan',
-      'lori':    'lori',
+      'jodene': 'jodene',
+      'jensen': 'jodene',
+      'katie': 'katie',
+      'robins': 'katie',
+      'megan': 'megan',
+      'lori': 'lori',
     };
 
     function resolveProvID(headerText) {
@@ -3020,12 +3160,12 @@ function importTebraAppointments(sheetId, dryRun) {
     }
 
     const appointments = [];
-    const errors       = [];
-    let currentProvID  = null;
-    let currentDate    = null;
+    const errors = [];
+    let currentProvID = null;
+    let currentDate = null;
 
     for (var i = 0; i < allRows.length; i++) {
-      var row  = allRows[i];
+      var row = allRows[i];
       var colA = row[0];
       var colB = row[1];
       var colD = row[3];
@@ -3035,7 +3175,7 @@ function importTebraAppointments(sheetId, dryRun) {
         var pid = resolveProvID(colA);
         if (pid) {
           currentProvID = pid;
-          currentDate   = null;
+          currentDate = null;
         }
         continue;
       }
@@ -3066,9 +3206,9 @@ function importTebraAppointments(sheetId, dryRun) {
         var apptTime = colD.split(' - ')[0].trim();
 
         appointments.push({
-          provID:  currentProvID,
-          date:    currentDate,
-          time:    apptTime,
+          provID: currentProvID,
+          date: currentDate,
+          time: apptTime,
           patient: patientName,
         });
       }
@@ -3077,14 +3217,14 @@ function importTebraAppointments(sheetId, dryRun) {
     if (dryRun) {
       Logger.log('DRY RUN — ' + appointments.length + ' appointments parsed.');
       return JSON.stringify({
-        dryRun:       true,
-        parsed:       appointments.length,
+        dryRun: true,
+        parsed: appointments.length,
         appointments: appointments,
-        errors:       errors,
+        errors: errors,
       });
     }
 
-    const ss        = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
     const apptSheet = ss.getSheetByName(TAB_APPT);
 
     if (!apptSheet) {
@@ -3095,18 +3235,18 @@ function importTebraAppointments(sheetId, dryRun) {
     const PLATFORM_TO_METHOD = { 'alma': 'alma', 'headway': 'hw', 'grow': 'grow', 'direct': 'direct' };
     var patSheet = ss.getSheetByName(TAB_PATIENT);
     if (patSheet && patSheet.getLastRow() > 1) {
-      patSheet.getRange(2, 1, patSheet.getLastRow() - 1, 6).getValues().forEach(function(r) {
+      patSheet.getRange(2, 1, patSheet.getLastRow() - 1, 6).getValues().forEach(function (r) {
         var first = String(r[0] || '').trim();
-        var last  = String(r[1] || '').trim();
+        var last = String(r[1] || '').trim();
         if (!first && !last) return;
         var fullName = (first + ' ' + last).trim().toLowerCase();
         var platform = String(r[2] || '').trim().toLowerCase();
         patientLookup[fullName] = {
           // Unknown/blank platform → blank Method, NOT a Headway default (Solrei brand rule).
-          method:         PLATFORM_TO_METHOD[platform] || '',
-          insurance:      String(r[3] || '').trim(),
+          method: PLATFORM_TO_METHOD[platform] || '',
+          insurance: String(r[3] || '').trim(),
           patientPortion: String(r[4] || '').trim(),
-          rate:           _sv(r[5]).trim(),   // _sv preserves numeric 0 ($0 copay)
+          rate: _sv(r[5]).trim(),   // _sv preserves numeric 0 ($0 copay)
         };
       });
     }
@@ -3115,55 +3255,55 @@ function importTebraAppointments(sheetId, dryRun) {
     var existingKeys = new Set();
     if (apptSheet.getLastRow() > 1) {
       var existing = apptSheet.getRange(2, 1, apptSheet.getLastRow() - 1, 4).getValues();
-      existing.forEach(function(r) {
+      existing.forEach(function (r) {
         existingKeys.add(r[0] + '||' + _fmtDate(r[1]) + '||' + _normalizeTimeKey(r[3]));
       });
     }
 
     var imported = 0;
-    var skipped  = 0;
+    var skipped = 0;
 
-    appointments.forEach(function(appt) {
+    appointments.forEach(function (appt) {
       var key = appt.provID + '||' + appt.date + '||' + _normalizeTimeKey(appt.time);
       if (existingKeys.has(key)) {
         skipped++;
         return;
       }
 
-      var ptInfo   = patientLookup[appt.patient.toLowerCase()] || {};
+      var ptInfo = patientLookup[appt.patient.toLowerCase()] || {};
       // Unknown/blank platform → blank Method, NOT a Headway default (Solrei brand rule).
-      var method   = ptInfo.method || '';
+      var method = ptInfo.method || '';
       var isDirect = method === 'direct';
 
       var apptId = 'TEBRA-' + new Date().getTime() + '-' +
-                   Math.random().toString(36).substr(2, 4).toUpperCase();
+        Math.random().toString(36).substr(2, 4).toUpperCase();
 
       var rowData = apptToRow({
-        id:               apptId,
-        time:             appt.time,
-        patient:          appt.patient,
-        method:           method,
-        alma:             { text: '', valid: null },
-        hw:               { text: '', valid: null },
-        grow:             { text: '', valid: null },
-        directIns:        ptInfo.insurance || '',
-        intake:           null,
-        ins:              null,
-        autopay:          null,
-        scr:              { 'PHQ-9': null, 'GAD-7': null, 'PCL-5': null },
-        ccEhr:            '',
-        notes:            'Imported from Tebra',
-        unsigned:         [],
-        cpt:              [],
-        billing:          'pending',
-        status:           'pending',
-        out:              false,
-        paymentType:      isDirect ? ptInfo.patientPortion : '',
-        paymentRate:      isDirect ? ptInfo.rate            : '',
-        paymentAmount:    '',
+        id: apptId,
+        time: appt.time,
+        patient: appt.patient,
+        method: method,
+        alma: { text: '', valid: null },
+        hw: { text: '', valid: null },
+        grow: { text: '', valid: null },
+        directIns: ptInfo.insurance || '',
+        intake: null,
+        ins: null,
+        autopay: null,
+        scr: { 'PHQ-9': null, 'GAD-7': null, 'PCL-5': null },
+        ccEhr: '',
+        notes: 'Imported from Tebra',
+        unsigned: [],
+        cpt: [],
+        billing: 'pending',
+        status: 'pending',
+        out: false,
+        paymentType: isDirect ? ptInfo.patientPortion : '',
+        paymentRate: isDirect ? ptInfo.rate : '',
+        paymentAmount: '',
         paymentCollected: false,
-        paymentFailed:    false,
-        comms:            [],
+        paymentFailed: false,
+        comms: [],
       }, appt.provID, appt.date);
 
       var newRow = apptSheet.getLastRow() + 1;
@@ -3178,13 +3318,13 @@ function importTebraAppointments(sheetId, dryRun) {
       'Imported ' + imported + ', skipped ' + skipped + ' from sheet ' + sheetId);
 
     Logger.log('Tebra import: ' + imported + ' imported, ' + skipped + ' skipped, ' +
-               errors.length + ' warnings.');
+      errors.length + ' warnings.');
 
     return JSON.stringify({
       imported: imported,
-      skipped:  skipped,
-      total:    appointments.length,
-      errors:   errors,
+      skipped: skipped,
+      total: appointments.length,
+      errors: errors,
     });
 
   } catch (e) {
@@ -3230,8 +3370,8 @@ function setTebraApiEnabled(enabled) {
   PropertiesService.getScriptProperties().setProperty('TEBRA_API_ENABLED', val ? 'true' : 'false');
   Logger.log((val ? '✅' : '🔴') + ' Tebra API ' + (val ? 'ENABLED' : 'DISABLED') + ' via CRB UI toggle.');
   _audit(SpreadsheetApp.getActiveSpreadsheet(),
-         val ? 'TEBRA_API_ENABLED' : 'TEBRA_API_DISABLED',
-         'Tebra API connection ' + (val ? 'enabled' : 'disabled') + ' via Billing Window toggle.');
+    val ? 'TEBRA_API_ENABLED' : 'TEBRA_API_DISABLED',
+    'Tebra API connection ' + (val ? 'enabled' : 'disabled') + ' via Billing Window toggle.');
   return JSON.stringify({ enabled: val });
 }
 
@@ -3245,12 +3385,12 @@ const TEBRA_ENDPOINT =
 // Keys are lowercase substrings matched against ResourceName1 returned by Tebra.
 // Add last-name entries so e.g. "Dr. Jensen" still maps to 'jodene'.
 const TEBRA_PROVIDER_MAP = {
-  'jodene':  'jodene',
-  'jensen':  'jodene',   // Jodene's last name
-  'katie':   'katie',
-  'robins':  'katie',    // Katie's last name
-  'megan':   'megan',
-  'lori':    'lori',
+  'jodene': 'jodene',
+  'jensen': 'jodene',   // Jodene's last name
+  'katie': 'katie',
+  'robins': 'katie',    // Katie's last name
+  'megan': 'megan',
+  'lori': 'lori',
 };
 
 /**
@@ -3281,8 +3421,8 @@ function checkTebraCreds() {
   if (!c.customerKey || !c.password || !c.user) {
     Logger.log('❌  One or more Tebra credentials are missing from Script Properties.');
     Logger.log('    TEBRA_CUSTOMER_KEY : ' + (c.customerKey ? '✅ set' : '❌ MISSING'));
-    Logger.log('    TEBRA_PASSWORD     : ' + (c.password    ? '✅ set' : '❌ MISSING'));
-    Logger.log('    TEBRA_USER         : ' + (c.user        ? '✅ set' : '❌ MISSING'));
+    Logger.log('    TEBRA_PASSWORD     : ' + (c.password ? '✅ set' : '❌ MISSING'));
+    Logger.log('    TEBRA_USER         : ' + (c.user ? '✅ set' : '❌ MISSING'));
     Logger.log('    Go to: Project Settings → Script Properties to add them.');
   } else {
     Logger.log('✅  Tebra credentials are set.');
@@ -3296,25 +3436,25 @@ function _getTebraCreds() {
   var p = PropertiesService.getScriptProperties();
   return {
     customerKey: p.getProperty('TEBRA_CUSTOMER_KEY') || '',
-    password:    p.getProperty('TEBRA_PASSWORD')     || '',
-    user:        p.getProperty('TEBRA_USER')         || '',
+    password: p.getProperty('TEBRA_PASSWORD') || '',
+    user: p.getProperty('TEBRA_USER') || '',
   };
 }
 
 function _xmlEscape(s) {
   return String(s || '')
-    .replace(/&/g,  '&amp;')
-    .replace(/</g,  '&lt;')
-    .replace(/>/g,  '&gt;')
-    .replace(/"/g,  '&quot;')
-    .replace(/'/g,  '&apos;');
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 function _tebraHeader(c) {
   return '<ns:RequestHeader>' +
     '<ns:CustomerKey>' + _xmlEscape(c.customerKey) + '</ns:CustomerKey>' +
-    '<ns:Password>'    + _xmlEscape(c.password)    + '</ns:Password>'    +
-    '<ns:User>'        + _xmlEscape(c.user)        + '</ns:User>'        +
+    '<ns:Password>' + _xmlEscape(c.password) + '</ns:Password>' +
+    '<ns:User>' + _xmlEscape(c.user) + '</ns:User>' +
     '</ns:RequestHeader>';
 }
 
@@ -3335,12 +3475,12 @@ function _tebraPost(operationName, bodyXml) {
     '</soap:Envelope>';
 
   var resp = UrlFetchApp.fetch(TEBRA_ENDPOINT, {
-    method:  'POST',
+    method: 'POST',
     headers: {
       'Content-Type': 'text/xml; charset=utf-8',
-      'SOAPAction':   soapAction,
+      'SOAPAction': soapAction,
     },
-    payload:            envelope,
+    payload: envelope,
     muteHttpExceptions: true,
   });
 
@@ -3367,11 +3507,11 @@ function _parseTebraStartDate(s) {
   var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):\d{2}\s*(AM|PM)$/i);
   if (!m) return { date: '', time: s };
 
-  var mo     = parseInt(m[1], 10) - 1;
-  var dy     = parseInt(m[2], 10);
-  var yr     = parseInt(m[3], 10);
-  var hr     = parseInt(m[4], 10);
-  var min    = parseInt(m[5], 10);
+  var mo = parseInt(m[1], 10) - 1;
+  var dy = parseInt(m[2], 10);
+  var yr = parseInt(m[3], 10);
+  var hr = parseInt(m[4], 10);
+  var min = parseInt(m[5], 10);
   var period = m[6].toUpperCase();
 
   if (period === 'PM' && hr !== 12) hr += 12;
@@ -3385,14 +3525,14 @@ function _parseTebraStartDate(s) {
     String(dt.getDate()).padStart(2, '0');
 
   var time = String(dt.getHours()).padStart(2, '0') + ':' +
-             String(dt.getMinutes()).padStart(2, '0');
+    String(dt.getMinutes()).padStart(2, '0');
 
   return { date: date, time: time };
 }
 
 function _titleCase(s) {
   if (!s) return '';
-  return String(s).toLowerCase().replace(/\b\w/g, function(c) {
+  return String(s).toLowerCase().replace(/\b\w/g, function (c) {
     return c.toUpperCase();
   });
 }
@@ -3441,7 +3581,7 @@ function _samePatient(nameA, nameB) {
 
 function _findXmlElements(el, localName, results) {
   if (el.getName() === localName) { results.push(el); return; }
-  el.getChildren().forEach(function(child) {
+  el.getChildren().forEach(function (child) {
     _findXmlElements(child, localName, results);
   });
 }
@@ -3470,13 +3610,13 @@ function testTebraConnection() {
   }
   var bodyXml =
     '<ns:GetProviders><ns:request>' +
-      _tebraHeader(c) +
-      '<ns:Fields>' +
-        '<ns:ProviderID>true</ns:ProviderID>' +
-        '<ns:ProviderFirstName>true</ns:ProviderFirstName>' +
-        '<ns:ProviderLastName>true</ns:ProviderLastName>' +
-        '<ns:PracticeID>true</ns:PracticeID>' +
-      '</ns:Fields>' +
+    _tebraHeader(c) +
+    '<ns:Fields>' +
+    '<ns:ProviderID>true</ns:ProviderID>' +
+    '<ns:ProviderFirstName>true</ns:ProviderFirstName>' +
+    '<ns:ProviderLastName>true</ns:ProviderLastName>' +
+    '<ns:PracticeID>true</ns:PracticeID>' +
+    '</ns:Fields>' +
     '</ns:request></ns:GetProviders>';
 
   try {
@@ -3504,7 +3644,7 @@ function testTebraStatusFetch() {
   try {
     var appts = _fetchTebraAppointments(c, today, today);
     Logger.log('Total returned (before filter): fetched ' + appts.length + ' valid appointments');
-    appts.forEach(function(a, i) {
+    appts.forEach(function (a, i) {
       Logger.log(
         '  [' + i + '] Patient: "' + a.patient + '"' +
         '  ConfirmationStatus: "' + a.tebraStatus + '"' +
@@ -3532,29 +3672,29 @@ function testTebraProviders() {
   var c = _getTebraCreds();
   if (!c.customerKey) { Logger.log('❌  Run setTebraCreds() first.'); return; }
 
-  var today      = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
   var startTebra = _tebraDateFmt(_parseYMD(today));
 
   var bodyXml =
     '<ns:GetAppointments><ns:request>' +
-      _tebraHeader(c) +
-      '<ns:Fields>' +
-        '<ns:ConfirmationStatus>true</ns:ConfirmationStatus>' +
-        '<ns:ID>true</ns:ID>' +
-        '<ns:PatientFullName>true</ns:PatientFullName>' +
-        '<ns:ResourceID1>true</ns:ResourceID1>' +
-        '<ns:ResourceName1>true</ns:ResourceName1>' +
-        '<ns:StartDate>true</ns:StartDate>' +
-      '</ns:Fields>' +
-      '<ns:Filter>' +
-        '<ns:StartDate>' + startTebra + '</ns:StartDate>' +
-        '<ns:EndDate>'   + startTebra + '</ns:EndDate>'   +
-      '</ns:Filter>' +
+    _tebraHeader(c) +
+    '<ns:Fields>' +
+    '<ns:ConfirmationStatus>true</ns:ConfirmationStatus>' +
+    '<ns:ID>true</ns:ID>' +
+    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:ResourceID1>true</ns:ResourceID1>' +
+    '<ns:ResourceName1>true</ns:ResourceName1>' +
+    '<ns:StartDate>true</ns:StartDate>' +
+    '</ns:Fields>' +
+    '<ns:Filter>' +
+    '<ns:StartDate>' + startTebra + '</ns:StartDate>' +
+    '<ns:EndDate>' + startTebra + '</ns:EndDate>' +
+    '</ns:Filter>' +
     '</ns:request></ns:GetAppointments>';
 
   try {
     var text = _tebraPost('GetAppointments', bodyXml);
-    var doc  = XmlService.parse(text);
+    var doc = XmlService.parse(text);
     var root = doc.getRootElement();
 
     var apptEls = [];
@@ -3566,15 +3706,15 @@ function testTebraProviders() {
       try {
         Logger.log('── First AppointmentData raw XML ──');
         Logger.log(XmlService.getRawFormat().format(apptEls[0]).substr(0, 2000));
-      } catch(e) { /* non-critical */ }
+      } catch (e) { /* non-critical */ }
     }
 
-    apptEls.forEach(function(el, i) {
-      var name    = _findFirstXml(el, 'PatientFullName');
-      var res1    = _findFirstXml(el, 'ResourceName1');
-      var resId1  = _findFirstXml(el, 'ResourceID1');
-      var status  = _findFirstXml(el, 'ConfirmationStatus');
-      var start   = _findFirstXml(el, 'StartDate');
+    apptEls.forEach(function (el, i) {
+      var name = _findFirstXml(el, 'PatientFullName');
+      var res1 = _findFirstXml(el, 'ResourceName1');
+      var resId1 = _findFirstXml(el, 'ResourceID1');
+      var status = _findFirstXml(el, 'ConfirmationStatus');
+      var start = _findFirstXml(el, 'StartDate');
       var matched = _matchTebraProvider(res1);
       Logger.log(
         '[' + i + '] Patient: "' + name + '"' +
@@ -3606,12 +3746,12 @@ function testTebraWsdl() {
   // AppointmentFieldsToReturn.  We also check xsd2 and xsd4 as fallbacks.
   var candidates = ['xsd0', 'xsd5', 'xsd2', 'xsd4'];
 
-  candidates.forEach(function(xsd) {
+  candidates.forEach(function (xsd) {
     try {
       Logger.log('── Fetching ' + xsd + ' ──────────────────────────────');
       var resp = UrlFetchApp.fetch(BASE + xsd, { muteHttpExceptions: true });
       var text = resp.getContentText();
-      var idx  = text.indexOf('AppointmentFieldsToReturn');
+      var idx = text.indexOf('AppointmentFieldsToReturn');
       if (idx === -1) {
         Logger.log(xsd + ': AppointmentFieldsToReturn NOT found (' + text.length + ' chars total)');
       } else {
@@ -3636,20 +3776,20 @@ function testTebraFindInsuranceField() {
   var BASE = TEBRA_ENDPOINT + '?xsd=';
   var xsdList = ['xsd0', 'xsd1', 'xsd2', 'xsd3', 'xsd4', 'xsd5', 'xsd6', 'xsd7'];
 
-  xsdList.forEach(function(xsd) {
+  xsdList.forEach(function (xsd) {
     try {
       var text = UrlFetchApp.fetch(BASE + xsd, { muteHttpExceptions: true }).getContentText();
       var typeIdx = text.indexOf('AppointmentFieldsToReturn');
       if (typeIdx === -1) return;  // not in this schema
 
       Logger.log('══ Found AppointmentFieldsToReturn in ' + xsd +
-                 ' at pos ' + typeIdx + ' ══');
+        ' at pos ' + typeIdx + ' ══');
 
       // Grab ~8000 chars from the type definition
       var snippet = text.substring(typeIdx, typeIdx + 8000);
 
       // Extract all xs:element names within the type block
-      var nameRe  = /name="([^"]+)"/g;
+      var nameRe = /name="([^"]+)"/g;
       var allNames = [];
       var m;
       while ((m = nameRe.exec(snippet)) !== null) {
@@ -3657,14 +3797,14 @@ function testTebraFindInsuranceField() {
       }
 
       Logger.log('All element names in AppointmentFieldsToReturn (' +
-                 allNames.length + ' total):');
+        allNames.length + ' total):');
       Logger.log(allNames.join(', '));
 
       // Filter for insurance / case / policy / plan / carrier
       var keywords = ['insur', 'case', 'policy', 'plan', 'carrier', 'payer'];
-      var matches  = allNames.filter(function(n) {
+      var matches = allNames.filter(function (n) {
         var lower = n.toLowerCase();
-        return keywords.some(function(kw) { return lower.indexOf(kw) !== -1; });
+        return keywords.some(function (kw) { return lower.indexOf(kw) !== -1; });
       });
 
       if (matches.length) {
@@ -3692,35 +3832,35 @@ function testTebraPatientCaseFields() {
   var c = _getTebraCreds();
   if (!c.customerKey) { Logger.log('❌  Run setTebraCreds() first.'); return; }
 
-  var tz         = Session.getScriptTimeZone();
-  var today      = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  var tz = Session.getScriptTimeZone();
+  var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
   var startTebra = _tebraDateFmt(_parseYMD(today));
 
   var bodyXml =
     '<ns:GetAppointments><ns:request>' +
-      _tebraHeader(c) +
-      '<ns:Fields>' +
-        '<ns:ConfirmationStatus>true</ns:ConfirmationStatus>' +
-        '<ns:ID>true</ns:ID>' +
-        '<ns:PatientCaseID>true</ns:PatientCaseID>' +
-        '<ns:PatientCaseName>true</ns:PatientCaseName>' +
-        '<ns:PatientCasePayerScenario>true</ns:PatientCasePayerScenario>' +
-        '<ns:PatientFullName>true</ns:PatientFullName>' +
-        '<ns:ResourceName1>true</ns:ResourceName1>' +
-        '<ns:StartDate>true</ns:StartDate>' +
-      '</ns:Fields>' +
-      '<ns:Filter>' +
-        '<ns:StartDate>' + startTebra + '</ns:StartDate>' +
-        '<ns:EndDate>'   + startTebra + '</ns:EndDate>'   +
-      '</ns:Filter>' +
+    _tebraHeader(c) +
+    '<ns:Fields>' +
+    '<ns:ConfirmationStatus>true</ns:ConfirmationStatus>' +
+    '<ns:ID>true</ns:ID>' +
+    '<ns:PatientCaseID>true</ns:PatientCaseID>' +
+    '<ns:PatientCaseName>true</ns:PatientCaseName>' +
+    '<ns:PatientCasePayerScenario>true</ns:PatientCasePayerScenario>' +
+    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:ResourceName1>true</ns:ResourceName1>' +
+    '<ns:StartDate>true</ns:StartDate>' +
+    '</ns:Fields>' +
+    '<ns:Filter>' +
+    '<ns:StartDate>' + startTebra + '</ns:StartDate>' +
+    '<ns:EndDate>' + startTebra + '</ns:EndDate>' +
+    '</ns:Filter>' +
     '</ns:request></ns:GetAppointments>';
 
   var text = _tebraPost('GetAppointments', bodyXml);
 
   // Find the first few AppointmentData blocks and log them
-  var doc      = XmlService.parse(text);
-  var root     = doc.getRootElement();
-  var apptEls  = [];
+  var doc = XmlService.parse(text);
+  var root = doc.getRootElement();
+  var apptEls = [];
   _findXmlElements(root, 'AppointmentData', apptEls);
 
   Logger.log('Total appointments returned: ' + apptEls.length);
@@ -3745,7 +3885,7 @@ function testTebraPatientCaseFields() {
 // Safe to run on a live sheet — only updates row 1.
 // ─────────────────────────────────────────────────────────────────
 function updateSheetHeaders() {
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(TAB_APPT);
   if (!sheet) {
     Logger.log('❌  Appointments sheet not found.');
@@ -3770,29 +3910,29 @@ function testTebraGetAppointments(dateStr, provId) {
     Logger.log('❌  Run setTebraCreds() first.');
     return;
   }
-  provId  = provId  || 1;
+  provId = provId || 1;
   dateStr = dateStr ||
     Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
 
   var tDate = _tebraDateFmt(_parseYMD(dateStr));
   Logger.log('Fetching appointments for ' + dateStr +
-             ' (Tebra date: ' + tDate + '), provider ID ' + provId);
+    ' (Tebra date: ' + tDate + '), provider ID ' + provId);
 
   var bodyXml =
     '<ns:GetAppointments><ns:request>' +
-      _tebraHeader(c) +
-      '<ns:Fields>' +
-        '<ns:ConfirmationStatus>true</ns:ConfirmationStatus>' +
-        '<ns:ID>true</ns:ID>' +
-        '<ns:PatientFullName>true</ns:PatientFullName>' +
-        '<ns:ResourceID1>true</ns:ResourceID1>' +
-        '<ns:ResourceName1>true</ns:ResourceName1>' +
-        '<ns:StartDate>true</ns:StartDate>' +
-      '</ns:Fields>' +
-      '<ns:Filter>' +
-        '<ns:StartDate>' + tDate + '</ns:StartDate>' +
-        '<ns:EndDate>'   + tDate + '</ns:EndDate>'   +
-      '</ns:Filter>' +
+    _tebraHeader(c) +
+    '<ns:Fields>' +
+    '<ns:ConfirmationStatus>true</ns:ConfirmationStatus>' +
+    '<ns:ID>true</ns:ID>' +
+    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:ResourceID1>true</ns:ResourceID1>' +
+    '<ns:ResourceName1>true</ns:ResourceName1>' +
+    '<ns:StartDate>true</ns:StartDate>' +
+    '</ns:Fields>' +
+    '<ns:Filter>' +
+    '<ns:StartDate>' + tDate + '</ns:StartDate>' +
+    '<ns:EndDate>' + tDate + '</ns:EndDate>' +
+    '</ns:Filter>' +
     '</ns:request></ns:GetAppointments>';
 
   try {
@@ -3815,20 +3955,20 @@ function testTebraGetAppointments(dateStr, provId) {
 function _extractStateFromLocationName(name) {
   if (!name) return '';
   var STATE_NAME_MAP = {
-    'alabama':'AL','alaska':'AK','arizona':'AZ','arkansas':'AR',
-    'california':'CA','colorado':'CO','connecticut':'CT','delaware':'DE',
-    'd.c.':'DC','dc':'DC','district of columbia':'DC','washington dc':'DC','washington d.c.':'DC',
-    'florida':'FL','georgia':'GA','hawaii':'HI','idaho':'ID',
-    'illinois':'IL','indiana':'IN','iowa':'IA','kansas':'KS',
-    'kentucky':'KY','louisiana':'LA','maine':'ME','maryland':'MD',
-    'massachusetts':'MA','michigan':'MI','minnesota':'MN','mississippi':'MS',
-    'missouri':'MO','montana':'MT','nebraska':'NE','nevada':'NV',
-    'new hampshire':'NH','new jersey':'NJ','new mexico':'NM','new york':'NY',
-    'north carolina':'NC','north dakota':'ND','ohio':'OH','oklahoma':'OK',
-    'oregon':'OR','pennsylvania':'PA','rhode island':'RI','south carolina':'SC',
-    'south dakota':'SD','tennessee':'TN','texas':'TX','utah':'UT',
-    'vermont':'VT','virginia':'VA','washington':'WA','west virginia':'WV',
-    'wisconsin':'WI','wyoming':'WY'
+    'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+    'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+    'd.c.': 'DC', 'dc': 'DC', 'district of columbia': 'DC', 'washington dc': 'DC', 'washington d.c.': 'DC',
+    'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+    'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+    'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+    'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
+    'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+    'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+    'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+    'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+    'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+    'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
+    'wisconsin': 'WI', 'wyoming': 'WY'
   };
   // Strip everything from " - Solrei" onward (handles any variation of the suffix)
   var statePart = name.replace(/\s*-\s*Solrei\b.*/i, '').trim();
@@ -3844,7 +3984,7 @@ function _extractStateFromLocationName(name) {
 ──────────────────────────────────────────────────────────────────────────── */
 function _fetchServiceLocationMap(c) {
   var nameToState = {};
-  var idToState   = {};
+  var idToState = {};
   if (!_isTebraApiEnabled()) {
     Logger.log('🔴 Tebra API disabled — GetServiceLocations blocked.');
     return { nameToState: nameToState, idToState: idToState };
@@ -3857,43 +3997,43 @@ function _fetchServiceLocationMap(c) {
     var envelope =
       '<?xml version="1.0" encoding="utf-8"?>' +
       '<soapenv:Envelope' +
-        ' xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"' +
-        ' xmlns:sch="http://www.kareo.com/api/schemas/"' +
-        ' xmlns:sch1="http://www.kareo.com/api/schemas">' +
-        '<soapenv:Body>' +
-          '<sch:GetServiceLocations>' +
-            '<sch:request>' +
-              '<sch:RequestHeader>' +
-                '<sch:ClientVersion>2.1</sch:ClientVersion>' +
-                '<sch:CustomerKey>' + _xmlEscape(c.customerKey) + '</sch:CustomerKey>' +
-                '<sch:Password>'    + _xmlEscape(c.password)    + '</sch:Password>'    +
-                '<sch:User>'        + _xmlEscape(c.user)        + '</sch:User>'        +
-              '</sch:RequestHeader>' +
-              '<sch1:Fields>' +
-                '<sch1:ID>true</sch1:ID>' +
-                '<sch1:Name>true</sch1:Name>' +
-              '</sch1:Fields>' +
-              '<sch1:Filter>' +
-                '<sch1:PracticeName>Solrei Behavioral Health, Inc.</sch1:PracticeName>' +
-              '</sch1:Filter>' +
-            '</sch:request>' +
-          '</sch:GetServiceLocations>' +
-        '</soapenv:Body>' +
+      ' xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"' +
+      ' xmlns:sch="http://www.kareo.com/api/schemas/"' +
+      ' xmlns:sch1="http://www.kareo.com/api/schemas">' +
+      '<soapenv:Body>' +
+      '<sch:GetServiceLocations>' +
+      '<sch:request>' +
+      '<sch:RequestHeader>' +
+      '<sch:ClientVersion>2.1</sch:ClientVersion>' +
+      '<sch:CustomerKey>' + _xmlEscape(c.customerKey) + '</sch:CustomerKey>' +
+      '<sch:Password>' + _xmlEscape(c.password) + '</sch:Password>' +
+      '<sch:User>' + _xmlEscape(c.user) + '</sch:User>' +
+      '</sch:RequestHeader>' +
+      '<sch1:Fields>' +
+      '<sch1:ID>true</sch1:ID>' +
+      '<sch1:Name>true</sch1:Name>' +
+      '</sch1:Fields>' +
+      '<sch1:Filter>' +
+      '<sch1:PracticeName>Solrei Behavioral Health, Inc.</sch1:PracticeName>' +
+      '</sch1:Filter>' +
+      '</sch:request>' +
+      '</sch:GetServiceLocations>' +
+      '</soapenv:Body>' +
       '</soapenv:Envelope>';
 
     var resp = UrlFetchApp.fetch(TEBRA_ENDPOINT, {
-      method:             'POST',
+      method: 'POST',
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
-        'SOAPAction':   'http://www.kareo.com/api/schemas/KareoServices/GetServiceLocations',
+        'SOAPAction': 'http://www.kareo.com/api/schemas/KareoServices/GetServiceLocations',
       },
-      payload:            envelope,
+      payload: envelope,
       muteHttpExceptions: true,
     });
     var text = resp.getContentText();
     Logger.log('🔍 GetServiceLocations raw (first 800): ' + text.substr(0, 800));
 
-    var doc  = XmlService.parse(text);
+    var doc = XmlService.parse(text);
     var root = doc.getRootElement();
 
     // Check auth
@@ -3901,25 +4041,25 @@ function _fetchServiceLocationMap(c) {
     _findXmlElements(root, 'SecurityResponse', secEls);
     if (secEls.length) {
       Logger.log('  GetServiceLocations auth: Authenticated=' + _findFirstXml(secEls[0], 'Authenticated') +
-                 ' SecurityResult=' + _findFirstXml(secEls[0], 'SecurityResult'));
+        ' SecurityResult=' + _findFirstXml(secEls[0], 'SecurityResult'));
     }
 
-    var els  = [];
+    var els = [];
     _findXmlElements(root, 'ServiceLocationData', els);
     Logger.log('  ServiceLocationData elements found: ' + els.length);
-    els.forEach(function(el) {
-      var name  = _findFirstXml(el, 'Name');
-      var id    = _findFirstXml(el, 'ID');
-      var abbr  = _extractStateFromLocationName(name);
+    els.forEach(function (el) {
+      var name = _findFirstXml(el, 'Name');
+      var id = _findFirstXml(el, 'ID');
+      var abbr = _extractStateFromLocationName(name);
       Logger.log('  Location: "' + name + '" → abbr="' + abbr + '"');
       if (abbr) {
         if (name) nameToState[name] = abbr;
-        if (id)   idToState[id]     = abbr;
+        if (id) idToState[id] = abbr;
       }
     });
     Logger.log('✅  Service location map: ' + Object.keys(nameToState).length +
-               ' locations → ' + JSON.stringify(nameToState));
-  } catch(e) {
+      ' locations → ' + JSON.stringify(nameToState));
+  } catch (e) {
     Logger.log('⚠️  _fetchServiceLocationMap failed (non-fatal): ' + e.message);
   }
   return { nameToState: nameToState, idToState: idToState };
@@ -3928,33 +4068,33 @@ function _fetchServiceLocationMap(c) {
 
 function _fetchTebraAppointments(c, startDateStr, endDateStr) {
   var startTebra = _tebraDateFmt(_parseYMD(startDateStr));
-  var endTebra   = _tebraDateFmt(_parseYMD(endDateStr));
+  var endTebra = _tebraDateFmt(_parseYMD(endDateStr));
 
   var bodyXml =
     '<ns:GetAppointments><ns:request>' +
-      _tebraHeader(c) +
-      '<ns:Fields>' +
-        '<ns:ConfirmationStatus>true</ns:ConfirmationStatus>' +
-        '<ns:ID>true</ns:ID>' +
-        '<ns:PatientCaseID>true</ns:PatientCaseID>' +
-        '<ns:PatientCaseName>true</ns:PatientCaseName>' +
-        '<ns:PatientFullName>true</ns:PatientFullName>' +
-        '<ns:ResourceID1>true</ns:ResourceID1>' +
-        '<ns:ResourceName1>true</ns:ResourceName1>' +
-        '<ns:StartDate>true</ns:StartDate>' +
-        // NOTE: ServiceLocationName and ServiceLocationID are NOT valid Fields for
-        // GetAppointments — requesting them causes Tebra to silently return 0 results.
-        // PatientState is instead resolved via a separate GetServiceLocations call.
-      '</ns:Fields>' +
-      '<ns:Filter>' +
-        '<ns:StartDate>' + startTebra + '</ns:StartDate>' +
-        '<ns:EndDate>'   + endTebra   + '</ns:EndDate>'   +
-      '</ns:Filter>' +
+    _tebraHeader(c) +
+    '<ns:Fields>' +
+    '<ns:ConfirmationStatus>true</ns:ConfirmationStatus>' +
+    '<ns:ID>true</ns:ID>' +
+    '<ns:PatientCaseID>true</ns:PatientCaseID>' +
+    '<ns:PatientCaseName>true</ns:PatientCaseName>' +
+    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:ResourceID1>true</ns:ResourceID1>' +
+    '<ns:ResourceName1>true</ns:ResourceName1>' +
+    '<ns:StartDate>true</ns:StartDate>' +
+    // NOTE: ServiceLocationName and ServiceLocationID are NOT valid Fields for
+    // GetAppointments — requesting them causes Tebra to silently return 0 results.
+    // PatientState is instead resolved via a separate GetServiceLocations call.
+    '</ns:Fields>' +
+    '<ns:Filter>' +
+    '<ns:StartDate>' + startTebra + '</ns:StartDate>' +
+    '<ns:EndDate>' + endTebra + '</ns:EndDate>' +
+    '</ns:Filter>' +
     '</ns:request></ns:GetAppointments>';
 
   var text = _tebraPost('GetAppointments', bodyXml);
 
-  var doc  = XmlService.parse(text);
+  var doc = XmlService.parse(text);
   var root = doc.getRootElement();
 
   // Check auth failure (IsError is false on auth failures, so check Authenticated too)
@@ -3972,7 +4112,7 @@ function _fetchTebraAppointments(c, startDateStr, endDateStr) {
   _findXmlElements(root, 'ErrorResponse', errEls);
   if (errEls.length && _getXmlChildText(errEls[0], 'IsError').toLowerCase() === 'true') {
     var errMsg = _getXmlChildText(errEls[0], 'ErrorMessage') ||
-                 _getXmlChildText(errEls[0], 'Message') || 'Unknown API error';
+      _getXmlChildText(errEls[0], 'Message') || 'Unknown API error';
     throw new Error('Tebra API error: ' + errMsg);
   }
 
@@ -3980,31 +4120,31 @@ function _fetchTebraAppointments(c, startDateStr, endDateStr) {
   _findXmlElements(root, 'AppointmentData', apptEls);
   Logger.log('Tebra returned ' + apptEls.length + ' total appointment elements.');
 
-// PatientState is sourced from the Patients tab via patientLookup — not from Tebra appointments.
+  // PatientState is sourced from the Patients tab via patientLookup — not from Tebra appointments.
 
   // Statuses that should update existing rows but NOT create new rows
   // Appointments with these Tebra statuses should update an existing row's
   // TebraStatus but should NOT create a new CRB row if no match is found.
   var NO_IMPORT_STATUS = {
-    'cancelled':   1, 'canceled':   1,
-    'deleted':     1,
-    'no show':     1, 'noshow':     1, 'no-show': 1,
+    'cancelled': 1, 'canceled': 1,
+    'deleted': 1,
+    'no show': 1, 'noshow': 1, 'no-show': 1,
     'rescheduled': 1                       // moved to a new slot — don't duplicate
   };
 
-  return apptEls.map(function(el) {
-    var fullName        = _findFirstXml(el, 'PatientFullName');
-    var rawStart        = _findFirstXml(el, 'StartDate');
-    var tebraId         = _findFirstXml(el, 'ID');
-    var resourceName1   = _findFirstXml(el, 'ResourceName1');
-    var status          = _findFirstXml(el, 'ConfirmationStatus');
-    var insurance       = _findFirstXml(el, 'PatientCaseName');
+  return apptEls.map(function (el) {
+    var fullName = _findFirstXml(el, 'PatientFullName');
+    var rawStart = _findFirstXml(el, 'StartDate');
+    var tebraId = _findFirstXml(el, 'ID');
+    var resourceName1 = _findFirstXml(el, 'ResourceName1');
+    var status = _findFirstXml(el, 'ConfirmationStatus');
+    var insurance = _findFirstXml(el, 'PatientCaseName');
     var serviceLocation = _findFirstXml(el, 'ServiceLocationName');
-    var serviceLocId    = _findFirstXml(el, 'ServiceLocationID');
+    var serviceLocId = _findFirstXml(el, 'ServiceLocationID');
 
-    var parsed      = _parseTebraStartDate(rawStart);
+    var parsed = _parseTebraStartDate(rawStart);
     // Match by provider name (ResourceName1) — more reliable than ResourceID
-    var crbProv     = _matchTebraProvider(resourceName1);
+    var crbProv = _matchTebraProvider(resourceName1);
     var patientName = _titleCase(_stripMiddleName(fullName));  // First + Last only — no middle names
 
     // _invalid: completely unusable — missing provider mapping, ZZZ test patient,
@@ -4018,25 +4158,25 @@ function _fetchTebraAppointments(c, startDateStr, endDateStr) {
     var _statusOnly = !_invalid && !!NO_IMPORT_STATUS[(status || '').toLowerCase()];
 
     return {
-      provID:          crbProv,
-      date:            parsed.date,
-      time:            parsed.time,
-      patient:         patientName,
-      tebraStatus:     status,
-      tebraApptId:     tebraId,
-      insurance:       insurance,           // primary insurance carrier from Tebra
+      provID: crbProv,
+      date: parsed.date,
+      time: parsed.time,
+      patient: patientName,
+      tebraStatus: status,
+      tebraApptId: tebraId,
+      insurance: insurance,           // primary insurance carrier from Tebra
       serviceLocation: serviceLocation,     // e.g. "Colorado - Solrei Behavioral Health, Inc."
-      serviceLocId:    serviceLocId,        // numeric Tebra service location ID (fallback lookup)
-      resourceName1:   resourceName1,       // kept for diagnostic logging
-      _invalid:        _invalid,
-      _statusOnly:     _statusOnly,
+      serviceLocId: serviceLocId,        // numeric Tebra service location ID (fallback lookup)
+      resourceName1: resourceName1,       // kept for diagnostic logging
+      _invalid: _invalid,
+      _statusOnly: _statusOnly,
     };
-  }).filter(function(a) {
+  }).filter(function (a) {
     if (a._invalid) {
       var isPlaceholder = PLACEHOLDER_PATIENT_NAMES.indexOf((a.patient || '').toUpperCase()) !== -1;
       Logger.log(isPlaceholder
         ? '  Skipping placeholder calendar block: ' + a.patient + ' on ' + a.date
-        : '  Invalid (unmapped provider "' + (a.resourceName1||'?') + '" / no name): ' + a.patient + ' on ' + a.date);
+        : '  Invalid (unmapped provider "' + (a.resourceName1 || '?') + '" / no name): ' + a.patient + ' on ' + a.date);
       return false;
     }
     if (!a.patient || !a.date || !a.time) {
@@ -4046,19 +4186,19 @@ function _fetchTebraAppointments(c, startDateStr, endDateStr) {
     // Keep status-only records — they still go to importFromTebraApi for existing-row updates
     if (a._statusOnly) {
       Logger.log('  Status-only [' + a.provID + '/' + a.tebraStatus + ']: ' +
-                 a.patient + ' on ' + a.date);
+        a.patient + ' on ' + a.date);
     }
     return true;
   });
 }
 
 function _fetchTebraAppointmentsChunked(c, startDateStr, endDateStr) {
-  var all      = [];
+  var all = [];
   var seenKeys = {};
-  var tz       = Session.getScriptTimeZone();
+  var tz = Session.getScriptTimeZone();
 
   var chunkStart = _parseYMD(startDateStr);
-  var rangeEnd   = _parseYMD(endDateStr);
+  var rangeEnd = _parseYMD(endDateStr);
 
   while (chunkStart <= rangeEnd) {
     var chunkEnd = new Date(chunkStart);
@@ -4066,13 +4206,13 @@ function _fetchTebraAppointmentsChunked(c, startDateStr, endDateStr) {
     if (chunkEnd > rangeEnd) chunkEnd = new Date(rangeEnd);
 
     var sStr = Utilities.formatDate(chunkStart, tz, 'yyyy-MM-dd');
-    var eStr = Utilities.formatDate(chunkEnd,   tz, 'yyyy-MM-dd');
+    var eStr = Utilities.formatDate(chunkEnd, tz, 'yyyy-MM-dd');
     Logger.log('  → Chunk: ' + sStr + ' – ' + eStr);
 
     var chunk = _fetchTebraAppointments(c, sStr, eStr);
     Logger.log('    Got ' + chunk.length + ' appointments in this chunk.');
 
-    chunk.forEach(function(a) {
+    chunk.forEach(function (a) {
       var key = (a.tebraApptId || (a.provID + '|' + a.date + '|' + a.time));
       if (!seenKeys[key]) {
         seenKeys[key] = true;
@@ -4097,7 +4237,7 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     }
 
     endDateStr = endDateStr || startDateStr;
-    dryRun     = !!dryRun;
+    dryRun = !!dryRun;
 
     if (!startDateStr) {
       return JSON.stringify({ error: 'startDateStr is required (YYYY-MM-DD)' });
@@ -4107,12 +4247,12 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     if (!c.customerKey) {
       return JSON.stringify({
         error: 'Tebra credentials not configured. ' +
-               'Run setTebraCreds() in the Apps Script editor first.'
+          'Run setTebraCreds() in the Apps Script editor first.'
       });
     }
 
-    var allAppts   = [];
-    var errors     = [];
+    var allAppts = [];
+    var errors = [];
     var provResult = {};
 
     // Fetch service location → state map (GetServiceLocations, non-fatal).
@@ -4121,50 +4261,50 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
 
     try {
       allAppts = _fetchTebraAppointmentsChunked(c, startDateStr, endDateStr);
-      allAppts.forEach(function(a) {
+      allAppts.forEach(function (a) {
         provResult[a.provID] = (provResult[a.provID] || 0) + 1;
         if (!a.patientState) {
           // Try map lookup first (by name, then by ID), then direct parse as fallback
           a.patientState = (a.serviceLocation && svcLocMap.nameToState[a.serviceLocation])
-                        || (a.serviceLocId    && svcLocMap.idToState[a.serviceLocId])
-                        || _extractStateFromLocationName(a.serviceLocation || '')
-                        || '';
+            || (a.serviceLocId && svcLocMap.idToState[a.serviceLocId])
+            || _extractStateFromLocationName(a.serviceLocation || '')
+            || '';
         }
       });
-      var withState = allAppts.filter(function(a) { return !!a.patientState; }).length;
+      var withState = allAppts.filter(function (a) { return !!a.patientState; }).length;
       Logger.log('📍 PatientState resolved: ' + withState + '/' + allAppts.length + ' appointments');
     } catch (fetchErr) {
       errors.push(fetchErr.message);
       Logger.log('❌  _fetchTebraAppointmentsChunked error: ' + fetchErr.message);
     }
 
-    var COL_APPTID     = APPT_COLS.indexOf('ApptID');
-    var COL_DATE       = APPT_COLS.indexOf('Date');
-    var COL_NOTES      = APPT_COLS.indexOf('Notes');
-    var COL_STATUS     = APPT_COLS.indexOf('Status');
-    var COL_LMOD       = APPT_COLS.indexOf('LastModified');
-    var COL_MODBY      = APPT_COLS.indexOf('ModifiedBy');
-    var NUM_COLS       = APPT_COLS.length;
+    var COL_APPTID = APPT_COLS.indexOf('ApptID');
+    var COL_DATE = APPT_COLS.indexOf('Date');
+    var COL_NOTES = APPT_COLS.indexOf('Notes');
+    var COL_STATUS = APPT_COLS.indexOf('Status');
+    var COL_LMOD = APPT_COLS.indexOf('LastModified');
+    var COL_MODBY = APPT_COLS.indexOf('ModifiedBy');
+    var NUM_COLS = APPT_COLS.length;
     var COL_DIRECT_INS = APPT_COLS.indexOf('DirectIns') + 1; // 1-based sheet column (M)
-    var COL_TS_0BASED  = APPT_COLS.indexOf('TebraStatus'); // 0-based — used by _findStaleRows'
-                                                            // idempotency check below, ahead of
-                                                            // the 1-based COL_TEBRA_STATUS declared
-                                                            // later for the main update loop.
+    var COL_TS_0BASED = APPT_COLS.indexOf('TebraStatus'); // 0-based — used by _findStaleRows'
+    // idempotency check below, ahead of
+    // the 1-based COL_TEBRA_STATUS declared
+    // later for the main update loop.
 
     var activeTebraIds = {};
     var activeSlotKeys = {};   // provID||date||normalizedTime — same key format as the
-                               // main update loop below, so ID reassignment by Tebra
-                               // doesn't cause a false "stale" flag (see _findStaleRows).
-    var canReconcile   = errors.length === 0;
+    // main update loop below, so ID reassignment by Tebra
+    // doesn't cause a false "stale" flag (see _findStaleRows).
+    var canReconcile = errors.length === 0;
     if (canReconcile) {
-      allAppts.forEach(function(a) {
+      allAppts.forEach(function (a) {
         if (a.tebraApptId) activeTebraIds[String(a.tebraApptId)] = true;
         activeSlotKeys[a.provID + '||' + a.date + '||' + _normalizeTimeKey(a.time)] = true;
       });
     }
 
     var COL_PROV_ID = APPT_COLS.indexOf('ProvID');
-    var COL_TIME    = APPT_COLS.indexOf('Time');
+    var COL_TIME = APPT_COLS.indexOf('Time');
 
     // ── PERFORMANCE (2026-07-25): _findStaleRows now takes an already-loaded,
     // full-width in-memory data block instead of re-reading the sheet itself —
@@ -4187,7 +4327,7 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       if (!canReconcile || !dataBlock || !dataBlock.length) return stale;
 
       var ID_RE = /\(ID:(\d+)\)/;
-      dataBlock.forEach(function(row, i) {
+      dataBlock.forEach(function (row, i) {
         var apptId = String(row[COL_APPTID] || '');
         if (apptId.indexOf('TEBRA-API-') !== 0) return;
 
@@ -4209,13 +4349,13 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
         // ID is gone, but the slot itself may still be active under a
         // different Tebra-assigned ID — check before flagging stale.
         var rowSlotKey = row[COL_PROV_ID] + '||' + rowDate + '||' +
-                         _normalizeTimeKey(row[COL_TIME]);
+          _normalizeTimeKey(row[COL_TIME]);
         if (activeSlotKeys[rowSlotKey]) return; // slot still active — not stale
 
         stale.push({
-          patient:  String(row[APPT_COLS.indexOf('Patient')] || ''),
-          date:     rowDate,
-          tebraId:  tebraId,
+          patient: String(row[APPT_COLS.indexOf('Patient')] || ''),
+          date: rowDate,
+          tebraId: tebraId,
           sheetRow: i + 2,
         });
       });
@@ -4223,11 +4363,11 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     }
 
     if (dryRun) {
-      var ss        = SpreadsheetApp.getActiveSpreadsheet();
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
       var apptSheet = ss.getSheetByName(TAB_APPT);
 
       Logger.log('DRY RUN — ' + allAppts.length + ' appointments from Tebra API.');
-      allAppts.forEach(function(a) {
+      allAppts.forEach(function (a) {
         Logger.log('  [' + a.provID + '] ' + a.date + '  ' + a.time + '  — ' + a.patient);
       });
 
@@ -4237,22 +4377,22 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       var wouldFlag = _findStaleRows(dryRunBlock);
       if (wouldFlag.length) {
         Logger.log('Would flag ' + wouldFlag.length + ' stale appointments as "Deleted in Tebra" (TebraStatus, Column AI):');
-        wouldFlag.forEach(function(s) {
+        wouldFlag.forEach(function (s) {
           Logger.log('  ⚠️  ' + s.patient + ' on ' + s.date + ' (Tebra ID ' + s.tebraId + ')');
         });
       }
 
       return JSON.stringify({
-        dryRun:       true,
-        parsed:       allAppts.length,
+        dryRun: true,
+        parsed: allAppts.length,
         appointments: allAppts,
-        providers:    provResult,
-        wouldFlag:    wouldFlag,
-        errors:       errors,
+        providers: provResult,
+        wouldFlag: wouldFlag,
+        errors: errors,
       });
     }
 
-    var ss        = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var apptSheet = ss.getSheetByName(TAB_APPT);
     if (!apptSheet) {
       return JSON.stringify({
@@ -4263,13 +4403,13 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     var patientLookup = _buildPatientLookup(ss);
     Logger.log('Patient lookup: ' + Object.keys(patientLookup).length + ' patients');
 
-    var existingRowMap       = {};
-    var existingTSMap        = {};   // rowNum → current TebraStatus in sheet (for logging)
-    var existingSignedMap    = {};   // rowNum → current Signed boolean in sheet (for auto-reconcile)
-    var existingPatientSet   = {};   // lowercase patient name → true (has ≥1 appointment row)
+    var existingRowMap = {};
+    var existingTSMap = {};   // rowNum → current TebraStatus in sheet (for logging)
+    var existingSignedMap = {};   // rowNum → current Signed boolean in sheet (for auto-reconcile)
+    var existingPatientSet = {};   // lowercase patient name → true (has ≥1 appointment row)
     var existingPatientByRow = {};   // rowNum → lowercase patient name in that row
-    var COL_TEBRA_STATUS  = APPT_COLS.indexOf('TebraStatus') + 1; // 1-based sheet column
-    var COL_SIGNED        = APPT_COLS.indexOf('Signed') + 1;      // 1-based sheet column (Z)
+    var COL_TEBRA_STATUS = APPT_COLS.indexOf('TebraStatus') + 1; // 1-based sheet column
+    var COL_SIGNED = APPT_COLS.indexOf('Signed') + 1;      // 1-based sheet column (Z)
 
     // ── PERFORMANCE (2026-07-25): this is THE fix for Full Sync's execution
     // time / "ScriptError ... INTERNAL" problem. Before, every existing-row
@@ -4285,15 +4425,15 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       ? apptSheet.getRange(2, 1, apptSheet.getLastRow() - 1, NUM_COLS).getValues()
       : [];
 
-    apptData.forEach(function(r, i) {
-      var key    = r[0] + '||' + _fmtDate(r[1]) + '||' + _normalizeTimeKey(r[3]);
+    apptData.forEach(function (r, i) {
+      var key = r[0] + '||' + _fmtDate(r[1]) + '||' + _normalizeTimeKey(r[3]);
       var rowNum = i + 2; // 1-based sheet row (row 1 = header)
       existingRowMap[key] = rowNum;
       // Track patient name per row (for slot-conflict detection below)
       // and per name (for _statusOnly new-patient check).
       var ptName = String(r[4] || '').toLowerCase().replace(/\s+/g, ' ').trim(); // col E = Patient
       if (ptName) {
-        existingPatientSet[ptName]   = true;
+        existingPatientSet[ptName] = true;
         existingPatientByRow[rowNum] = ptName;
       }
       // Capture existing TebraStatus (0-based index = COL_TEBRA_STATUS - 1)
@@ -4329,13 +4469,13 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     };
     function _sPri(s) { return _STATUS_PRI[(s || '').toLowerCase().trim()] || 4; }
 
-    var _dedupeMap  = {};  // "provID||date||time||patientNorm" → index in dedupedAppts
+    var _dedupeMap = {};  // "provID||date||time||patientNorm" → index in dedupedAppts
     var dedupedAppts = [];
-    allAppts.forEach(function(a) {
+    allAppts.forEach(function (a) {
       // Normalize whitespace so "John  Smith" and "John Smith" collapse to the same key.
       var _ptNorm = (a.patient || '').toLowerCase().replace(/\s+/g, ' ').trim();
       var dk = a.provID + '||' + a.date + '||' + _normalizeTimeKey(a.time) +
-               '||' + _ptNorm;
+        '||' + _ptNorm;
       if (!_dedupeMap.hasOwnProperty(dk)) {
         _dedupeMap[dk] = dedupedAppts.length;
         dedupedAppts.push(a);
@@ -4343,32 +4483,32 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
         var idx = _dedupeMap[dk];
         if (_sPri(a.tebraStatus) > _sPri(dedupedAppts[idx].tebraStatus)) {
           Logger.log('  ↑ Dedup: keeping "' + a.tebraStatus + '" over "' +
-                     dedupedAppts[idx].tebraStatus + '" for ' + a.patient + ' on ' + a.date);
+            dedupedAppts[idx].tebraStatus + '" for ' + a.patient + ' on ' + a.date);
           dedupedAppts[idx] = a;
         }
       }
     });
     if (dedupedAppts.length < allAppts.length) {
       Logger.log('  Deduplication: ' + allAppts.length + ' Tebra records → ' +
-                 dedupedAppts.length + ' unique patient+slot entries.');
+        dedupedAppts.length + ' unique patient+slot entries.');
     }
     // ── End deduplication ─────────────────────────────────────────────────
 
-    var imported          = 0;
-    var skipped           = 0;
-    var statusUpdated     = 0;
-    var insuranceUpdated  = 0;
-    var autoSigned        = 0;   // rows auto-flipped to Signed=TRUE because TebraStatus = Checked Out
-    var newPatientsMap    = {};   // key: lowercase full name → { firstName, lastName, insurance }
+    var imported = 0;
+    var skipped = 0;
+    var statusUpdated = 0;
+    var insuranceUpdated = 0;
+    var autoSigned = 0;   // rows auto-flipped to Signed=TRUE because TebraStatus = Checked Out
+    var newPatientsMap = {};   // key: lowercase full name → { firstName, lastName, insurance }
 
     // ── PERFORMANCE: new appointment rows are collected here and written in
     // ONE batched setValues() call after the loop, instead of one
     // setValues() + one setNumberFormat() call per row as before.
-    var newRowsData    = [];
+    var newRowsData = [];
     var firstNewRowNum = apptSheet.getLastRow() + 1;
-    var nextNewRowNum  = firstNewRowNum;
+    var nextNewRowNum = firstNewRowNum;
 
-    dedupedAppts.forEach(function(appt) {
+    dedupedAppts.forEach(function (appt) {
       var key = appt.provID + '||' + appt.date + '||' + _normalizeTimeKey(appt.time);
 
       // ── Track ALL valid patients for Patients tab check ────────────────
@@ -4381,7 +4521,7 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
           var _pts = appt.patient.trim().split(/\s+/);
           newPatientsMap[_ptNameLower] = {
             firstName: _pts[0] || '',
-            lastName:  _pts.slice(1).join(' ') || '',
+            lastName: _pts.slice(1).join(' ') || '',
             insurance: appt.insurance || '',
           };
         } else if (appt.insurance && !newPatientsMap[_ptNameLower].insurance) {
@@ -4392,8 +4532,8 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       // ─────────────────────────────────────────────────────────────────
 
       if (existingRowMap.hasOwnProperty(key)) {
-        var rowNum  = existingRowMap[key];
-        var rowIdx  = rowNum - 2; // index into apptData
+        var rowNum = existingRowMap[key];
+        var rowIdx = rowNum - 2; // index into apptData
 
         // ── Slot-conflict guard ──────────────────────────────────────────────
         // If the existing row belongs to a DIFFERENT patient, a previous patient
@@ -4403,14 +4543,14 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
         // Normalize whitespace so "John  Smith" and "John Smith" don't
         // falsely trigger a slot-conflict and create a duplicate row.
         var existingPtInRow = (existingPatientByRow[rowNum] || '').replace(/\s+/g, ' ').trim();
-        var incomingPt      = (appt.patient || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        var incomingPt = (appt.patient || '').toLowerCase().replace(/\s+/g, ' ').trim();
         // Use _samePatient() instead of strict equality so that middle-name variants
         // ("Jane Smith" vs "Jane M Smith") are treated as the same person rather than
         // triggering a false slot-conflict that creates a duplicate row.
         if (existingPtInRow && incomingPt && !_samePatient(existingPtInRow, incomingPt)) {
           Logger.log('  ⚡ Slot conflict on ' + appt.date + ' ' + appt.time +
-                     ' [' + appt.provID + ']: sheet has "' + existingPtInRow +
-                     '" but Tebra has "' + incomingPt + '" — creating new row');
+            ' [' + appt.provID + ']: sheet has "' + existingPtInRow +
+            '" but Tebra has "' + incomingPt + '" — creating new row');
           // Fall through to row creation below (do NOT return here)
         } else {
           var touched = false;
@@ -4426,8 +4566,8 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
             touched = true;
             if (prevStatus !== appt.tebraStatus) {
               Logger.log('  ↻ TebraStatus: ' + appt.patient + ' (' + appt.date + ') ' +
-                         (prevStatus ? '"' + prevStatus + '" → ' : '[new] ') +
-                         '"' + appt.tebraStatus + '"');
+                (prevStatus ? '"' + prevStatus + '" → ' : '[new] ') +
+                '"' + appt.tebraStatus + '"');
             }
 
             // ── Auto-reconcile Signed flag with Tebra's "Checked Out" status.
@@ -4438,13 +4578,13 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
             // just change") so every sync also mops up any pre-existing backlog
             // of rows that are already Checked Out but not yet marked Signed.
             if (COL_SIGNED > 0 && _isCheckedOutStatus(appt.tebraStatus) &&
-                !existingSignedMap[rowNum]) {
+              !existingSignedMap[rowNum]) {
               apptData[rowIdx][COL_SIGNED - 1] = true;
               existingSignedMap[rowNum] = true;
               autoSigned++;
               touched = true;
               Logger.log('  ✓ Auto-signed: ' + appt.patient + ' (' + appt.date +
-                         ') — TebraStatus "' + appt.tebraStatus + '" → Signed=TRUE');
+                ') — TebraStatus "' + appt.tebraStatus + '" → Signed=TRUE');
             }
           }
 
@@ -4458,7 +4598,7 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
           // ── PatientState: stamp from Patients tab (primary source), only if
           // currently blank. Read directly from the in-memory block — no
           // separate getRange().getValue() round-trip needed anymore.
-          var COL_PT_STATE  = APPT_COLS.indexOf('PatientState') + 1; // 1-based
+          var COL_PT_STATE = APPT_COLS.indexOf('PatientState') + 1; // 1-based
           var _ptLookupInfo = patientLookup[(appt.patient || '').toLowerCase()] || {};
           var _stateToWrite = appt.patientState || _ptLookupInfo.patientState || '';
           if (_stateToWrite && COL_PT_STATE > 0) {
@@ -4481,7 +4621,7 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       // patientLookup (built from the Patients tab), because a patient can exist in
       // the Patients tab from a previous run but still have zero appointment rows.
       if (appt._statusOnly) {
-        var _ptKey      = (appt.patient || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        var _ptKey = (appt.patient || '').toLowerCase().replace(/\s+/g, ' ').trim();
         var _hasApptRow = !!existingPatientSet[_ptKey];
         if (_hasApptRow) { skipped++; return; }
         // No appointment row exists for this patient — create one so they appear in CRB.
@@ -4490,13 +4630,13 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
 
       // ── Reached row-creation path — log for diagnostics ─────────────
       Logger.log('  ➕ Creating row: ' + appt.patient +
-                 ' [' + appt.provID + '] ' + appt.date + ' ' + appt.time +
-                 ' status="' + appt.tebraStatus + '"' +
-                 ' _statusOnly=' + appt._statusOnly);
+        ' [' + appt.provID + '] ' + appt.date + ' ' + appt.time +
+        ' status="' + appt.tebraStatus + '"' +
+        ' _statusOnly=' + appt._statusOnly);
 
-      var ptInfo   = patientLookup[(appt.patient || '').toLowerCase()] || {};
+      var ptInfo = patientLookup[(appt.patient || '').toLowerCase()] || {};
       // Unknown/blank platform → blank Method, NOT a Headway default (Solrei brand rule).
-      var method   = ptInfo.method || '';
+      var method = ptInfo.method || '';
       var isDirect = method === 'direct';
 
       // Prefer insurance from Tebra API; fall back to local Patients tab entry
@@ -4507,38 +4647,38 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       var patientStateValue = appt.patientState || ptInfo.patientState || '';
 
       var apptId = 'TEBRA-API-' + new Date().getTime() + '-' +
-                   Math.random().toString(36).substr(2, 4).toUpperCase();
+        Math.random().toString(36).substr(2, 4).toUpperCase();
 
       var rowData = apptToRow({
-        id:               apptId,
-        time:             appt.time,
-        patient:          appt.patient,
-        method:           method,
-        alma:             { text: '', valid: null },
-        hw:               { text: '', valid: null },
-        grow:             { text: '', valid: null },
-        directIns:        directInsValue,
-        intake:           null,
-        ins:              null,
-        autopay:          null,
-        scr:              { 'PHQ-9': null, 'GAD-7': null, 'PCL-5': null },
-        ccEhr:            '',
-        notes:            'Imported from Tebra API' +
-                          (appt.tebraApptId ? ' (ID:' + appt.tebraApptId + ')' : ''),
-        unsigned:         [],
-        cpt:              [],
-        billing:          'pending',
-        status:           'pending',
-        out:              false,
-        paymentType:      isDirect ? (ptInfo.patientPortion || '') : '',
-        paymentRate:      isDirect ? (ptInfo.rate           || '') : '',
-        paymentAmount:    '',
+        id: apptId,
+        time: appt.time,
+        patient: appt.patient,
+        method: method,
+        alma: { text: '', valid: null },
+        hw: { text: '', valid: null },
+        grow: { text: '', valid: null },
+        directIns: directInsValue,
+        intake: null,
+        ins: null,
+        autopay: null,
+        scr: { 'PHQ-9': null, 'GAD-7': null, 'PCL-5': null },
+        ccEhr: '',
+        notes: 'Imported from Tebra API' +
+          (appt.tebraApptId ? ' (ID:' + appt.tebraApptId + ')' : ''),
+        unsigned: [],
+        cpt: [],
+        billing: 'pending',
+        status: 'pending',
+        out: false,
+        paymentType: isDirect ? (ptInfo.patientPortion || '') : '',
+        paymentRate: isDirect ? (ptInfo.rate || '') : '',
+        paymentAmount: '',
         paymentCollected: false,
-        paymentFailed:    false,
-        comms:            [],
-        tebraStatus:      appt.tebraStatus || '',
+        paymentFailed: false,
+        comms: [],
+        tebraStatus: appt.tebraStatus || '',
         insuranceCarrier: directInsValue,
-        patientState:     patientStateValue,
+        patientState: patientStateValue,
       }, appt.provID, appt.date);
 
       var newRow = nextNewRowNum;
@@ -4550,7 +4690,7 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       // for the same slot can correctly identify the patient in the new row.
       var _ptKeyNew = (appt.patient || '').toLowerCase().replace(/\s+/g, ' ').trim();
       existingPatientByRow[newRow] = _ptKeyNew;
-      existingTSMap[newRow]        = appt.tebraStatus || '';
+      existingTSMap[newRow] = appt.tebraStatus || '';
       // ── Critical: update existingPatientSet so that any additional _statusOnly
       // records for this brand-new patient are not treated as "no row yet" and
       // don't create a second (or third) duplicate row.
@@ -4573,19 +4713,19 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     // excluded from appointment + unsigned-note tallies exactly like No Show /
     // Rescheduled / Cancelled.
     var staleRows = _findStaleRows(apptData);
-    var flagged   = 0;
-    var now       = new Date().toISOString();
+    var flagged = 0;
+    var now = new Date().toISOString();
 
-    staleRows.forEach(function(s) {
+    staleRows.forEach(function (s) {
       var rowIdx = s.sheetRow - 2;
       if (COL_TEBRA_STATUS > 0) {
         apptData[rowIdx][COL_TEBRA_STATUS - 1] = 'Deleted in Tebra';
       }
-      apptData[rowIdx][COL_LMOD]   = now;
-      apptData[rowIdx][COL_MODBY]  = 'Tebra Sync';
+      apptData[rowIdx][COL_LMOD] = now;
+      apptData[rowIdx][COL_MODBY] = 'Tebra Sync';
       flagged++;
       Logger.log('  ⚠️  Flagged deleted-from-Tebra: ' + s.patient + ' on ' + s.date +
-                 ' (Tebra ID ' + s.tebraId + ', sheet row ' + s.sheetRow + ')');
+        ' (Tebra ID ' + s.tebraId + ', sheet row ' + s.sheetRow + ')');
     });
 
     // ── PERFORMANCE: ONE batched write for every existing-row change made
@@ -4610,12 +4750,12 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     // autocomplete, patient search, and future lookups. Batched into one
     // setValues() call instead of one appendRow() per patient.
     var patientsCreated = 0;
-    var patSheet        = ss.getSheetByName(TAB_PATIENT);
+    var patSheet = ss.getSheetByName(TAB_PATIENT);
 
     var newPatientKeys = Object.keys(newPatientsMap);
     if (patSheet && newPatientKeys.length > 0) {
       var newPatientRows = [];
-      newPatientKeys.forEach(function(nameLower) {
+      newPatientKeys.forEach(function (nameLower) {
         var pt = newPatientsMap[nameLower];
         // Guard: skip if they were somehow added to patientLookup between passes
         if (patientLookup[nameLower]) return;
@@ -4637,14 +4777,14 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
         // unknown appointments show as unselected rather than defaulting to
         // Headway (Solrei brand rule).
         patientLookup[nameLower] = {
-          method:         '',
-          insurance:      pt.insurance,
+          method: '',
+          insurance: pt.insurance,
           patientPortion: '',
-          rate:           '',
+          rate: '',
         };
 
         Logger.log('  ✅ Added to Patients tab: ' + pt.firstName + ' ' + pt.lastName +
-                   (pt.insurance ? ' (Ins: ' + pt.insurance + ')' : ''));
+          (pt.insurance ? ' (Ins: ' + pt.insurance + ')' : ''));
       });
       if (newPatientRows.length) {
         var patStartRow = patSheet.getLastRow() + 1;
@@ -4658,37 +4798,37 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     // across all appointments returned in this sync window. Batched into
     // one setValues() call instead of one setValue() per updated patient.
     var patientInsuranceMap = {};
-    allAppts.forEach(function(a) {
+    allAppts.forEach(function (a) {
       if (a.insurance && a.patient) {
         patientInsuranceMap[a.patient.toLowerCase()] = a.insurance;
       }
     });
 
     var patientsUpdated = 0;
-    var COL_PT_FNAME    = PATIENT_COLS.indexOf('FirstName');       // 0-based
-    var COL_PT_LNAME    = PATIENT_COLS.indexOf('LastName');        // 0-based
-    var COL_PT_INS      = PATIENT_COLS.indexOf('InsuranceCarrier'); // 0-based — in-memory mutation
+    var COL_PT_FNAME = PATIENT_COLS.indexOf('FirstName');       // 0-based
+    var COL_PT_LNAME = PATIENT_COLS.indexOf('LastName');        // 0-based
+    var COL_PT_INS = PATIENT_COLS.indexOf('InsuranceCarrier'); // 0-based — in-memory mutation
 
     if (patSheet && patSheet.getLastRow() > 1 &&
-        Object.keys(patientInsuranceMap).length > 0) {
+      Object.keys(patientInsuranceMap).length > 0) {
 
       var ptLastRow = patSheet.getLastRow();
-      var ptData    = patSheet.getRange(2, 1, ptLastRow - 1, PATIENT_COLS.length).getValues();
+      var ptData = patSheet.getRange(2, 1, ptLastRow - 1, PATIENT_COLS.length).getValues();
       var ptTouched = false;
 
-      ptData.forEach(function(row, i) {
-        var first    = String(row[COL_PT_FNAME] || '').trim();
-        var last     = String(row[COL_PT_LNAME] || '').trim();
+      ptData.forEach(function (row, i) {
+        var first = String(row[COL_PT_FNAME] || '').trim();
+        var last = String(row[COL_PT_LNAME] || '').trim();
         if (!first && !last) return;
 
         var fullName = _titleCase(first + ' ' + last).toLowerCase();
-        var ins      = patientInsuranceMap[fullName];
+        var ins = patientInsuranceMap[fullName];
         if (ins) {
           row[COL_PT_INS] = ins;
           ptTouched = true;
           patientsUpdated++;
           Logger.log('  Patients tab: updated Insurance for ' + _titleCase(first + ' ' + last) +
-                     ' → ' + ins);
+            ' → ' + ins);
         }
       });
 
@@ -4732,26 +4872,26 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       ' cancelled — Tebra API [' + startDateStr + ' – ' + endDateStr + ']');
 
     Logger.log('✅  Tebra API import: ' + imported + ' appts imported, ' +
-               patientsCreated + ' new patients added to Patients tab, ' +
-               statusUpdated + ' status refreshed, ' +
-               insuranceUpdated + ' appt insurance updated (col M), ' +
-               patientsUpdated + ' Patients tab insurance updated, ' +
-               autoSigned + ' auto-signed (Checked Out → Signed=TRUE), ' +
-               skipped + ' skipped, ' + flagged + ' flagged cancelled, ' +
-               errors.length + ' errors.');
+      patientsCreated + ' new patients added to Patients tab, ' +
+      statusUpdated + ' status refreshed, ' +
+      insuranceUpdated + ' appt insurance updated (col M), ' +
+      patientsUpdated + ' Patients tab insurance updated, ' +
+      autoSigned + ' auto-signed (Checked Out → Signed=TRUE), ' +
+      skipped + ' skipped, ' + flagged + ' flagged cancelled, ' +
+      errors.length + ' errors.');
 
     return JSON.stringify({
-      imported:          imported,
-      patientsCreated:   patientsCreated,
-      statusUpdated:     statusUpdated,
-      insuranceUpdated:  insuranceUpdated,
-      patientsUpdated:   patientsUpdated,
-      autoSigned:        autoSigned,
-      skipped:           skipped,
-      flagged:           flagged,
-      total:             allAppts.length,
-      providers:         provResult,
-      errors:            errors,
+      imported: imported,
+      patientsCreated: patientsCreated,
+      statusUpdated: statusUpdated,
+      insuranceUpdated: insuranceUpdated,
+      patientsUpdated: patientsUpdated,
+      autoSigned: autoSigned,
+      skipped: skipped,
+      flagged: flagged,
+      total: allAppts.length,
+      providers: provResult,
+      errors: errors,
     });
 
   } catch (e) {
@@ -4773,28 +4913,28 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
    PrimarySubscriber or other non-state data contaminating the column.
 ────────────────────────────────────────────────────────────────────────────── */
 function backfillPatientStatesFromTab() {
-  var ss        = SpreadsheetApp.getActiveSpreadsheet();
-  var patSheet  = ss.getSheetByName(TAB_PATIENT);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var patSheet = ss.getSheetByName(TAB_PATIENT);
   var apptSheet = ss.getSheetByName(TAB_APPT);
   if (!patSheet || !apptSheet) { Logger.log('❌  Sheet not found.'); return; }
 
   // ── Read ALL patient data (header + rows) and resolve column indices from header
   var ptAll = patSheet.getDataRange().getValues();
   if (ptAll.length < 2) { Logger.log('No patient rows.'); return; }
-  var ptHdr = ptAll[0].map(function(h) { return String(h || '').trim(); });
-  var COL_PT_FNAME = ptHdr.indexOf('FirstName');    if (COL_PT_FNAME < 0) COL_PT_FNAME = 0;
-  var COL_PT_LNAME = ptHdr.indexOf('LastName');     if (COL_PT_LNAME < 0) COL_PT_LNAME = 1;
+  var ptHdr = ptAll[0].map(function (h) { return String(h || '').trim(); });
+  var COL_PT_FNAME = ptHdr.indexOf('FirstName'); if (COL_PT_FNAME < 0) COL_PT_FNAME = 0;
+  var COL_PT_LNAME = ptHdr.indexOf('LastName'); if (COL_PT_LNAME < 0) COL_PT_LNAME = 1;
   var COL_PT_STATE = ptHdr.indexOf('PatientState'); if (COL_PT_STATE < 0) COL_PT_STATE = 12;
   Logger.log('backfillPatientStatesFromTab: PatientState column in Patients tab = index ' +
-             COL_PT_STATE + ' (header: "' + ptHdr[COL_PT_STATE] + '")');
+    COL_PT_STATE + ' (header: "' + ptHdr[COL_PT_STATE] + '")');
 
   // ── Build name → state map; only include valid 2-letter state codes
   var stateMap = {};
   var badValues = 0;
-  ptAll.slice(1).forEach(function(r) {
+  ptAll.slice(1).forEach(function (r) {
     var first = String(r[COL_PT_FNAME] || '').trim();
-    var last  = String(r[COL_PT_LNAME] || '').trim();
-    var raw   = String(r[COL_PT_STATE] || '').trim();
+    var last = String(r[COL_PT_LNAME] || '').trim();
+    var raw = String(r[COL_PT_STATE] || '').trim();
     if (!raw) return;
     var state = raw.toUpperCase();
     if (!_isValidUSState(state)) {
@@ -4805,17 +4945,17 @@ function backfillPatientStatesFromTab() {
     if (first || last) stateMap[(first + ' ' + last).trim().toLowerCase()] = state;
   });
   Logger.log('backfillPatientStatesFromTab: ' + Object.keys(stateMap).length +
-             ' patients have a valid state on Patients tab.' +
-             (badValues ? ' (' + badValues + ' non-state values skipped — check PatientState column in Patients tab)' : ''));
+    ' patients have a valid state on Patients tab.' +
+    (badValues ? ' (' + badValues + ' non-state values skipped — check PatientState column in Patients tab)' : ''));
 
   // ── Walk Appointments tab and fill blank PatientState cells
   var COL_APPT_PATIENT = APPT_COLS.indexOf('Patient');       // 0-based
-  var COL_APPT_STATE   = APPT_COLS.indexOf('PatientState');  // 0-based
+  var COL_APPT_STATE = APPT_COLS.indexOf('PatientState');  // 0-based
   if (COL_APPT_PATIENT < 0 || COL_APPT_STATE < 0) {
     Logger.log('❌  Patient or PatientState column missing from APPT_COLS.'); return;
   }
 
-  var lastRow  = apptSheet.getLastRow();
+  var lastRow = apptSheet.getLastRow();
   if (lastRow < 2) { Logger.log('No appointment rows.'); return; }
 
   var readCols = Math.max(COL_APPT_PATIENT, COL_APPT_STATE) + 1;
@@ -4823,9 +4963,9 @@ function backfillPatientStatesFromTab() {
   var colState1 = COL_APPT_STATE + 1; // 1-based for setValues
 
   var updated = 0;
-  apptData.forEach(function(r, i) {
+  apptData.forEach(function (r, i) {
     if (String(r[COL_APPT_STATE] || '').trim()) return; // already filled — skip
-    var name  = String(r[COL_APPT_PATIENT] || '').trim().toLowerCase();
+    var name = String(r[COL_APPT_PATIENT] || '').trim().toLowerCase();
     var state = stateMap[name];
     if (!state) return;
     apptSheet.getRange(i + 2, colState1).setValue(state);
@@ -4846,7 +4986,7 @@ function backfillPatientStatesFromTab() {
    Run manually:  cleanBadPatientStates()
 ────────────────────────────────────────────────────────────────────────────── */
 function cleanBadPatientStates() {
-  var ss        = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var apptSheet = ss.getSheetByName(TAB_APPT);
   if (!apptSheet || apptSheet.getLastRow() < 2) {
     Logger.log('cleanBadPatientStates: No appointment rows found.'); return;
@@ -4857,13 +4997,13 @@ function cleanBadPatientStates() {
     Logger.log('❌  PatientState column not found in APPT_COLS.'); return;
   }
 
-  var lastRow   = apptSheet.getLastRow();
+  var lastRow = apptSheet.getLastRow();
   var stateCol1 = COL_APPT_STATE + 1; // 1-based
   var stateVals = apptSheet.getRange(2, stateCol1, lastRow - 1, 1).getValues();
-  var cleared   = 0;
-  var kept      = 0;
+  var cleared = 0;
+  var kept = 0;
 
-  stateVals.forEach(function(row, i) {
+  stateVals.forEach(function (row, i) {
     var v = String(row[0] || '').trim();
     if (!v) return; // already blank
     if (_isValidUSState(v)) { kept++; return; } // valid — leave it
@@ -4875,7 +5015,7 @@ function cleanBadPatientStates() {
 
   SpreadsheetApp.flush();
   Logger.log('✅  cleanBadPatientStates: ' + cleared + ' bad values cleared, ' +
-             kept + ' valid state codes kept.');
+    kept + ' valid state codes kept.');
   if (cleared > 0) {
     Logger.log('   → Now run backfillPatientStatesFromTab() to re-fill from Patients tab.');
   }
@@ -4883,7 +5023,7 @@ function cleanBadPatientStates() {
 
 
 function _buildPatientLookup(ss) {
-  var lookup  = {};
+  var lookup = {};
   var PLATFORM_TO_METHOD = {
     'alma': 'alma', 'headway': 'hw', 'grow': 'grow', 'direct': 'direct'
   };
@@ -4892,79 +5032,79 @@ function _buildPatientLookup(ss) {
     var allRows = patSheet.getDataRange().getValues();
     // ── Resolve column indices from actual header row so the lookup is robust
     //    even if PATIENT_COLS and the physical sheet columns have drifted apart.
-    var hdr = allRows[0].map(function(h) { return String(h || '').trim(); });
+    var hdr = allRows[0].map(function (h) { return String(h || '').trim(); });
     function col(name, fallback) {
       var idx = hdr.indexOf(name);
       return idx >= 0 ? idx : fallback;
     }
-    var C_FIRST   = col('FirstName',        0);
-    var C_LAST    = col('LastName',          1);
-    var C_PLAT    = col('BillingChannel',    2);
-    var C_INS     = col('InsuranceCarrier',  3);
-    var C_PORTION = col('CostShareClass',    4);
-    var C_RATE    = col('Rate',              5);
-    var C_CLMPLAT = col('ClaimGateway',      6);
-    var C_MEMID   = col('MemberID',          7);
-    var C_DOB     = col('MemberDOB',         8);
-    var C_PCN     = col('PCN',               9);
-    var C_GROUP   = col('GroupNumber',      10);
-    var C_SUBSCR  = col('PrimarySubscriber',11);
-    var C_STATE   = col('PatientState',     12);
-    var C_RNPI    = col('RenderingNPI',     13);
-    var C_BNPI    = col('BillingNPI',       14);
-    var C_XCODE   = col('xCode',            15);
+    var C_FIRST = col('FirstName', 0);
+    var C_LAST = col('LastName', 1);
+    var C_PLAT = col('BillingChannel', 2);
+    var C_INS = col('InsuranceCarrier', 3);
+    var C_PORTION = col('CostShareClass', 4);
+    var C_RATE = col('Rate', 5);
+    var C_CLMPLAT = col('ClaimGateway', 6);
+    var C_MEMID = col('MemberID', 7);
+    var C_DOB = col('MemberDOB', 8);
+    var C_PCN = col('PCN', 9);
+    var C_GROUP = col('GroupNumber', 10);
+    var C_SUBSCR = col('PrimarySubscriber', 11);
+    var C_STATE = col('PatientState', 12);
+    var C_RNPI = col('RenderingNPI', 13);
+    var C_BNPI = col('BillingNPI', 14);
+    var C_XCODE = col('xCode', 15);
 
-    allRows.slice(1).forEach(function(r) {
-        var first    = String(r[C_FIRST] || '').trim();
-        var last     = String(r[C_LAST]  || '').trim();
-        if (!first && !last) return;
-        var fullName = (first + ' ' + last).trim().toLowerCase();
-        var platform = String(r[C_PLAT]  || '').trim().toLowerCase();
-        var rawState = String(r[C_STATE] || '').trim().toUpperCase();
-        lookup[fullName] = {
-          // Unknown/blank platform → blank Method, NOT a Headway default (Solrei brand rule).
-          method:             PLATFORM_TO_METHOD[platform] || '',
-          insurance:          String(r[C_INS]     || '').trim(),
-          patientPortion:     String(r[C_PORTION] || '').trim(),
-          rate:               _sv(r[C_RATE]).trim(),   // _sv preserves numeric 0 ($0 copay)
-          claimPlatform:      String(r[C_CLMPLAT] || '').trim(),
-          memberID:           String(r[C_MEMID]   || '').trim(),
-          // Sheets stores manually-entered dates as Date objects; convert to YYYY-MM-DD
-          memberDOB:          r[C_DOB] instanceof Date
-                                ? Utilities.formatDate(r[C_DOB], Session.getScriptTimeZone(), 'yyyy-MM-dd')
-                                : String(r[C_DOB]  || '').trim(),
-          pcn:                String(r[C_PCN]    || '').trim(),
-          groupNumber:        String(r[C_GROUP]  || '').trim(),
-          primarySubscriber:  String(r[C_SUBSCR] || '').trim(),
-          // Only store the state if it's a real 2-letter US state code —
-          // guards against PrimarySubscriber or other data appearing in this cell.
-          patientState:       _isValidUSState(rawState) ? rawState : '',
-          renderingNPI:       String(r[C_RNPI]   || '').trim(),
-          billingNPI:         String(r[C_BNPI]   || '').trim(),
-          xCode:              String(r[C_XCODE]  || '').trim(),
-        };
-      });
+    allRows.slice(1).forEach(function (r) {
+      var first = String(r[C_FIRST] || '').trim();
+      var last = String(r[C_LAST] || '').trim();
+      if (!first && !last) return;
+      var fullName = (first + ' ' + last).trim().toLowerCase();
+      var platform = String(r[C_PLAT] || '').trim().toLowerCase();
+      var rawState = String(r[C_STATE] || '').trim().toUpperCase();
+      lookup[fullName] = {
+        // Unknown/blank platform → blank Method, NOT a Headway default (Solrei brand rule).
+        method: PLATFORM_TO_METHOD[platform] || '',
+        insurance: String(r[C_INS] || '').trim(),
+        patientPortion: String(r[C_PORTION] || '').trim(),
+        rate: _sv(r[C_RATE]).trim(),   // _sv preserves numeric 0 ($0 copay)
+        claimPlatform: String(r[C_CLMPLAT] || '').trim(),
+        memberID: String(r[C_MEMID] || '').trim(),
+        // Sheets stores manually-entered dates as Date objects; convert to YYYY-MM-DD
+        memberDOB: r[C_DOB] instanceof Date
+          ? Utilities.formatDate(r[C_DOB], Session.getScriptTimeZone(), 'yyyy-MM-dd')
+          : String(r[C_DOB] || '').trim(),
+        pcn: String(r[C_PCN] || '').trim(),
+        groupNumber: String(r[C_GROUP] || '').trim(),
+        primarySubscriber: String(r[C_SUBSCR] || '').trim(),
+        // Only store the state if it's a real 2-letter US state code —
+        // guards against PrimarySubscriber or other data appearing in this cell.
+        patientState: _isValidUSState(rawState) ? rawState : '',
+        renderingNPI: String(r[C_RNPI] || '').trim(),
+        billingNPI: String(r[C_BNPI] || '').trim(),
+        xCode: String(r[C_XCODE] || '').trim(),
+      };
+    });
   }
   return lookup;
 }
 
 
 function repairTimeColumn() {
-  var ss        = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet     = ss.getSheetByName(TAB_APPT);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(TAB_APPT);
   if (!sheet || sheet.getLastRow() < 2) {
     Logger.log('Nothing to repair.');
     return;
   }
 
-  var TIME_COL  = APPT_COLS.indexOf('Time') + 1;
-  var lastRow   = sheet.getLastRow();
+  var TIME_COL = APPT_COLS.indexOf('Time') + 1;
+  var lastRow = sheet.getLastRow();
   var timeRange = sheet.getRange(2, TIME_COL, lastRow - 1, 1);
-  var values    = timeRange.getValues();
+  var values = timeRange.getValues();
 
   var fixed = 0;
-  var fixed_values = values.map(function(row) {
-    var v    = row[0];
+  var fixed_values = values.map(function (row) {
+    var v = row[0];
     var norm = _fmtTime(v);
     if (norm !== String(v)) fixed++;
     return [norm];
@@ -4975,12 +5115,12 @@ function repairTimeColumn() {
 
   SpreadsheetApp.flush();
   Logger.log('✅  repairTimeColumn: checked ' + values.length +
-             ' rows, fixed ' + fixed + ' time cells.');
+    ' rows, fixed ' + fixed + ' time cells.');
 }
 
 
 function clearTebraApiImports() {
-  var ss        = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var apptSheet = ss.getSheetByName(TAB_APPT);
   if (!apptSheet || apptSheet.getLastRow() < 2) {
     Logger.log('Nothing to clear.');
@@ -5003,7 +5143,7 @@ function clearTebraApiImports() {
     return;
   }
 
-  rowsToDelete.forEach(function(rowNum) {
+  rowsToDelete.forEach(function (rowNum) {
     apptSheet.deleteRow(rowNum);
   });
 
@@ -5035,16 +5175,16 @@ function debugImportMay12() {
 }
 
 function runTebraApiImportThisWeek() {
-  var tz    = Session.getScriptTimeZone();
+  var tz = Session.getScriptTimeZone();
   var today = new Date();
-  var dow   = today.getDay();
+  var dow = today.getDay();
   var mon = new Date(today);
   mon.setDate(today.getDate() - ((dow + 6) % 7));
   var sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
 
   var startStr = Utilities.formatDate(mon, tz, 'yyyy-MM-dd');
-  var endStr   = Utilities.formatDate(sun, tz, 'yyyy-MM-dd');
+  var endStr = Utilities.formatDate(sun, tz, 'yyyy-MM-dd');
 
   Logger.log('Importing week ' + startStr + ' – ' + endStr + ' from Tebra API...');
   var result = JSON.parse(importFromTebraApi(startStr, endStr, false));
@@ -5052,9 +5192,9 @@ function runTebraApiImportThisWeek() {
 }
 
 function runTebraApiImportEightWeeks() {
-  var tz    = Session.getScriptTimeZone();
+  var tz = Session.getScriptTimeZone();
   var today = new Date();
-  var dow   = today.getDay();
+  var dow = today.getDay();
 
   var lastMon = new Date(today);
   lastMon.setDate(today.getDate() - ((dow + 6) % 7) - 7);
@@ -5062,8 +5202,8 @@ function runTebraApiImportEightWeeks() {
   var eightWeeksOut = new Date(lastMon);
   eightWeeksOut.setDate(lastMon.getDate() + 55);
 
-  var startStr = Utilities.formatDate(lastMon,        tz, 'yyyy-MM-dd');
-  var endStr   = Utilities.formatDate(eightWeeksOut,  tz, 'yyyy-MM-dd');
+  var startStr = Utilities.formatDate(lastMon, tz, 'yyyy-MM-dd');
+  var endStr = Utilities.formatDate(eightWeeksOut, tz, 'yyyy-MM-dd');
 
   Logger.log('Importing eight weeks ' + startStr + ' – ' + endStr + ' from Tebra API...');
   var result = JSON.parse(importFromTebraApi(startStr, endStr, false));
@@ -5077,7 +5217,7 @@ function runTebraApiImportEightWeeks() {
 // or after bulk scheduling changes. Normal day-to-day syncing uses
 // importFromTebraApi() with a narrow date range.
 function fullSyncTebraApi(startDateStr, endDateStr) {
-  var tz    = Session.getScriptTimeZone();
+  var tz = Session.getScriptTimeZone();
   var today = new Date();
 
   // If the UI didn't pass explicit dates, build a sensible default range.
@@ -5108,33 +5248,33 @@ function overnightSyncTebraApi() {
     return;
   }
 
-  var DAYS_BACK    = 14;  // 2 weeks back
+  var DAYS_BACK = 14;  // 2 weeks back
   var DAYS_FORWARD = 28;  // 4 weeks forward
 
-  var tz    = Session.getScriptTimeZone();
+  var tz = Session.getScriptTimeZone();
   var today = new Date();
 
   var start = new Date(today); start.setDate(today.getDate() - DAYS_BACK);
-  var end   = new Date(today); end.setDate(today.getDate() + DAYS_FORWARD);
+  var end = new Date(today); end.setDate(today.getDate() + DAYS_FORWARD);
 
   var startStr = Utilities.formatDate(start, tz, 'yyyy-MM-dd');
-  var endStr   = Utilities.formatDate(end,   tz, 'yyyy-MM-dd');
+  var endStr = Utilities.formatDate(end, tz, 'yyyy-MM-dd');
 
   Logger.log('🌙 Overnight Tebra sync: ' + startStr + ' → ' + endStr +
-             ' (' + DAYS_BACK + ' days back, ' + DAYS_FORWARD + ' days forward)');
+    ' (' + DAYS_BACK + ' days back, ' + DAYS_FORWARD + ' days forward)');
 
   try {
     var result = JSON.parse(importFromTebraApi(startStr, endStr, false));
     Logger.log('✅ Overnight sync complete: ' + JSON.stringify(result));
     _audit(SpreadsheetApp.getActiveSpreadsheet(),
-           'OVERNIGHT_SYNC_COMPLETE',
-           'Overnight Tebra sync ' + startStr + '→' + endStr +
-           ' — imported ' + (result.imported || 0) + ' appts.');
+      'OVERNIGHT_SYNC_COMPLETE',
+      'Overnight Tebra sync ' + startStr + '→' + endStr +
+      ' — imported ' + (result.imported || 0) + ' appts.');
   } catch (e) {
     Logger.log('❌ Overnight sync FAILED: ' + e.message);
     _audit(SpreadsheetApp.getActiveSpreadsheet(),
-           'OVERNIGHT_SYNC_FAILED',
-           'Overnight Tebra sync failed: ' + e.message);
+      'OVERNIGHT_SYNC_FAILED',
+      'Overnight Tebra sync failed: ' + e.message);
   }
 }
 
@@ -5153,7 +5293,7 @@ function overnightSyncTebraApi() {
 // Safe to run multiple times (idempotent once duplicates are gone).
 // ─────────────────────────────────────────────────────────────────────────────
 function deduplicateAppointments() {
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(TAB_APPT);
   if (!sheet) {
     Logger.log('❌ deduplicateAppointments: sheet "' + TAB_APPT + '" not found.');
@@ -5166,10 +5306,10 @@ function deduplicateAppointments() {
     return;
   }
 
-  var NUM_COLS    = APPT_COLS.length;
-  var PROV_IDX    = APPT_COLS.indexOf('ProvID');    // 0
-  var DATE_IDX    = APPT_COLS.indexOf('Date');      // 1
-  var TIME_IDX    = APPT_COLS.indexOf('Time');      // 3
+  var NUM_COLS = APPT_COLS.length;
+  var PROV_IDX = APPT_COLS.indexOf('ProvID');    // 0
+  var DATE_IDX = APPT_COLS.indexOf('Date');      // 1
+  var TIME_IDX = APPT_COLS.indexOf('Time');      // 3
   var PATIENT_IDX = APPT_COLS.indexOf('Patient');   // 4
 
   // Read all data rows (row 1 is the header)
@@ -5180,8 +5320,8 @@ function deduplicateAppointments() {
   // Value: array of { rowNum (1-based), data, ptNorm (stripped first+last) }
   var slotGroups = {};
 
-  allData.forEach(function(row, i) {
-    var provID  = String(row[PROV_IDX]    || '').trim();
+  allData.forEach(function (row, i) {
+    var provID = String(row[PROV_IDX] || '').trim();
     var dateStr = _fmtDate(row[DATE_IDX]);
     var timeStr = _normalizeTimeKey(row[TIME_IDX]);
     var patient = String(row[PATIENT_IDX] || '').trim();
@@ -5190,7 +5330,7 @@ function deduplicateAppointments() {
 
     var slotKey = provID + '||' + dateStr + '||' + timeStr;
     // Strip middle name and lowercase for comparison
-    var ptNorm  = _stripMiddleName(patient).toLowerCase().replace(/\s+/g, ' ').trim();
+    var ptNorm = _stripMiddleName(patient).toLowerCase().replace(/\s+/g, ' ').trim();
 
     if (!slotGroups[slotKey]) slotGroups[slotKey] = [];
     slotGroups[slotKey].push({ rowNum: i + 2, data: row, ptNorm: ptNorm });
@@ -5207,11 +5347,11 @@ function deduplicateAppointments() {
     APPT_COLS.indexOf('ClaimStatus'),
     APPT_COLS.indexOf('ClaimPaidAmount'),
     APPT_COLS.indexOf('NoteStatus'),
-  ].filter(function(idx) { return idx >= 0; });
+  ].filter(function (idx) { return idx >= 0; });
 
   function _scoreRow(data) {
     var score = 0;
-    SCORE_COLS.forEach(function(idx) {
+    SCORE_COLS.forEach(function (idx) {
       var v = data[idx];
       if (v !== undefined && v !== null && v !== '' && v !== false) score++;
     });
@@ -5221,33 +5361,33 @@ function deduplicateAppointments() {
   // ── Find duplicates and decide which rows to delete ───────────────────────
   var rowsToDelete = []; // 1-based row numbers
 
-  Object.keys(slotGroups).forEach(function(slotKey) {
+  Object.keys(slotGroups).forEach(function (slotKey) {
     var entries = slotGroups[slotKey];
     if (entries.length < 2) return; // no duplicates in this slot
 
     // Sub-group entries by their normalized patient name.
     // Entries with the same first+last (ignoring middle names) are duplicates.
     var ptGroups = {};
-    entries.forEach(function(e) {
+    entries.forEach(function (e) {
       var k = e.ptNorm || '__empty__';
       if (!ptGroups[k]) ptGroups[k] = [];
       ptGroups[k].push(e);
     });
 
-    Object.keys(ptGroups).forEach(function(ptKey) {
+    Object.keys(ptGroups).forEach(function (ptKey) {
       var group = ptGroups[ptKey];
       if (group.length < 2) return; // only one row for this patient — fine
 
       // Sort best-row first (highest score = most data filled in)
-      group.sort(function(a, b) { return _scoreRow(b.data) - _scoreRow(a.data); });
+      group.sort(function (a, b) { return _scoreRow(b.data) - _scoreRow(a.data); });
 
       var best = group[0];
       Logger.log('  🔀 Dup [' + slotKey + '] "' + ptKey + '"' +
-                 ' → keep row ' + best.rowNum +
-                 ' (score ' + _scoreRow(best.data) + ')' +
-                 ', delete: ' + group.slice(1).map(function(e) { return e.rowNum; }).join(', '));
+        ' → keep row ' + best.rowNum +
+        ' (score ' + _scoreRow(best.data) + ')' +
+        ', delete: ' + group.slice(1).map(function (e) { return e.rowNum; }).join(', '));
 
-      group.slice(1).forEach(function(e) { rowsToDelete.push(e.rowNum); });
+      group.slice(1).forEach(function (e) { rowsToDelete.push(e.rowNum); });
     });
   });
 
@@ -5257,11 +5397,11 @@ function deduplicateAppointments() {
   }
 
   // Delete from bottom up so row numbers above each deletion stay valid
-  rowsToDelete.sort(function(a, b) { return b - a; });
+  rowsToDelete.sort(function (a, b) { return b - a; });
   Logger.log('🗑  Deleting ' + rowsToDelete.length + ' duplicate row(s): ' +
-             rowsToDelete.join(', '));
+    rowsToDelete.join(', '));
 
-  rowsToDelete.forEach(function(rowNum) { sheet.deleteRow(rowNum); });
+  rowsToDelete.forEach(function (rowNum) { sheet.deleteRow(rowNum); });
 
   _audit(ss, 'DEDUP_APPOINTMENTS',
     'Removed ' + rowsToDelete.length + ' duplicate appointment row(s).');
@@ -5271,27 +5411,27 @@ function deduplicateAppointments() {
 
 
 function runTebraApiImportDryRunThisWeek() {
-  var tz    = Session.getScriptTimeZone();
+  var tz = Session.getScriptTimeZone();
   var today = new Date();
-  var dow   = today.getDay();
-  var mon   = new Date(today);
+  var dow = today.getDay();
+  var mon = new Date(today);
   mon.setDate(today.getDate() - ((dow + 6) % 7));
   var sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
 
   var startStr = Utilities.formatDate(mon, tz, 'yyyy-MM-dd');
-  var endStr   = Utilities.formatDate(sun, tz, 'yyyy-MM-dd');
+  var endStr = Utilities.formatDate(sun, tz, 'yyyy-MM-dd');
 
   Logger.log('DRY RUN — week ' + startStr + ' – ' + endStr);
   var result = JSON.parse(importFromTebraApi(startStr, endStr, true));
   Logger.log('Would import ' + result.parsed + ' appointments:');
-  (result.appointments || []).forEach(function(a, i) {
+  (result.appointments || []).forEach(function (a, i) {
     Logger.log('  ' + (i + 1) + '. [' + a.provID + '] ' +
-               a.date + '  ' + a.time + '  — ' + a.patient);
+      a.date + '  ' + a.time + '  — ' + a.patient);
   });
   if (result.wouldFlag && result.wouldFlag.length) {
     Logger.log('Would flag ' + result.wouldFlag.length + ' as "cancelled in tebra":');
-    result.wouldFlag.forEach(function(s) {
+    result.wouldFlag.forEach(function (s) {
       Logger.log('  ⚠️  ' + s.patient + ' on ' + s.date);
     });
   }
@@ -5312,10 +5452,10 @@ function debugUnsignedNotes(patientName) {
   var sheet = ss.getSheetByName(TAB_APPT);
   if (!sheet || sheet.getLastRow() < 2) { Logger.log('No data.'); return; }
 
-  var COL_DATE     = APPT_COLS.indexOf('Date') + 1;
-  var COL_PATIENT  = APPT_COLS.indexOf('Patient') + 1;
+  var COL_DATE = APPT_COLS.indexOf('Date') + 1;
+  var COL_PATIENT = APPT_COLS.indexOf('Patient') + 1;
   var COL_UNSIGNED = APPT_COLS.indexOf('UnsignedDates') + 1;
-  var COL_SIGNED   = APPT_COLS.indexOf('Signed') + 1;
+  var COL_SIGNED = APPT_COLS.indexOf('Signed') + 1;
 
   var target = _normName(patientName);
   var data = sheet.getDataRange().getValues();
@@ -5360,19 +5500,19 @@ function debugUnsignedNotes(patientName) {
  *   debugTebraStatusForProvider('jodene', '2026-05-08');
  */
 function debugTebraStatusForProvider(provId, dateStr) {
-  provId  = provId  || 'jodene';
+  provId = provId || 'jodene';
   dateStr = dateStr || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
 
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(TAB_APPT);
   if (!sheet || sheet.getLastRow() < 2) { Logger.log('No data.'); return; }
 
-  var TS_IDX   = APPT_COLS.indexOf('TebraStatus');  // 0-based
-  var allRows  = sheet.getDataRange().getValues();
-  var numCols  = allRows[0] ? allRows[0].length : 0;
+  var TS_IDX = APPT_COLS.indexOf('TebraStatus');  // 0-based
+  var allRows = sheet.getDataRange().getValues();
+  var numCols = allRows[0] ? allRows[0].length : 0;
 
   Logger.log('Sheet has ' + numCols + ' columns in data range. TebraStatus is at 0-based index ' + TS_IDX +
-             ' (column ' + (TS_IDX + 1) + '). Data range ' + (numCols > TS_IDX ? 'INCLUDES' : 'DOES NOT INCLUDE') + ' it.');
+    ' (column ' + (TS_IDX + 1) + '). Data range ' + (numCols > TS_IDX ? 'INCLUDES' : 'DOES NOT INCLUDE') + ' it.');
 
   // ── 1. Sheet rows for this provider + date ───────────────────────
   Logger.log('\n── Sheet rows for [' + provId + '] on ' + dateStr + ' ──');
@@ -5381,9 +5521,9 @@ function debugTebraStatusForProvider(provId, dateStr) {
     var r = allRows[i];
     if (String(r[0]) !== provId) continue;
     if (_fmtDate(r[1]) !== dateStr) continue;
-    var timeKey  = _normalizeTimeKey(r[3]);
-    var tebra    = numCols > TS_IDX ? String(r[TS_IDX] || '') : '(col out of range)';
-    var patient  = String(r[4] || '');
+    var timeKey = _normalizeTimeKey(r[3]);
+    var tebra = numCols > TS_IDX ? String(r[TS_IDX] || '') : '(col out of range)';
+    var patient = String(r[4] || '');
     var sheetKey = provId + '||' + dateStr + '||' + timeKey;
     sheetRows.push({ patient: patient, time: String(r[3]), timeKey: timeKey, tebraStatus: tebra, sheetKey: sheetKey, rowNum: i + 1 });
     Logger.log('  Row ' + (i + 1) + '  ' + patient + '  time="' + r[3] + '" → key="' + timeKey + '"  TebraStatus="' + tebra + '"');
@@ -5399,17 +5539,17 @@ function debugTebraStatusForProvider(provId, dateStr) {
   } catch (e) {
     Logger.log('  Tebra fetch error: ' + e.message);
   }
-  var tebraForProv = tebraAppts.filter(function(a) { return a.provID === provId; });
+  var tebraForProv = tebraAppts.filter(function (a) { return a.provID === provId; });
   Logger.log('  Tebra returned ' + tebraForProv.length + ' appointments for ' + provId + ':');
-  tebraForProv.forEach(function(a) {
+  tebraForProv.forEach(function (a) {
     var tebraKey = a.provID + '||' + a.date + '||' + _normalizeTimeKey(a.time);
     Logger.log('  ' + a.patient + '  time="' + a.time + '" → key="' + _normalizeTimeKey(a.time) + '"  status="' + a.tebraStatus + '"');
   });
 
   // ── 3. Match / no-match report ───────────────────────────────────
   Logger.log('\n── Match report ──');
-  sheetRows.forEach(function(row) {
-    var match = tebraForProv.find(function(a) {
+  sheetRows.forEach(function (row) {
+    var match = tebraForProv.find(function (a) {
       return (a.provID + '||' + a.date + '||' + _normalizeTimeKey(a.time)) === row.sheetKey;
     });
     if (match) {
@@ -5431,7 +5571,7 @@ function repairUnsignedColumn() {
   var values = range.getValues();
   var fixed = 0;
 
-  var converted = values.map(function(row) {
+  var converted = values.map(function (row) {
     var v = row[0];
     if (v === null || v === undefined || v === '') return [''];
     if (v instanceof Date) {
@@ -5448,7 +5588,7 @@ function repairUnsignedColumn() {
   range.setValues(converted);
   SpreadsheetApp.flush();
   Logger.log('repairUnsignedColumn: forced text format on ' + values.length +
-             ' cells; converted ' + fixed + ' Date objects to "M/D/YY" text.');
+    ' cells; converted ' + fixed + ' Date objects to "M/D/YY" text.');
 }
 
 
@@ -5468,7 +5608,7 @@ function repairUnsignedColumn() {
  */
 function diagnoseNewPatient(patientName) {
   patientName = patientName || 'REPLACE WITH PATIENT NAME';
-  var ss     = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var target = patientName.trim().toLowerCase();
 
   Logger.log('');
@@ -5482,7 +5622,7 @@ function diagnoseNewPatient(patientName) {
   var inPatientsTab = false;
   if (patSheet && patSheet.getLastRow() > 1) {
     var pRows = patSheet.getRange(2, 1, patSheet.getLastRow() - 1, 6).getValues();
-    pRows.forEach(function(r, i) {
+    pRows.forEach(function (r, i) {
       var full = (String(r[0]) + ' ' + String(r[1])).trim().toLowerCase();
       if (full === target) {
         inPatientsTab = true;
@@ -5496,7 +5636,7 @@ function diagnoseNewPatient(patientName) {
   // ── 2. APPOINTMENTS TAB ───────────────────────────────────────────
   Logger.log('\n── 2. Appointments tab ──');
   var apptSheet = ss.getSheetByName(TAB_APPT);
-  var apptRows  = [];
+  var apptRows = [];
   if (apptSheet && apptSheet.getLastRow() > 1) {
     var aData = apptSheet.getDataRange().getValues();
     var headers = aData[0];
@@ -5505,23 +5645,23 @@ function diagnoseNewPatient(patientName) {
       var ptCell = String(r[APPT_COLS.indexOf('Patient')] || '').trim().toLowerCase();
       if (ptCell !== target) continue;
       apptRows.push({ rowNum: i + 1, data: r });
-      var provID  = r[APPT_COLS.indexOf('ProvID')];
-      var date    = _fmtDate(r[APPT_COLS.indexOf('Date')]);
-      var time    = r[APPT_COLS.indexOf('Time')];
-      var apptId  = r[APPT_COLS.indexOf('ApptID')];
-      var status  = r[APPT_COLS.indexOf('Status')];
+      var provID = r[APPT_COLS.indexOf('ProvID')];
+      var date = _fmtDate(r[APPT_COLS.indexOf('Date')]);
+      var time = r[APPT_COLS.indexOf('Time')];
+      var apptId = r[APPT_COLS.indexOf('ApptID')];
+      var status = r[APPT_COLS.indexOf('Status')];
       var billing = r[APPT_COLS.indexOf('Billing')];
-      var tebra   = r[APPT_COLS.indexOf('TebraStatus')];
-      var notes   = r[APPT_COLS.indexOf('Notes')];
+      var tebra = r[APPT_COLS.indexOf('TebraStatus')];
+      var notes = r[APPT_COLS.indexOf('Notes')];
       Logger.log('  ✅ FOUND row ' + (i + 1) + ':');
-      Logger.log('     ProvID="'      + provID  + '"');
-      Logger.log('     Date="'        + date    + '"  (raw: ' + JSON.stringify(r[APPT_COLS.indexOf('Date')]) + ')');
-      Logger.log('     Time="'        + time    + '"  key="' + _normalizeTimeKey(time) + '"');
-      Logger.log('     ApptID="'      + apptId  + '"');
-      Logger.log('     Status="'      + status  + '"');
-      Logger.log('     Billing="'     + billing + '"');
-      Logger.log('     TebraStatus="' + tebra   + '"');
-      Logger.log('     Notes="'       + String(notes || '').substring(0, 80) + '"');
+      Logger.log('     ProvID="' + provID + '"');
+      Logger.log('     Date="' + date + '"  (raw: ' + JSON.stringify(r[APPT_COLS.indexOf('Date')]) + ')');
+      Logger.log('     Time="' + time + '"  key="' + _normalizeTimeKey(time) + '"');
+      Logger.log('     ApptID="' + apptId + '"');
+      Logger.log('     Status="' + status + '"');
+      Logger.log('     Billing="' + billing + '"');
+      Logger.log('     TebraStatus="' + tebra + '"');
+      Logger.log('     Notes="' + String(notes || '').substring(0, 80) + '"');
       var sheetKey = String(provID) + '||' + date + '||' + _normalizeTimeKey(time);
       Logger.log('     existingRowMap key="' + sheetKey + '"');
     }
@@ -5531,7 +5671,7 @@ function diagnoseNewPatient(patientName) {
 
   // ── 3. WHAT TEBRA CURRENTLY RETURNS ──────────────────────────────
   Logger.log('\n── 3. Tebra API (next 14 days) ──');
-  var tz       = Session.getScriptTimeZone();
+  var tz = Session.getScriptTimeZone();
   var todayStr = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
   var futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 14);
@@ -5540,26 +5680,26 @@ function diagnoseNewPatient(patientName) {
   try {
     var c = _getTebraCreds();
     var allTebra = _fetchTebraAppointments(c, todayStr, futureStr);
-    allTebra.forEach(function(a) {
+    allTebra.forEach(function (a) {
       if ((a.patient || '').toLowerCase() === target) {
         tebraMatches.push(a);
         var tebraKey = a.provID + '||' + a.date + '||' + _normalizeTimeKey(a.time);
         Logger.log('  ✅ FOUND in Tebra:');
-        Logger.log('     patient="'      + a.patient      + '"');
-        Logger.log('     provID="'       + a.provID       + '"');
-        Logger.log('     date="'         + a.date         + '"');
-        Logger.log('     time="'         + a.time         + '"  key="' + _normalizeTimeKey(a.time) + '"');
-        Logger.log('     tebraStatus="'  + a.tebraStatus  + '"');
-        Logger.log('     _statusOnly='   + a._statusOnly);
-        Logger.log('     _invalid='      + a._invalid);
-        Logger.log('     insurance="'    + a.insurance    + '"');
-        Logger.log('     tebraKey="'     + tebraKey       + '"');
+        Logger.log('     patient="' + a.patient + '"');
+        Logger.log('     provID="' + a.provID + '"');
+        Logger.log('     date="' + a.date + '"');
+        Logger.log('     time="' + a.time + '"  key="' + _normalizeTimeKey(a.time) + '"');
+        Logger.log('     tebraStatus="' + a.tebraStatus + '"');
+        Logger.log('     _statusOnly=' + a._statusOnly);
+        Logger.log('     _invalid=' + a._invalid);
+        Logger.log('     insurance="' + a.insurance + '"');
+        Logger.log('     tebraKey="' + tebraKey + '"');
 
         // Does a matching sheet row exist?
-        var matchedRow = apptRows.find(function(ar) {
+        var matchedRow = apptRows.find(function (ar) {
           var k = String(ar.data[APPT_COLS.indexOf('ProvID')]) + '||' +
-                  _fmtDate(ar.data[APPT_COLS.indexOf('Date')]) + '||' +
-                  _normalizeTimeKey(ar.data[APPT_COLS.indexOf('Time')]);
+            _fmtDate(ar.data[APPT_COLS.indexOf('Date')]) + '||' +
+            _normalizeTimeKey(ar.data[APPT_COLS.indexOf('Time')]);
           return k === tebraKey;
         });
         if (matchedRow) {
@@ -5570,7 +5710,7 @@ function diagnoseNewPatient(patientName) {
             // Check existingPatientSet equivalent
             var hasAnyRow = apptRows.length > 0;
             Logger.log('     → _statusOnly=true  hasAnyApptRow=' + hasAnyRow +
-                       (hasAnyRow ? '  → WOULD BE SKIPPED ⚠' : '  → WOULD CREATE ROW ✅'));
+              (hasAnyRow ? '  → WOULD BE SKIPPED ⚠' : '  → WOULD CREATE ROW ✅'));
           }
         }
       }
@@ -5585,7 +5725,7 @@ function diagnoseNewPatient(patientName) {
 
   // ── 4. SUMMARY ────────────────────────────────────────────────────
   Logger.log('\n── 4. Summary ──');
-  Logger.log('  In Patients tab:     ' + (inPatientsTab  ? 'YES' : 'NO'));
+  Logger.log('  In Patients tab:     ' + (inPatientsTab ? 'YES' : 'NO'));
   Logger.log('  In Appointments tab: ' + (apptRows.length > 0 ? 'YES (' + apptRows.length + ' row(s))' : 'NO'));
   Logger.log('  Found in Tebra:      ' + (tebraMatches.length > 0 ? 'YES (' + tebraMatches.length + ' appt(s))' : 'NO'));
   Logger.log('══════════════════════════════════════════════');
@@ -5610,8 +5750,8 @@ function runDiagnoseNewPatient() {
 function savePatientClaimRecord(patientName, fieldsJson) {
   try {
     var fields = JSON.parse(fieldsJson || '{}');
-    var ss     = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet  = ss.getSheetByName(TAB_PATIENT);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_PATIENT);
     if (!sheet || sheet.getLastRow() < 2) {
       return JSON.stringify({ ok: false, error: 'No patient sheet' });
     }
@@ -5621,7 +5761,7 @@ function savePatientClaimRecord(patientName, fieldsJson) {
     // ── Defensive header extension: ensure all PATIENT_COLS headers exist ──
     // This handles the case where the sheet was created before all columns were added.
     var headerRow = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
-    PATIENT_COLS.forEach(function(col, idx) {
+    PATIENT_COLS.forEach(function (col, idx) {
       if (headerRow.indexOf(col) === -1) {
         var targetCol = idx + 1;  // 1-based column position per PATIENT_COLS order
         // Ensure sheet has enough columns
@@ -5632,22 +5772,22 @@ function savePatientClaimRecord(patientName, fieldsJson) {
       }
     });
 
-    var numCols   = Math.max(PATIENT_COLS.length, sheet.getLastColumn());
-    var data      = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.min(numCols, sheet.getLastColumn()))
-                        .getValues();
+    var numCols = Math.max(PATIENT_COLS.length, sheet.getLastColumn());
+    var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.min(numCols, sheet.getLastColumn()))
+      .getValues();
 
-    var COL_CLAIM  = PATIENT_COLS.indexOf('ClaimGateway')       + 1;  // 1-based
-    var COL_INS    = PATIENT_COLS.indexOf('InsuranceCarrier')   + 1;
-    var COL_MEMID  = PATIENT_COLS.indexOf('MemberID')          + 1;
-    var COL_DOB    = PATIENT_COLS.indexOf('MemberDOB')         + 1;
-    var COL_PCN    = PATIENT_COLS.indexOf('PCN')               + 1;
-    var COL_GROUP  = PATIENT_COLS.indexOf('GroupNumber')       + 1;
-    var COL_SUB    = PATIENT_COLS.indexOf('PrimarySubscriber') + 1;
-    var COL_STATE  = PATIENT_COLS.indexOf('PatientState')      + 1;
-    var COL_RNPI   = PATIENT_COLS.indexOf('RenderingNPI')      + 1;
-    var COL_BNPI   = PATIENT_COLS.indexOf('BillingNPI')        + 1;
-    var COL_XCODE  = PATIENT_COLS.indexOf('xCode')             + 1;
-    var COL_PPLAT  = PATIENT_COLS.indexOf('PaymentProcessingChannel') + 1;
+    var COL_CLAIM = PATIENT_COLS.indexOf('ClaimGateway') + 1;  // 1-based
+    var COL_INS = PATIENT_COLS.indexOf('InsuranceCarrier') + 1;
+    var COL_MEMID = PATIENT_COLS.indexOf('MemberID') + 1;
+    var COL_DOB = PATIENT_COLS.indexOf('MemberDOB') + 1;
+    var COL_PCN = PATIENT_COLS.indexOf('PCN') + 1;
+    var COL_GROUP = PATIENT_COLS.indexOf('GroupNumber') + 1;
+    var COL_SUB = PATIENT_COLS.indexOf('PrimarySubscriber') + 1;
+    var COL_STATE = PATIENT_COLS.indexOf('PatientState') + 1;
+    var COL_RNPI = PATIENT_COLS.indexOf('RenderingNPI') + 1;
+    var COL_BNPI = PATIENT_COLS.indexOf('BillingNPI') + 1;
+    var COL_XCODE = PATIENT_COLS.indexOf('xCode') + 1;
+    var COL_PPLAT = PATIENT_COLS.indexOf('PaymentProcessingChannel') + 1;
 
     for (var i = 0; i < data.length; i++) {
       var fullName = (String(data[i][0] || '') + ' ' + String(data[i][1] || '')).trim().toLowerCase();
@@ -5666,20 +5806,20 @@ function savePatientClaimRecord(patientName, fieldsJson) {
       }
 
       // Text/dropdown fields (no coercion risk — written as plain strings)
-      if (COL_CLAIM > 0) sheet.getRange(rowNum, COL_CLAIM).setValue(fields.claimPlatform    || '');
-      if (COL_INS   > 0) sheet.getRange(rowNum, COL_INS  ).setValue(fields.insurance         || '');
-      if (COL_SUB   > 0) sheet.getRange(rowNum, COL_SUB  ).setValue(fields.primarySubscriber || '');
-      if (COL_STATE > 0) sheet.getRange(rowNum, COL_STATE).setValue(fields.patientState      || '');
+      if (COL_CLAIM > 0) sheet.getRange(rowNum, COL_CLAIM).setValue(fields.claimPlatform || '');
+      if (COL_INS > 0) sheet.getRange(rowNum, COL_INS).setValue(fields.insurance || '');
+      if (COL_SUB > 0) sheet.getRange(rowNum, COL_SUB).setValue(fields.primarySubscriber || '');
+      if (COL_STATE > 0) sheet.getRange(rowNum, COL_STATE).setValue(fields.patientState || '');
 
       // Force plain text on DOB — prevents Sheets from re-interpreting YYYY-MM-DD as a date serial
-      setPlainText(COL_DOB,   fields.memberDOB);
+      setPlainText(COL_DOB, fields.memberDOB);
 
       // Force plain text on all code/ID fields — preserves leading zeros
       setPlainText(COL_MEMID, fields.memberID);
-      setPlainText(COL_PCN,   fields.pcn);
+      setPlainText(COL_PCN, fields.pcn);
       setPlainText(COL_GROUP, fields.groupNumber);
-      setPlainText(COL_RNPI,  fields.renderingNPI);
-      setPlainText(COL_BNPI,  fields.billingNPI);
+      setPlainText(COL_RNPI, fields.renderingNPI);
+      setPlainText(COL_BNPI, fields.billingNPI);
       setPlainText(COL_XCODE, fields.xCode);
       if (COL_PPLAT > 0) sheet.getRange(rowNum, COL_PPLAT).setValue(fields.paymentPlatform || '');
 
@@ -5706,14 +5846,14 @@ function savePatientClaimRecord(patientName, fieldsJson) {
 ════════════════════════════════════════════════════════════════ */
 function savePatientBestChannel(patientName, channelJson) {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_PATIENT);
     if (!sheet || sheet.getLastRow() < 2) {
       return JSON.stringify({ ok: false, error: 'No patient sheet' });
     }
 
     var nameLower = (patientName || '').trim().toLowerCase();
-    var COL_BC    = PATIENT_COLS.indexOf('BestChannel') + 1;  // 1-based
+    var COL_BC = PATIENT_COLS.indexOf('BestChannel') + 1;  // 1-based
 
     if (COL_BC < 1) {
       return JSON.stringify({ ok: false, error: 'BestChannel column not in PATIENT_COLS' });
@@ -5728,7 +5868,7 @@ function savePatientBestChannel(patientName, channelJson) {
     }
 
     var numCols = Math.min(PATIENT_COLS.length, sheet.getLastColumn());
-    var data    = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.max(numCols, 2)).getValues();
+    var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.max(numCols, 2)).getValues();
 
     for (var i = 0; i < data.length; i++) {
       var fullName = (String(data[i][0] || '') + ' ' + String(data[i][1] || '')).trim().toLowerCase();
@@ -5777,35 +5917,35 @@ function savePatientBestChannel(patientName, channelJson) {
 ════════════════════════════════════════════════════════════════ */
 function setPatientBillingChannel(patientName, channel) {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_PATIENT);
     if (!sheet || sheet.getLastRow() < 2) {
       return JSON.stringify({ ok: false, error: 'No patient sheet' });
     }
 
     var ALLOWED = ['Alma', 'Headway', 'Grow', 'Direct'];
-    var raw     = String(channel || '').trim();
-    var norm    = raw.toLowerCase() === 'unknown' ? '' : raw;
+    var raw = String(channel || '').trim();
+    var norm = raw.toLowerCase() === 'unknown' ? '' : raw;
     if (norm && ALLOWED.indexOf(norm) === -1) {
       return JSON.stringify({ ok: false, error: 'Invalid billing channel: ' + channel });
     }
 
     var nameLower = (patientName || '').trim().toLowerCase();
-    var COL_CHAN  = PATIENT_COLS.indexOf('BillingChannel') + 1;  // 1-based
+    var COL_CHAN = PATIENT_COLS.indexOf('BillingChannel') + 1;  // 1-based
 
     if (COL_CHAN < 1) {
       return JSON.stringify({ ok: false, error: 'BillingChannel column not in PATIENT_COLS' });
     }
 
     var numCols = Math.min(PATIENT_COLS.length, sheet.getLastColumn());
-    var data    = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.max(numCols, 2)).getValues();
+    var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.max(numCols, 2)).getValues();
 
     for (var i = 0; i < data.length; i++) {
       var fullName = (String(data[i][0] || '') + ' ' + String(data[i][1] || '')).trim().toLowerCase();
       if (fullName !== nameLower) continue;
 
       var rowNum = i + 2;
-      var prior  = String(data[i][2] || '').trim();
+      var prior = String(data[i][2] || '').trim();
       sheet.getRange(rowNum, COL_CHAN).setValue(norm);
       SpreadsheetApp.flush();
       _audit(ss, 'setPatientBillingChannel', patientName + ': "' + (prior || '(blank)') + '" → "' + (norm || '(blank)') + '"');
@@ -5829,16 +5969,16 @@ function setPatientBillingChannel(patientName, channel) {
    Safe to re-run — skips columns that already exist.
 ════════════════════════════════════════════════════════════════ */
 function migrateAddPatientClaimCols() {
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(TAB_PATIENT);
   if (!sheet) { Logger.log('No Patients tab found.'); return; }
 
   var headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   // Derive from PATIENT_COLS — any column beyond the original 6 may need adding
-  var newCols   = PATIENT_COLS.slice(6);
-  var added     = 0;
+  var newCols = PATIENT_COLS.slice(6);
+  var added = 0;
 
-  newCols.forEach(function(col) {
+  newCols.forEach(function (col) {
     if (headerRow.indexOf(col) === -1) {
       var nextCol = sheet.getLastColumn() + 1;
       sheet.getRange(1, nextCol).setValue(col);
@@ -5904,18 +6044,18 @@ function renameHeadersForTerminologyCleanup() {
   // Appointments tab (col F, AA, AB, AC, AM). Col BB (InsuranceCarrier)
   // is already correctly named — not part of this map, no change needed.
   var APPT_RENAMES = {
-    'Method':          'BillingChannel',
-    'PaymentType':     'CostShareClass',
-    'PaymentRate':     'CostShareRate',
-    'PaymentAmount':   'CostShareCollectedAmt',
+    'Method': 'BillingChannel',
+    'PaymentType': 'CostShareClass',
+    'PaymentRate': 'CostShareRate',
+    'PaymentAmount': 'CostShareCollectedAmt',
     'PaymentPlatform': 'PaymentProcessingChannel',
   };
   // Patients tab (col C, D, E, G, Q).
   var PATIENT_RENAMES = {
-    'Platform':        'BillingChannel',
-    'Insurance':       'InsuranceCarrier',
-    'PatientPortion':  'CostShareClass',
-    'ClaimPlatform':   'ClaimGateway',
+    'Platform': 'BillingChannel',
+    'Insurance': 'InsuranceCarrier',
+    'PatientPortion': 'CostShareClass',
+    'ClaimPlatform': 'ClaimGateway',
     'PaymentPlatform': 'PaymentProcessingChannel',
   };
 
@@ -5924,12 +6064,12 @@ function renameHeadersForTerminologyCleanup() {
     var lastCol = sheet.getLastColumn();
     if (lastCol < 1) { results.push('❌ ' + sheet.getName() + ': no columns found.'); return; }
     var hdrRange = sheet.getRange(1, 1, 1, lastCol);
-    var hdrs     = hdrRange.getValues()[0];
-    var changed  = false;
-    var present  = {};
-    hdrs.forEach(function(h) { present[String(h || '').trim()] = true; });
+    var hdrs = hdrRange.getValues()[0];
+    var changed = false;
+    var present = {};
+    hdrs.forEach(function (h) { present[String(h || '').trim()] = true; });
 
-    Object.keys(renameMap).forEach(function(oldName) {
+    Object.keys(renameMap).forEach(function (oldName) {
       var newName = renameMap[oldName];
       if (present[newName]) {
         results.push('SKIP (already renamed): ' + sheet.getName() + ' — "' + newName + '" already present');
@@ -5938,7 +6078,7 @@ function renameHeadersForTerminologyCleanup() {
       var idx = hdrs.indexOf(oldName);
       if (idx === -1) {
         results.push('⚠️ NOT FOUND: ' + sheet.getName() + ' — no column currently named "' + oldName +
-                      '" (expected to rename to "' + newName + '") — check manually');
+          '" (expected to rename to "' + newName + '") — check manually');
         return;
       }
       hdrs[idx] = newName;
@@ -5980,13 +6120,13 @@ function renameHeadersForTerminologyCleanup() {
 
    SAFE TO RE-RUN: already-TRUE values are skipped (no double-write).
    ════════════════════════════════════════════════════════════════════ */
-function bulkVerifyQ1_2026_dryRun() { bulkVerifyQ1_2026(true);  }
-function bulkVerifyQ1_2026()        { _bulkVerifyRange('2026-01-01', '2026-03-31', false); }
+function bulkVerifyQ1_2026_dryRun() { bulkVerifyQ1_2026(true); }
+function bulkVerifyQ1_2026() { _bulkVerifyRange('2026-01-01', '2026-03-31', false); }
 
 function _bulkVerifyRange(startISO, endISO, dryRun) {
   dryRun = (dryRun === true);
 
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(TAB_APPT);
   if (!sheet || sheet.getLastRow() < 2) {
     Logger.log('No appointment data found.');
@@ -5994,30 +6134,30 @@ function _bulkVerifyRange(startISO, endISO, dryRun) {
   }
 
   // ── Column indices (0-based) ──────────────────────────────────────
-  var COL_DATE      = APPT_COLS.indexOf('Date');          // 1
-  var COL_METHOD    = APPT_COLS.indexOf('BillingChannel'); // 5
-  var COL_ALMA_V    = APPT_COLS.indexOf('AlmaValid');     // 7
-  var COL_HW_V      = APPT_COLS.indexOf('HWValid');       // 9
-  var COL_GROW_V    = APPT_COLS.indexOf('GrowValid');     // 11
-  var COL_INTAKE    = APPT_COLS.indexOf('Intake');        // 13
-  var COL_INS       = APPT_COLS.indexOf('InsVerified');   // 14
-  var COL_AUTOPAY   = APPT_COLS.indexOf('Autopay');       // 15
-  var COL_STATUS    = APPT_COLS.indexOf('Status');        // 24
-  var COL_LMOD      = APPT_COLS.indexOf('LastModified');  // 32
-  var COL_MODBY     = APPT_COLS.indexOf('ModifiedBy');    // 33
-  var COL_DIRECT_V  = APPT_COLS.indexOf('DirectValid');   // 48
+  var COL_DATE = APPT_COLS.indexOf('Date');          // 1
+  var COL_METHOD = APPT_COLS.indexOf('BillingChannel'); // 5
+  var COL_ALMA_V = APPT_COLS.indexOf('AlmaValid');     // 7
+  var COL_HW_V = APPT_COLS.indexOf('HWValid');       // 9
+  var COL_GROW_V = APPT_COLS.indexOf('GrowValid');     // 11
+  var COL_INTAKE = APPT_COLS.indexOf('Intake');        // 13
+  var COL_INS = APPT_COLS.indexOf('InsVerified');   // 14
+  var COL_AUTOPAY = APPT_COLS.indexOf('Autopay');       // 15
+  var COL_STATUS = APPT_COLS.indexOf('Status');        // 24
+  var COL_LMOD = APPT_COLS.indexOf('LastModified');  // 32
+  var COL_MODBY = APPT_COLS.indexOf('ModifiedBy');    // 33
+  var COL_DIRECT_V = APPT_COLS.indexOf('DirectValid');   // 48
 
-  var rows    = sheet.getDataRange().getValues();
-  var now     = new Date().toISOString();
+  var rows = sheet.getDataRange().getValues();
+  var now = new Date().toISOString();
   var updated = 0;
   var skipped = 0;
   var outOfRange = 0;
 
   Logger.log((dryRun ? '🔍 DRY RUN — ' : '✏️  LIVE — ') +
-             'bulkVerifyRange ' + startISO + ' → ' + endISO);
+    'bulkVerifyRange ' + startISO + ' → ' + endISO);
 
   for (var i = 1; i < rows.length; i++) {
-    var r       = rows[i];
+    var r = rows[i];
     var rowDate = _fmtDate(r[COL_DATE]);
 
     // Skip rows outside the target window
@@ -6025,8 +6165,8 @@ function _bulkVerifyRange(startISO, endISO, dryRun) {
 
     // Skip void rows (No-show / Cancelled / Rescheduled in Tebra)
     var tebraStatus = APPT_COLS.indexOf('TebraStatus') >= 0
-                      ? String(r[APPT_COLS.indexOf('TebraStatus')] || '')
-                      : '';
+      ? String(r[APPT_COLS.indexOf('TebraStatus')] || '')
+      : '';
     if (_isVoidStatus(tebraStatus)) {
       Logger.log('  ↷ Skip void: row ' + (i + 1) + '  ' + String(r[4] || '') + '  ' + rowDate);
       skipped++;
@@ -6039,14 +6179,14 @@ function _bulkVerifyRange(startISO, endISO, dryRun) {
 
     // Determine the method-valid column (1-based) for this appointment
     var validCol1 = 0;
-    if      (method === 'alma')  validCol1 = COL_ALMA_V   + 1;
-    else if (method === 'hw')    validCol1 = COL_HW_V     + 1;
-    else if (method === 'grow')  validCol1 = COL_GROW_V   + 1;
+    if (method === 'alma') validCol1 = COL_ALMA_V + 1;
+    else if (method === 'hw') validCol1 = COL_HW_V + 1;
+    else if (method === 'grow') validCol1 = COL_GROW_V + 1;
     else if (method === 'direct') validCol1 = COL_DIRECT_V + 1;
 
     Logger.log('  ' + (dryRun ? '[would update]' : '[updating]') +
-               '  row ' + rowNum + '  ' + patient + '  ' + rowDate +
-               '  method=' + (method || '(none)') + '  validCol=' + validCol1);
+      '  row ' + rowNum + '  ' + patient + '  ' + rowDate +
+      '  method=' + (method || '(none)') + '  validCol=' + validCol1);
 
     if (!dryRun) {
       // ── Method valid ─────────────────────────────────────────────
@@ -6054,13 +6194,13 @@ function _bulkVerifyRange(startISO, endISO, dryRun) {
         sheet.getRange(rowNum, validCol1).setValue(true);
       }
       // ── Intake, InsVerified, Autopay ─────────────────────────────
-      sheet.getRange(rowNum, COL_INTAKE  + 1).setValue(true);
-      sheet.getRange(rowNum, COL_INS     + 1).setValue(true);
+      sheet.getRange(rowNum, COL_INTAKE + 1).setValue(true);
+      sheet.getRange(rowNum, COL_INS + 1).setValue(true);
       sheet.getRange(rowNum, COL_AUTOPAY + 1).setValue(true);
       // ── Status ───────────────────────────────────────────────────
-      sheet.getRange(rowNum, COL_STATUS  + 1).setValue('valid');
+      sheet.getRange(rowNum, COL_STATUS + 1).setValue('valid');
       // ── Audit stamp ──────────────────────────────────────────────
-      sheet.getRange(rowNum, COL_LMOD  + 1).setValue(now);
+      sheet.getRange(rowNum, COL_LMOD + 1).setValue(now);
       sheet.getRange(rowNum, COL_MODBY + 1).setValue('bulkVerifyQ1_2026');
     }
 
@@ -6072,9 +6212,9 @@ function _bulkVerifyRange(startISO, endISO, dryRun) {
   Logger.log('');
   Logger.log('══════════════════════════════════════════════');
   Logger.log((dryRun ? '🔍 DRY RUN COMPLETE' : '✅  DONE') +
-             ' — ' + startISO + ' → ' + endISO);
+    ' — ' + startISO + ' → ' + endISO);
   Logger.log('  Appointments ' + (dryRun ? 'that would be updated' : 'updated') +
-             ': ' + updated);
+    ': ' + updated);
   Logger.log('  Void/skipped: ' + skipped);
   Logger.log('  Outside range (not touched): ' + outOfRange);
   Logger.log('══════════════════════════════════════════════');
@@ -6115,22 +6255,22 @@ function _bulkVerifyRange(startISO, endISO, dryRun) {
 function _fetchTebraPatientStates(c) {
   var bodyXml =
     '<ns:GetAllPatients><ns:request>' +
-      _tebraHeader(c) +
-      '<ns:Fields>' +
-        '<ns:FirstName>true</ns:FirstName>' +
-        '<ns:LastName>true</ns:LastName>' +
-        '<ns:PatientFullName>true</ns:PatientFullName>' +
-        '<ns:State>true</ns:State>' +
-        '<ns:PrimaryInsurancePolicyCompanyName>true</ns:PrimaryInsurancePolicyCompanyName>' +
-        '<ns:DefaultRenderingProviderFullName>true</ns:DefaultRenderingProviderFullName>' +
-      '</ns:Fields>' +
-      '<ns:Filter>' +
-        '<ns:BatchSize>1000</ns:BatchSize>' +
-      '</ns:Filter>' +
+    _tebraHeader(c) +
+    '<ns:Fields>' +
+    '<ns:FirstName>true</ns:FirstName>' +
+    '<ns:LastName>true</ns:LastName>' +
+    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:State>true</ns:State>' +
+    '<ns:PrimaryInsurancePolicyCompanyName>true</ns:PrimaryInsurancePolicyCompanyName>' +
+    '<ns:DefaultRenderingProviderFullName>true</ns:DefaultRenderingProviderFullName>' +
+    '</ns:Fields>' +
+    '<ns:Filter>' +
+    '<ns:BatchSize>1000</ns:BatchSize>' +
+    '</ns:Filter>' +
     '</ns:request></ns:GetAllPatients>';
 
   var text = _tebraPost('GetAllPatients', bodyXml);
-  var doc  = XmlService.parse(text);
+  var doc = XmlService.parse(text);
   var root = doc.getRootElement();
 
   // Check for API-level errors
@@ -6138,7 +6278,7 @@ function _fetchTebraPatientStates(c) {
   _findXmlElements(root, 'ErrorResponse', errEls);
   if (errEls.length && _getXmlChildText(errEls[0], 'IsError').toLowerCase() === 'true') {
     var errMsg = _getXmlChildText(errEls[0], 'ErrorMessage') ||
-                 _getXmlChildText(errEls[0], 'Message') || 'Unknown API error';
+      _getXmlChildText(errEls[0], 'Message') || 'Unknown API error';
     throw new Error('Tebra GetAllPatients API error: ' + errMsg);
   }
 
@@ -6155,16 +6295,16 @@ function _fetchTebraPatientStates(c) {
 
   if (patientEls.length === 0) {
     Logger.log('⚠️  Zero patients returned. Run testTebraGetPatientsRaw() to inspect ' +
-               'the raw XML and confirm the correct container element name.');
+      'the raw XML and confirm the correct container element name.');
     return {};
   }
 
   var patientMap = {};
-  patientEls.forEach(function(el) {
+  patientEls.forEach(function (el) {
     // Name — prefer PatientFullName, fall back to FirstName + LastName
     var fullNameRaw = (_findFirstXml(el, 'PatientFullName') || '').trim();
-    var first       = (_findFirstXml(el, 'FirstName') || '').trim();
-    var last        = (_findFirstXml(el, 'LastName')  || '').trim();
+    var first = (_findFirstXml(el, 'FirstName') || '').trim();
+    var last = (_findFirstXml(el, 'LastName') || '').trim();
 
     if (!fullNameRaw && !first && !last) return;
 
@@ -6173,30 +6313,30 @@ function _fetchTebraPatientStates(c) {
       : _normName(first + ' ' + last);
     if (!nameKey) return;
 
-    var state    = (_findFirstXml(el, 'State') || '').trim().toUpperCase();
-    var ins      = (_findFirstXml(el, 'PrimaryInsurancePolicyCompanyName') || '').trim();
-    var provName = (_findFirstXml(el, 'DefaultRenderingProviderFullName')  || '').trim();
+    var state = (_findFirstXml(el, 'State') || '').trim().toUpperCase();
+    var ins = (_findFirstXml(el, 'PrimaryInsurancePolicyCompanyName') || '').trim();
+    var provName = (_findFirstXml(el, 'DefaultRenderingProviderFullName') || '').trim();
 
     // Keep first occurrence; update only if a later record has more data
     if (!patientMap[nameKey]) {
       patientMap[nameKey] = { state: state, insurance: ins, providerName: provName };
     } else {
-      if (state    && !patientMap[nameKey].state)        patientMap[nameKey].state       = state;
-      if (ins      && !patientMap[nameKey].insurance)    patientMap[nameKey].insurance   = ins;
+      if (state && !patientMap[nameKey].state) patientMap[nameKey].state = state;
+      if (ins && !patientMap[nameKey].insurance) patientMap[nameKey].insurance = ins;
       if (provName && !patientMap[nameKey].providerName) patientMap[nameKey].providerName = provName;
     }
   });
 
   Logger.log('Patient map built: ' + Object.keys(patientMap).length +
-             ' unique patients from Tebra.');
+    ' unique patients from Tebra.');
 
   // Log a sample for verification
   var sample = Object.keys(patientMap).slice(0, 5);
-  sample.forEach(function(k) {
+  sample.forEach(function (k) {
     var d = patientMap[k];
-    Logger.log('  "' + k + '" → state=' + (d.state||'—') +
-               ', ins=' + (d.insurance||'—') +
-               ', prov=' + (d.providerName||'—'));
+    Logger.log('  "' + k + '" → state=' + (d.state || '—') +
+      ', ins=' + (d.insurance || '—') +
+      ', prov=' + (d.providerName || '—'));
   });
 
   return patientMap;
@@ -6225,53 +6365,53 @@ function _fetchTebraPatientStates(c) {
  */
 function backfillInsuranceCarrier(forceOverwrite) {
   try {
-    var ss        = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var apptSheet = ss.getSheetByName(TAB_APPT);
-    var patSheet  = ss.getSheetByName(TAB_PATIENT);
+    var patSheet = ss.getSheetByName(TAB_PATIENT);
     if (!apptSheet || apptSheet.getLastRow() < 2) {
       return JSON.stringify({ updated: 0 });
     }
 
     // ── Column indices ────────────────────────────────────────────────────────
-    var IDX_PATIENT    = APPT_COLS.indexOf('Patient');          // 0-based (4)
+    var IDX_PATIENT = APPT_COLS.indexOf('Patient');          // 0-based (4)
     var IDX_DIRECT_INS = APPT_COLS.indexOf('DirectIns');        // 0-based (12)
-    var IDX_INS_CARR   = APPT_COLS.indexOf('InsuranceCarrier'); // 0-based (53)
-    var COL_INS_CARR   = IDX_INS_CARR + 1;                     // 1-based
+    var IDX_INS_CARR = APPT_COLS.indexOf('InsuranceCarrier'); // 0-based (53)
+    var COL_INS_CARR = IDX_INS_CARR + 1;                     // 1-based
 
     // ── Build name → insurance map from Patients tab ─────────────────────────
     var patInsMap = {};
     var COL_PT_FNAME = PATIENT_COLS.indexOf('FirstName');  // 0
     var COL_PT_LNAME = PATIENT_COLS.indexOf('LastName');   // 1
-    var COL_PT_INS   = PATIENT_COLS.indexOf('InsuranceCarrier');  // 3
+    var COL_PT_INS = PATIENT_COLS.indexOf('InsuranceCarrier');  // 3
 
     if (patSheet && patSheet.getLastRow() > 1) {
       patSheet.getRange(2, 1, patSheet.getLastRow() - 1, PATIENT_COLS.length)
-              .getValues()
-              .forEach(function(r) {
-                var first = String(r[COL_PT_FNAME] || '').trim();
-                var last  = String(r[COL_PT_LNAME] || '').trim();
-                var ins   = String(r[COL_PT_INS]   || '').trim();
-                if ((first || last) && ins) {
-                  patInsMap[_normName(first + ' ' + last)] = ins;
-                }
-              });
+        .getValues()
+        .forEach(function (r) {
+          var first = String(r[COL_PT_FNAME] || '').trim();
+          var last = String(r[COL_PT_LNAME] || '').trim();
+          var ins = String(r[COL_PT_INS] || '').trim();
+          if ((first || last) && ins) {
+            patInsMap[_normName(first + ' ' + last)] = ins;
+          }
+        });
     }
     Logger.log('backfillInsuranceCarrier: Patients tab insurance map has ' +
-               Object.keys(patInsMap).length + ' entries.');
+      Object.keys(patInsMap).length + ' entries.');
 
     // ── Scan Appointments tab ─────────────────────────────────────────────────
-    var lastRow  = apptSheet.getLastRow();
-    var numRows  = lastRow - 1;
+    var lastRow = apptSheet.getLastRow();
+    var numRows = lastRow - 1;
     var apptData = apptSheet.getRange(2, 1, numRows, APPT_COLS.length).getValues();
-    var updated  = 0;
+    var updated = 0;
 
-    apptData.forEach(function(row, i) {
-      var existing  = String(row[IDX_INS_CARR]   || '').trim();
+    apptData.forEach(function (row, i) {
+      var existing = String(row[IDX_INS_CARR] || '').trim();
       if (existing && !forceOverwrite) return;  // already populated — skip unless force
 
       // Source 1: DirectIns on this row (from Tebra appointment sync)
       var directIns = String(row[IDX_DIRECT_INS] || '').trim();
-      var carrier   = directIns;
+      var carrier = directIns;
 
       // Source 2: Patients tab fallback by patient name
       if (!carrier) {
@@ -6287,7 +6427,7 @@ function backfillInsuranceCarrier(forceOverwrite) {
 
     SpreadsheetApp.flush();
     Logger.log('✅  backfillInsuranceCarrier: ' + updated + ' InsuranceCarrier cells updated' +
-               (forceOverwrite ? ' (force overwrite)' : ' (blanks only)') + '.');
+      (forceOverwrite ? ' (force overwrite)' : ' (blanks only)') + '.');
 
     return JSON.stringify({ updated: updated });
 
@@ -6352,40 +6492,40 @@ function syncPatientStates(tebraPatientMap, forceOverwrite) {
     var mapSize = Object.keys(tebraPatientMap || {}).length;
     if (!mapSize) {
       Logger.log('⚠️  syncPatientStates: no patient data returned from Tebra. ' +
-                 'Run testTebraGetPatientsRaw() to diagnose.');
+        'Run testTebraGetPatientsRaw() to diagnose.');
       return JSON.stringify({ patientsUpdated: 0, appointmentsUpdated: 0 });
     }
     Logger.log('syncPatientStates: working with ' + mapSize + ' patients from Tebra map.');
 
-    var patSheet  = ss.getSheetByName(TAB_PATIENT);
+    var patSheet = ss.getSheetByName(TAB_PATIENT);
     var apptSheet = ss.getSheetByName(TAB_APPT);
-    var patientsUpdated      = 0;
-    var appointmentsUpdated  = 0;
+    var patientsUpdated = 0;
+    var appointmentsUpdated = 0;
 
     // ── Column indices (0-based for reading, 1-based for writing) ──────────────
-    var COL_PT_FNAME     = PATIENT_COLS.indexOf('FirstName');     // 0-based
-    var COL_PT_LNAME     = PATIENT_COLS.indexOf('LastName');      // 0-based
-    var COL_PT_INS_IDX   = PATIENT_COLS.indexOf('InsuranceCarrier'); // 0-based (index 3)
+    var COL_PT_FNAME = PATIENT_COLS.indexOf('FirstName');     // 0-based
+    var COL_PT_LNAME = PATIENT_COLS.indexOf('LastName');      // 0-based
+    var COL_PT_INS_IDX = PATIENT_COLS.indexOf('InsuranceCarrier'); // 0-based (index 3)
     var COL_PT_STATE_IDX = PATIENT_COLS.indexOf('PatientState');  // 0-based (index 12)
-    var COL_PT_INS       = COL_PT_INS_IDX   + 1;                 // 1-based for setRange
-    var COL_PT_STATE     = COL_PT_STATE_IDX + 1;                 // 1-based for setRange
+    var COL_PT_INS = COL_PT_INS_IDX + 1;                 // 1-based for setRange
+    var COL_PT_STATE = COL_PT_STATE_IDX + 1;                 // 1-based for setRange
 
     // ── 1. Update Patients tab ────────────────────────────────────────────────
     if (patSheet && patSheet.getLastRow() > 1 && COL_PT_STATE > 0) {
       var ptData = patSheet.getRange(2, 1, patSheet.getLastRow() - 1, PATIENT_COLS.length).getValues();
-      ptData.forEach(function(row, i) {
+      ptData.forEach(function (row, i) {
         var first = String(row[COL_PT_FNAME] || '').trim();
-        var last  = String(row[COL_PT_LNAME] || '').trim();
+        var last = String(row[COL_PT_LNAME] || '').trim();
         if (!first && !last) return;
 
-        var nameKey   = _normName(first + ' ' + last);
+        var nameKey = _normName(first + ' ' + last);
         var tebraData = tebraPatientMap[nameKey];
         if (!tebraData) return;
 
-        var rowNum        = i + 2;
+        var rowNum = i + 2;
         var existingState = String(row[COL_PT_STATE_IDX] || '').trim();
-        var existingIns   = String(row[COL_PT_INS_IDX]   || '').trim();
-        var anyUpdate     = false;
+        var existingIns = String(row[COL_PT_INS_IDX] || '').trim();
+        var anyUpdate = false;
 
         if (tebraData.state && (forceOverwrite || !existingState)) {
           patSheet.getRange(rowNum, COL_PT_STATE).setValue(tebraData.state);
@@ -6399,32 +6539,32 @@ function syncPatientStates(tebraPatientMap, forceOverwrite) {
         if (anyUpdate) {
           patientsUpdated++;
           Logger.log('  Patients tab: ' + _titleCase(first + ' ' + last) +
-                     ' → state=' + (tebraData.state||'—') +
-                     ', ins=' + (tebraData.insurance||'—'));
+            ' → state=' + (tebraData.state || '—') +
+            ', ins=' + (tebraData.insurance || '—'));
         }
       });
     }
 
     // ── 2. Back-fill Appointments tab ─────────────────────────────────────────
-    var COL_APPT_PAT_IDX  = APPT_COLS.indexOf('Patient');           // 0-based (4)
-    var COL_APPT_INS_IDX  = APPT_COLS.indexOf('InsuranceCarrier');  // 0-based (53)
-    var COL_APPT_ST_IDX   = APPT_COLS.indexOf('PatientState');      // 0-based (54)
-    var COL_APPT_INS      = COL_APPT_INS_IDX + 1;                  // 1-based
-    var COL_APPT_STATE    = COL_APPT_ST_IDX  + 1;                  // 1-based
+    var COL_APPT_PAT_IDX = APPT_COLS.indexOf('Patient');           // 0-based (4)
+    var COL_APPT_INS_IDX = APPT_COLS.indexOf('InsuranceCarrier');  // 0-based (53)
+    var COL_APPT_ST_IDX = APPT_COLS.indexOf('PatientState');      // 0-based (54)
+    var COL_APPT_INS = COL_APPT_INS_IDX + 1;                  // 1-based
+    var COL_APPT_STATE = COL_APPT_ST_IDX + 1;                  // 1-based
 
     if (apptSheet && apptSheet.getLastRow() > 1 && COL_APPT_STATE > 0) {
       var apptData = apptSheet.getRange(2, 1, apptSheet.getLastRow() - 1, APPT_COLS.length).getValues();
-      apptData.forEach(function(row, i) {
+      apptData.forEach(function (row, i) {
         var patNameNorm = _normName(String(row[COL_APPT_PAT_IDX] || ''));
         if (!patNameNorm) return;
 
         var tebraData = tebraPatientMap[patNameNorm];
         if (!tebraData) return;
 
-        var rowNum       = i + 2;
-        var existingSt   = String(row[COL_APPT_ST_IDX]  || '').trim();
-        var existingIns  = String(row[COL_APPT_INS_IDX] || '').trim();
-        var anyUpdate    = false;
+        var rowNum = i + 2;
+        var existingSt = String(row[COL_APPT_ST_IDX] || '').trim();
+        var existingIns = String(row[COL_APPT_INS_IDX] || '').trim();
+        var anyUpdate = false;
 
         if (tebraData.state && (forceOverwrite || !existingSt)) {
           apptSheet.getRange(rowNum, COL_APPT_STATE).setValue(tebraData.state);
@@ -6445,10 +6585,10 @@ function syncPatientStates(tebraPatientMap, forceOverwrite) {
       (forceOverwrite ? ' (force overwrite)' : ' (blanks only)'));
 
     Logger.log('✅  syncPatientStates: ' + patientsUpdated + ' Patients rows, ' +
-               appointmentsUpdated + ' Appointment rows updated.');
+      appointmentsUpdated + ' Appointment rows updated.');
 
     return JSON.stringify({
-      patientsUpdated:     patientsUpdated,
+      patientsUpdated: patientsUpdated,
       appointmentsUpdated: appointmentsUpdated,
     });
 
@@ -6492,16 +6632,16 @@ function testTebraGetPatients() {
   Logger.log('=== testTebraGetPatients (GetAllPatients) ===');
   try {
     var patientMap = _fetchTebraPatientStates(c);
-    var entries    = Object.keys(patientMap);
+    var entries = Object.keys(patientMap);
     Logger.log('Total patients returned: ' + entries.length);
     Logger.log('');
     Logger.log('First 10 entries (name → state | insurance | provider):');
-    entries.slice(0, 10).forEach(function(name) {
+    entries.slice(0, 10).forEach(function (name) {
       var d = patientMap[name];
       Logger.log('  "' + name + '" →  ' +
-                 'state=' + (d.state       || '(blank)') + '  |  ' +
-                 'ins='   + (d.insurance   || '(blank)') + '  |  ' +
-                 'prov='  + (d.providerName|| '(blank)'));
+        'state=' + (d.state || '(blank)') + '  |  ' +
+        'ins=' + (d.insurance || '(blank)') + '  |  ' +
+        'prov=' + (d.providerName || '(blank)'));
     });
 
     if (entries.length === 0) {
@@ -6531,19 +6671,19 @@ function testTebraGetPatientsRaw() {
   // Field names match the SoapUI test — these are PascalCase and case-sensitive.
   var bodyXml =
     '<ns:GetAllPatients><ns:request>' +
-      _tebraHeader(c) +
-      '<ns:Fields>' +
-        '<ns:FirstName>true</ns:FirstName>' +
-        '<ns:LastName>true</ns:LastName>' +
-        '<ns:PatientFullName>true</ns:PatientFullName>' +
-        '<ns:State>true</ns:State>' +
-        '<ns:PrimaryInsurancePolicyCompanyName>true</ns:PrimaryInsurancePolicyCompanyName>' +
-        '<ns:DefaultRenderingProviderFullName>true</ns:DefaultRenderingProviderFullName>' +
-        '<ns:DefaultRenderingProviderId>true</ns:DefaultRenderingProviderId>' +
-      '</ns:Fields>' +
-      '<ns:Filter>' +
-        '<ns:BatchSize>1000</ns:BatchSize>' +
-      '</ns:Filter>' +
+    _tebraHeader(c) +
+    '<ns:Fields>' +
+    '<ns:FirstName>true</ns:FirstName>' +
+    '<ns:LastName>true</ns:LastName>' +
+    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:State>true</ns:State>' +
+    '<ns:PrimaryInsurancePolicyCompanyName>true</ns:PrimaryInsurancePolicyCompanyName>' +
+    '<ns:DefaultRenderingProviderFullName>true</ns:DefaultRenderingProviderFullName>' +
+    '<ns:DefaultRenderingProviderId>true</ns:DefaultRenderingProviderId>' +
+    '</ns:Fields>' +
+    '<ns:Filter>' +
+    '<ns:BatchSize>1000</ns:BatchSize>' +
+    '</ns:Filter>' +
     '</ns:request></ns:GetAllPatients>';
 
   try {
@@ -6597,25 +6737,25 @@ function testPatientAuth_Try1_ClientVersion() {
   Logger.log('=== TRY 1: GetAllPatients + ClientVersion 2.1 ===');
   var bodyXml =
     '<ns:GetAllPatients><ns:request>' +
-      '<ns:RequestHeader>' +
-        '<ns:ClientVersion>2.1</ns:ClientVersion>' +
-        '<ns:CustomerKey>' + _xmlEscape(c.customerKey) + '</ns:CustomerKey>' +
-        '<ns:Password>'    + _xmlEscape(c.password)    + '</ns:Password>'    +
-        '<ns:User>'        + _xmlEscape(c.user)        + '</ns:User>'        +
-      '</ns:RequestHeader>' +
-      '<ns:Fields>' +
-        '<ns:FirstName>true</ns:FirstName>' +
-        '<ns:LastName>true</ns:LastName>' +
-        '<ns:State>true</ns:State>' +
-      '</ns:Fields>' +
-      '<ns:Filter><ns:BatchSize>10</ns:BatchSize></ns:Filter>' +
+    '<ns:RequestHeader>' +
+    '<ns:ClientVersion>2.1</ns:ClientVersion>' +
+    '<ns:CustomerKey>' + _xmlEscape(c.customerKey) + '</ns:CustomerKey>' +
+    '<ns:Password>' + _xmlEscape(c.password) + '</ns:Password>' +
+    '<ns:User>' + _xmlEscape(c.user) + '</ns:User>' +
+    '</ns:RequestHeader>' +
+    '<ns:Fields>' +
+    '<ns:FirstName>true</ns:FirstName>' +
+    '<ns:LastName>true</ns:LastName>' +
+    '<ns:State>true</ns:State>' +
+    '</ns:Fields>' +
+    '<ns:Filter><ns:BatchSize>10</ns:BatchSize></ns:Filter>' +
     '</ns:request></ns:GetAllPatients>';
 
   try {
     var text = _tebraPost('GetAllPatients', bodyXml);
     Logger.log('Response length: ' + text.length);
     Logger.log(text.substr(0, 1200));
-  } catch(e) { Logger.log('❌  ' + e.message); }
+  } catch (e) { Logger.log('❌  ' + e.message); }
   Logger.log('=== End TRY 1 ===');
 }
 
@@ -6631,28 +6771,28 @@ function testPatientAuth_Try2_GetPatients() {
   Logger.log('=== TRY 2: GetPatients (not GetAllPatients) ===');
   var bodyXml =
     '<ns:GetPatients><ns:request>' +
-      '<ns:RequestHeader>' +
-        '<ns:ClientVersion>2.1</ns:ClientVersion>' +
-        '<ns:CustomerKey>' + _xmlEscape(c.customerKey) + '</ns:CustomerKey>' +
-        '<ns:Password>'    + _xmlEscape(c.password)    + '</ns:Password>'    +
-        '<ns:User>'        + _xmlEscape(c.user)        + '</ns:User>'        +
-      '</ns:RequestHeader>' +
-      '<ns:Fields>' +
-        '<ns:FirstName>true</ns:FirstName>' +
-        '<ns:LastName>true</ns:LastName>' +
-        '<ns:PatientFullName>true</ns:PatientFullName>' +
-        '<ns:State>true</ns:State>' +
-        '<ns:PrimaryInsurancePolicyCompanyName>true</ns:PrimaryInsurancePolicyCompanyName>' +
-        '<ns:DefaultRenderingProviderFullName>true</ns:DefaultRenderingProviderFullName>' +
-      '</ns:Fields>' +
-      '<ns:Filter><ns:BatchSize>10</ns:BatchSize></ns:Filter>' +
+    '<ns:RequestHeader>' +
+    '<ns:ClientVersion>2.1</ns:ClientVersion>' +
+    '<ns:CustomerKey>' + _xmlEscape(c.customerKey) + '</ns:CustomerKey>' +
+    '<ns:Password>' + _xmlEscape(c.password) + '</ns:Password>' +
+    '<ns:User>' + _xmlEscape(c.user) + '</ns:User>' +
+    '</ns:RequestHeader>' +
+    '<ns:Fields>' +
+    '<ns:FirstName>true</ns:FirstName>' +
+    '<ns:LastName>true</ns:LastName>' +
+    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:State>true</ns:State>' +
+    '<ns:PrimaryInsurancePolicyCompanyName>true</ns:PrimaryInsurancePolicyCompanyName>' +
+    '<ns:DefaultRenderingProviderFullName>true</ns:DefaultRenderingProviderFullName>' +
+    '</ns:Fields>' +
+    '<ns:Filter><ns:BatchSize>10</ns:BatchSize></ns:Filter>' +
     '</ns:request></ns:GetPatients>';
 
   try {
     var text = _tebraPost('GetPatients', bodyXml);
     Logger.log('Response length: ' + text.length);
     Logger.log(text.substr(0, 1500));
-  } catch(e) { Logger.log('❌  ' + e.message); }
+  } catch (e) { Logger.log('❌  ' + e.message); }
   Logger.log('=== End TRY 2 ===');
 }
 
@@ -6667,31 +6807,31 @@ function testPatientAuth_Try3_WithPracticeID() {
   Logger.log('=== TRY 3: GetPatients + PracticeID=1 in filter ===');
   var bodyXml =
     '<ns:GetPatients><ns:request>' +
-      '<ns:RequestHeader>' +
-        '<ns:ClientVersion>2.1</ns:ClientVersion>' +
-        '<ns:CustomerKey>' + _xmlEscape(c.customerKey) + '</ns:CustomerKey>' +
-        '<ns:Password>'    + _xmlEscape(c.password)    + '</ns:Password>'    +
-        '<ns:User>'        + _xmlEscape(c.user)        + '</ns:User>'        +
-      '</ns:RequestHeader>' +
-      '<ns:Fields>' +
-        '<ns:FirstName>true</ns:FirstName>' +
-        '<ns:LastName>true</ns:LastName>' +
-        '<ns:PatientFullName>true</ns:PatientFullName>' +
-        '<ns:State>true</ns:State>' +
-        '<ns:PrimaryInsurancePolicyCompanyName>true</ns:PrimaryInsurancePolicyCompanyName>' +
-        '<ns:DefaultRenderingProviderFullName>true</ns:DefaultRenderingProviderFullName>' +
-      '</ns:Fields>' +
-      '<ns:Filter>' +
-        '<ns:BatchSize>10</ns:BatchSize>' +
-        '<ns:PracticeID>1</ns:PracticeID>' +
-      '</ns:Filter>' +
+    '<ns:RequestHeader>' +
+    '<ns:ClientVersion>2.1</ns:ClientVersion>' +
+    '<ns:CustomerKey>' + _xmlEscape(c.customerKey) + '</ns:CustomerKey>' +
+    '<ns:Password>' + _xmlEscape(c.password) + '</ns:Password>' +
+    '<ns:User>' + _xmlEscape(c.user) + '</ns:User>' +
+    '</ns:RequestHeader>' +
+    '<ns:Fields>' +
+    '<ns:FirstName>true</ns:FirstName>' +
+    '<ns:LastName>true</ns:LastName>' +
+    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:State>true</ns:State>' +
+    '<ns:PrimaryInsurancePolicyCompanyName>true</ns:PrimaryInsurancePolicyCompanyName>' +
+    '<ns:DefaultRenderingProviderFullName>true</ns:DefaultRenderingProviderFullName>' +
+    '</ns:Fields>' +
+    '<ns:Filter>' +
+    '<ns:BatchSize>10</ns:BatchSize>' +
+    '<ns:PracticeID>1</ns:PracticeID>' +
+    '</ns:Filter>' +
     '</ns:request></ns:GetPatients>';
 
   try {
     var text = _tebraPost('GetPatients', bodyXml);
     Logger.log('Response length: ' + text.length);
     Logger.log(text.substr(0, 1500));
-  } catch(e) { Logger.log('❌  ' + e.message); }
+  } catch (e) { Logger.log('❌  ' + e.message); }
   Logger.log('=== End TRY 3 ===');
 }
 
@@ -6711,129 +6851,129 @@ function testServiceLocationFields() {
   var c = _getTebraCreds();
   if (!c.customerKey) { Logger.log('❌  Run setTebraCreds() first.'); return; }
 
-  var tz      = Session.getScriptTimeZone();
+  var tz = Session.getScriptTimeZone();
   var testDate = '2026-04-27';  // a date with known appointments
-  var tDate    = _tebraDateFmt(_parseYMD(testDate));
+  var tDate = _tebraDateFmt(_parseYMD(testDate));
 
   // ── Test A: request ServiceLocation (nested object) in Fields ──────────────
   Logger.log('=== Test A: ServiceLocation as nested Field key ===');
   try {
     var bodyA =
       '<ns:GetAppointments><ns:request>' +
-        _tebraHeader(c) +
-        '<ns:Fields>' +
-          '<ns:ID>true</ns:ID>' +
-          '<ns:PatientFullName>true</ns:PatientFullName>' +
-          '<ns:StartDate>true</ns:StartDate>' +
-          '<ns:ServiceLocation>true</ns:ServiceLocation>' +
-        '</ns:Fields>' +
-        '<ns:Filter>' +
-          '<ns:StartDate>' + tDate + '</ns:StartDate>' +
-          '<ns:EndDate>'   + tDate + '</ns:EndDate>' +
-        '</ns:Filter>' +
+      _tebraHeader(c) +
+      '<ns:Fields>' +
+      '<ns:ID>true</ns:ID>' +
+      '<ns:PatientFullName>true</ns:PatientFullName>' +
+      '<ns:StartDate>true</ns:StartDate>' +
+      '<ns:ServiceLocation>true</ns:ServiceLocation>' +
+      '</ns:Fields>' +
+      '<ns:Filter>' +
+      '<ns:StartDate>' + tDate + '</ns:StartDate>' +
+      '<ns:EndDate>' + tDate + '</ns:EndDate>' +
+      '</ns:Filter>' +
       '</ns:request></ns:GetAppointments>';
     var textA = _tebraPost('GetAppointments', bodyA);
-    var docA  = XmlService.parse(textA);
+    var docA = XmlService.parse(textA);
     var rootA = docA.getRootElement();
-    var elsA  = [];
+    var elsA = [];
     _findXmlElements(rootA, 'AppointmentData', elsA);
     Logger.log('Test A returned ' + elsA.length + ' appointments');
     if (elsA.length > 0) {
       var kidsA = elsA[0].getChildren();
-      Logger.log('Test A fields: ' + kidsA.map(function(k) {
+      Logger.log('Test A fields: ' + kidsA.map(function (k) {
         var subs = k.getChildren();
         return subs.length > 0
-          ? k.getName() + '{' + subs.map(function(s){ return s.getName()+'='+s.getText(); }).join(',') + '}'
+          ? k.getName() + '{' + subs.map(function (s) { return s.getName() + '=' + s.getText(); }).join(',') + '}'
           : k.getName() + '=' + k.getText();
       }).join(', '));
     }
-  } catch(eA) { Logger.log('Test A error: ' + eA.message); }
+  } catch (eA) { Logger.log('Test A error: ' + eA.message); }
 
   // ── Test B: no Fields section (get all default fields) ─────────────────────
   Logger.log('=== Test B: no Fields section ===');
   try {
     var bodyB =
       '<ns:GetAppointments><ns:request>' +
-        _tebraHeader(c) +
-        '<ns:Filter>' +
-          '<ns:StartDate>' + tDate + '</ns:StartDate>' +
-          '<ns:EndDate>'   + tDate + '</ns:EndDate>' +
-        '</ns:Filter>' +
+      _tebraHeader(c) +
+      '<ns:Filter>' +
+      '<ns:StartDate>' + tDate + '</ns:StartDate>' +
+      '<ns:EndDate>' + tDate + '</ns:EndDate>' +
+      '</ns:Filter>' +
       '</ns:request></ns:GetAppointments>';
     var textB = _tebraPost('GetAppointments', bodyB);
-    var docB  = XmlService.parse(textB);
+    var docB = XmlService.parse(textB);
     var rootB = docB.getRootElement();
-    var elsB  = [];
+    var elsB = [];
     _findXmlElements(rootB, 'AppointmentData', elsB);
     Logger.log('Test B returned ' + elsB.length + ' appointments');
     if (elsB.length > 0) {
       var kidsB = elsB[0].getChildren();
-      Logger.log('Test B fields (' + kidsB.length + '): ' + kidsB.map(function(k){
+      Logger.log('Test B fields (' + kidsB.length + '): ' + kidsB.map(function (k) {
         var subs = k.getChildren();
         return subs.length > 0
-          ? k.getName() + '{' + subs.map(function(s){ return s.getName(); }).join(',') + '}'
+          ? k.getName() + '{' + subs.map(function (s) { return s.getName(); }).join(',') + '}'
           : k.getName() + '=' + k.getText();
       }).join(', '));
     }
     // Also log raw first 1200 chars to confirm what Tebra returns
     Logger.log('Test B raw (first 1200): ' + textB.substr(0, 1200));
-  } catch(eB) { Logger.log('Test B error: ' + eB.message); }
+  } catch (eB) { Logger.log('Test B error: ' + eB.message); }
 
   // ── Test C: ServiceLocationName alone (the name the API docs use) ──────────
   Logger.log('=== Test C: ServiceLocationName alone ===');
   try {
     var bodyC =
       '<ns:GetAppointments><ns:request>' +
-        _tebraHeader(c) +
-        '<ns:Fields>' +
-          '<ns:ID>true</ns:ID>' +
-          '<ns:StartDate>true</ns:StartDate>' +
-          '<ns:ServiceLocationName>true</ns:ServiceLocationName>' +
-        '</ns:Fields>' +
-        '<ns:Filter>' +
-          '<ns:StartDate>' + tDate + '</ns:StartDate>' +
-          '<ns:EndDate>'   + tDate + '</ns:EndDate>' +
-        '</ns:Filter>' +
+      _tebraHeader(c) +
+      '<ns:Fields>' +
+      '<ns:ID>true</ns:ID>' +
+      '<ns:StartDate>true</ns:StartDate>' +
+      '<ns:ServiceLocationName>true</ns:ServiceLocationName>' +
+      '</ns:Fields>' +
+      '<ns:Filter>' +
+      '<ns:StartDate>' + tDate + '</ns:StartDate>' +
+      '<ns:EndDate>' + tDate + '</ns:EndDate>' +
+      '</ns:Filter>' +
       '</ns:request></ns:GetAppointments>';
     var textC = _tebraPost('GetAppointments', bodyC);
-    var docC  = XmlService.parse(textC);
+    var docC = XmlService.parse(textC);
     var rootC = docC.getRootElement();
-    var elsC  = [];
+    var elsC = [];
     _findXmlElements(rootC, 'AppointmentData', elsC);
     Logger.log('Test C returned ' + elsC.length + ' appointments');
     if (elsC.length > 0) {
       var kidsC = elsC[0].getChildren();
-      Logger.log('Test C fields: ' + kidsC.map(function(k){ return k.getName()+'='+k.getText(); }).join(', '));
+      Logger.log('Test C fields: ' + kidsC.map(function (k) { return k.getName() + '=' + k.getText(); }).join(', '));
     }
-  } catch(eC) { Logger.log('Test C error: ' + eC.message); }
+  } catch (eC) { Logger.log('Test C error: ' + eC.message); }
 
   // ── Test D: ServiceLocationID alone ────────────────────────────────────────
   Logger.log('=== Test D: ServiceLocationID alone ===');
   try {
     var bodyD =
       '<ns:GetAppointments><ns:request>' +
-        _tebraHeader(c) +
-        '<ns:Fields>' +
-          '<ns:ID>true</ns:ID>' +
-          '<ns:StartDate>true</ns:StartDate>' +
-          '<ns:ServiceLocationID>true</ns:ServiceLocationID>' +
-        '</ns:Fields>' +
-        '<ns:Filter>' +
-          '<ns:StartDate>' + tDate + '</ns:StartDate>' +
-          '<ns:EndDate>'   + tDate + '</ns:EndDate>' +
-        '</ns:Filter>' +
+      _tebraHeader(c) +
+      '<ns:Fields>' +
+      '<ns:ID>true</ns:ID>' +
+      '<ns:StartDate>true</ns:StartDate>' +
+      '<ns:ServiceLocationID>true</ns:ServiceLocationID>' +
+      '</ns:Fields>' +
+      '<ns:Filter>' +
+      '<ns:StartDate>' + tDate + '</ns:StartDate>' +
+      '<ns:EndDate>' + tDate + '</ns:EndDate>' +
+      '</ns:Filter>' +
       '</ns:request></ns:GetAppointments>';
     var textD = _tebraPost('GetAppointments', bodyD);
-    var docD  = XmlService.parse(textD);
+    var docD = XmlService.parse(textD);
     var rootD = docD.getRootElement();
-    var elsD  = [];
+    var elsD = [];
     _findXmlElements(rootD, 'AppointmentData', elsD);
     Logger.log('Test D returned ' + elsD.length + ' appointments');
     if (elsD.length > 0) {
       var kidsD = elsD[0].getChildren();
-      Logger.log('Test D fields: ' + kidsD.map(function(k){ return k.getName()+'='+k.getText(); }).join(', '));
+      Logger.log('Test D fields: ' + kidsD.map(function (k) { return k.getName() + '=' + k.getText(); }).join(', '));
     }
-  } catch(eD) { Logger.log('Test D error: ' + eD.message); }
+  } catch (eD) { Logger.log('Test D error: ' + eD.message); }
 
   Logger.log('=== Done. ===');
 }
@@ -6849,7 +6989,7 @@ function testServiceLocationNames() { testServiceLocationFields(); }
 
 function bulkImportPayments(rowsJson) {
   try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet) return JSON.stringify({ error: 'Appointments sheet not found' });
 
@@ -6857,26 +6997,26 @@ function bulkImportPayments(rowsJson) {
     if (!Array.isArray(importRows) || importRows.length === 0)
       return JSON.stringify({ matched: [], unmatched: [], total: 0 });
 
-    var IDX_PROV_ID  = APPT_COLS.indexOf('ProvID');
-    var IDX_DATE     = APPT_COLS.indexOf('Date');
-    var IDX_APPT_ID  = APPT_COLS.indexOf('ApptID');
-    var IDX_PATIENT  = APPT_COLS.indexOf('Patient');
-    var IDX_STATUS   = APPT_COLS.indexOf('ClaimStatus');
+    var IDX_PROV_ID = APPT_COLS.indexOf('ProvID');
+    var IDX_DATE = APPT_COLS.indexOf('Date');
+    var IDX_APPT_ID = APPT_COLS.indexOf('ApptID');
+    var IDX_PATIENT = APPT_COLS.indexOf('Patient');
+    var IDX_STATUS = APPT_COLS.indexOf('ClaimStatus');
     var IDX_PAID_AMT = APPT_COLS.indexOf('ClaimPaidAmount');
-    var COL_STATUS   = IDX_STATUS   + 1;
+    var COL_STATUS = IDX_STATUS + 1;
     var COL_PAID_AMT = IDX_PAID_AMT + 1;
 
     // Headway may use legal names that differ from CRB provID (e.g. Katherine → katie)
     var provMap = {
-      jodene:     'jodene',
-      katherine:  'katie',   // Headway full name
-      katie:      'katie',
-      megan:      'megan',
-      lori:       'lori',
+      jodene: 'jodene',
+      katherine: 'katie',   // Headway full name
+      katie: 'katie',
+      megan: 'megan',
+      lori: 'lori',
     };
     var staffSheet = ss.getSheetByName(TAB_STAFF);
     if (staffSheet && staffSheet.getLastRow() > 1) {
-      staffSheet.getDataRange().getValues().slice(1).forEach(function(r) {
+      staffSheet.getDataRange().getValues().slice(1).forEach(function (r) {
         var provID = String(r[2] || '').toLowerCase().trim();
         var firstName = String(r[3] || '').trim().split(' ')[0].toLowerCase();
         if (provID && firstName) { provMap[firstName] = provID; provMap[provID] = provID; }
@@ -6910,8 +7050,8 @@ function bulkImportPayments(rowsJson) {
       var ta = a.split(' ').filter(Boolean);
       var tb = b.split(' ').filter(Boolean);
       var shorter = ta.length <= tb.length ? ta : tb;
-      var longer  = ta.length <= tb.length ? tb : ta;
-      return shorter.every(function(tok) { return longer.indexOf(tok) >= 0; });
+      var longer = ta.length <= tb.length ? tb : ta;
+      return shorter.every(function (tok) { return longer.indexOf(tok) >= 0; });
     }
 
     function normProvId(name) {
@@ -6922,11 +7062,11 @@ function bulkImportPayments(rowsJson) {
     var allValues = sheet.getDataRange().getValues();
     var matched = [], unmatched = [];
 
-    importRows.forEach(function(row) {
-      var targetDate = normDate(row.date          || row['APPOINTMENT DATE'] || '');
-      var targetProv = normProvId(row.providerName || row['PROVIDER NAME']    || '');
-      var targetPat  = normPat(row.patientName    || row['PATIENT NAME']      || '');
-      var payAmt     = String(row.paymentAmount   || row['PAYMENT AMOUNT']    || '').trim();
+    importRows.forEach(function (row) {
+      var targetDate = normDate(row.date || row['APPOINTMENT DATE'] || '');
+      var targetProv = normProvId(row.providerName || row['PROVIDER NAME'] || '');
+      var targetPat = normPat(row.patientName || row['PATIENT NAME'] || '');
+      var payAmt = String(row.paymentAmount || row['PAYMENT AMOUNT'] || '').trim();
 
       if (!targetDate || !targetProv || !targetPat || !payAmt) {
         unmatched.push({ row: row, reason: 'Missing required field' });
@@ -6975,7 +7115,7 @@ function bulkImportPayments(rowsJson) {
       sheet.getRange(sheetRow, COL_PAID_AMT).setNumberFormat('@').setValue(payAmt);
       sheet.getRange(sheetRow, COL_STATUS).setValue('Paid');
       allValues[foundIdx][IDX_PAID_AMT] = payAmt;
-      allValues[foundIdx][IDX_STATUS]   = 'Paid';
+      allValues[foundIdx][IDX_STATUS] = 'Paid';
 
       matched.push({
         apptId: String(allValues[foundIdx][IDX_APPT_ID] || ''),
