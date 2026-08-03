@@ -5147,6 +5147,12 @@
       margin-bottom: 14px
     }
 
+    /* A patient only ever has one primary code, so two full combos can
+       never be selected at once — there's no real "partial" state, just
+       "this one's on" or "this one isn't." Per Dean 2026-08-03: border
+       stays this same green in every state (never tan/gold), only the
+       fill changes — default green → darker green on hover → the same
+       Forest 20 the individual code tiles use once actually selected. */
     .cpt-combo-btn {
       display: flex;
       flex-direction: column;
@@ -5157,25 +5163,18 @@
       border-radius: 9px;
       background: #F0FDF4;
       cursor: pointer;
-      transition: border-color .12s, background .12s;
+      transition: background .12s;
       font-family: inherit;
       user-select: none;
       width: 100%
     }
 
     .cpt-combo-btn:hover {
-      border-color: #09371F;
-      background: #F2EDDB
+      background: #6B9E8A
     }
 
     .cpt-combo-btn.on {
-      border-color: #09371F;
-      background: #F0FDF4
-    }
-
-    .cpt-combo-btn.partial {
-      border-color: #BE992A;
-      background: #F8EFD8
+      background: #B9CEC0
     }
 
     .cpt-combo-row {
@@ -6206,18 +6205,28 @@
     }
 
     body.dark .cpt-combo-btn:hover {
-      border-color: #6B9E8A;
       background: #09371F
     }
 
+    /* Same Forest 20 the individual tiles use when selected — a light
+       pastel even here, so its own text needs a dark-mode-specific
+       override right below (the default dark text colors assume a
+       near-black background and would be unreadable on this). */
     body.dark .cpt-combo-btn.on {
-      border-color: #6B9E8A;
-      background: #051F11
+      background: #B9CEC0
     }
 
-    body.dark .cpt-combo-btn.partial {
-      border-color: #BE992A;
-      background: #7A5A00
+    body.dark .cpt-combo-btn.on .cpt-combo-pri {
+      color: #09371F
+    }
+
+    body.dark .cpt-combo-btn.on .cpt-combo-add {
+      color: #3D768A
+    }
+
+    body.dark .cpt-combo-btn.on .cpt-combo-plus,
+    body.dark .cpt-combo-btn.on .cpt-combo-desc {
+      color: #2B2716
     }
 
     body.dark .cpt-combo-pri {
@@ -11919,10 +11928,9 @@
                 <div className="cpt-row-lbl">99214 combinations</div>
                 {COMBOS.slice(0, 3).map(([p, a]) => {
                   const bothOn = sel.includes(p) && sel.includes(a);
-                  const partial = sel.includes(p) !== sel.includes(a);
                   return (
                     <button key={`${p}+${a}`}
-                      className={`cpt-combo-btn${bothOn ? ' on' : partial ? ' partial' : ''}`}
+                      className={`cpt-combo-btn${bothOn ? ' on' : ''}`}
                       onClick={() => quickCombo(p, a)}>
                       <span className="cpt-combo-row">
                         <span className="cpt-combo-pri">{p}</span>
@@ -11936,10 +11944,9 @@
                 <div className="cpt-row-lbl">99215 combinations</div>
                 {COMBOS.slice(3).map(([p, a]) => {
                   const bothOn = sel.includes(p) && sel.includes(a);
-                  const partial = sel.includes(p) !== sel.includes(a);
                   return (
                     <button key={`${p}+${a}`}
-                      className={`cpt-combo-btn${bothOn ? ' on' : partial ? ' partial' : ''}`}
+                      className={`cpt-combo-btn${bothOn ? ' on' : ''}`}
                       onClick={() => quickCombo(p, a)}>
                       <span className="cpt-combo-row">
                         <span className="cpt-combo-pri">{p}</span>
