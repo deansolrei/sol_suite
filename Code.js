@@ -2471,6 +2471,12 @@ function getPaymentTrackerData(provFilter) {
       if (!appt.paymentType) continue;  // no Cost-Share Class set — nothing to track
       if (appt.date && appt.date > cutoffStr) continue;  // more than 5 days out
       if (_isZeroRate(appt.paymentRate)) continue;       // $0 copay — nothing to collect
+      // No Show / Rescheduled / Cancelled / stale-Tebra-ID rows don't
+      // represent a real visit and never show on the main SolBoard
+      // calendar — same _isVoidStatus rule as everywhere else in the app
+      // (unsigned-note counting, Tebra Sync reconciliation), applied here
+      // per Dean 2026-08-03 so Payment Tracker matches that same behavior.
+      if (_isVoidStatus(appt.tebraStatus)) continue;
 
       var ptKey = _normName(appt.patient);
       var ptInfo = patLookup[ptKey] || {};
