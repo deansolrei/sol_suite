@@ -13626,6 +13626,191 @@
       return r.source === 'SolBoard Auto' ? ('auto:' + r.id) : ('manual:' + r.rowIndex);
     }
 
+    // Display labels as stored raw in the PaymentTrackerManual sheet (matches
+    // the 252-row legacy import's own convention) — not the lowercase-hyphenated
+    // internal keys ('copay','cash-pay') the main Appointments tab uses.
+    const PT_CSC_OPTIONS = ['Copay', 'Coinsurance', 'Cash Pay', 'Deductible'];
+
+    /* ── AddPaymentManualEntryModal — hand-entered exception row ──────────────
+       Always writes Source: 'Manual Entry' via addPaymentManualEntry. Reuses
+       the same Cost-Share/Collected-Failed/Payment-Channel field set and
+       interaction pattern (auto-fill today's date on Collected/Failed, the
+       "Other…" platform reveal) already established in BillerApptModal for
+       editing a real appointment's payment fields — same mental model, just
+       for a row that isn't tied to one.
+    ───────────────────────────────────────────────────────────────────── */
+    function AddPaymentManualEntryModal({ onSave, onClose }) {
+      const [provID, setProvID] = useState('');
+      const [patient, setPatient] = useState('');
+      const [date, setDate] = useState('');
+      const [cpt, setCpt] = useState('');
+      const [paymentType, setPaymentType] = useState('');
+      const [paymentRate, setPaymentRate] = useState('');
+      const [paymentAmount, setPaymentAmount] = useState('');
+      const [paymentCollected, setPaymentCollected] = useState(false);
+      const [paymentFailed, setPaymentFailed] = useState(false);
+      const [paymentDate, setPaymentDate] = useState('');
+      const [paymentPlatform, setPaymentPlatform] = useState('');
+      const [paymentPlan, setPaymentPlan] = useState(false);
+      const [status, setStatus] = useState('');
+      const [comments, setComments] = useState('');
+      const [saving, setSaving] = useState(false);
+      const [err, setErr] = useState('');
+
+      const pp = paymentPlatform || '';
+      const isPreset = PAYMENT_PLATFORMS.includes(pp);
+      const dropVal = isPreset ? pp : (pp ? 'Other' : '');
+      const isOther = dropVal === 'Other';
+      const otherTxt = isOther && pp !== 'other' ? pp : '';
+
+      function toggleCollected(checked) {
+        const newFailed = checked ? false : paymentFailed;
+        const newDate = checked && !paymentDate ? new Date().toISOString().slice(0, 10) : (!checked && !newFailed ? '' : paymentDate);
+        setPaymentCollected(checked);
+        setPaymentFailed(newFailed);
+        setPaymentDate(newDate);
+      }
+      function toggleFailed(checked) {
+        const newCollected = checked ? false : paymentCollected;
+        const newDate = checked && !paymentDate ? new Date().toISOString().slice(0, 10) : (!checked && !newCollected ? '' : paymentDate);
+        setPaymentFailed(checked);
+        setPaymentCollected(newCollected);
+        setPaymentDate(newDate);
+      }
+
+      function handleSave() {
+        if (!patient.trim()) { setErr('Patient name is required'); return; }
+        if (!provID) { setErr('Provider is required'); return; }
+        setErr('');
+        setSaving(true);
+        const entry = {
+          provID, patient: patient.trim(), date: date || 'N/A', cpt,
+          paymentType, paymentRate, paymentAmount,
+          paymentCollected, paymentFailed, paymentDate,
+          paymentPlatform, paymentPlan, status, comments,
+        };
+        gsr('addPaymentManualEntry', JSON.stringify(entry))
+          .then(json => {
+            setSaving(false);
+            let res = null;
+            try { res = JSON.parse(json); } catch (e) { }
+            if (!res || res.error) { setErr((res && res.error) || 'Save failed'); return; }
+            onSave(res.row);
+          })
+          .catch(() => { setSaving(false); setErr('Save failed'); });
+      }
+
+      return (
+        <div className="overlay" onClick={onClose}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="m-hdr">
+              <div><div className="m-title">Add Manual Entry</div><div className="m-sub">Cost-share collection not tracked automatically</div></div>
+              <button className="m-close" onClick={onClose}>×</button>
+            </div>
+            <div className="m-body">
+              <div className="g2 frm">
+                <div><label className="fl">Provider</label>
+                  <select className="fi" value={provID} onChange={e => setProvID(e.target.value)}>
+                    <option value="">— Select —</option>
+                    {PROVIDERS.filter(p => p.id !== 'megan').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div><label className="fl">Patient Name</label>
+                  <input className="fi" value={patient} onChange={e => setPatient(e.target.value)} placeholder="Full name" autoFocus />
+                </div>
+              </div>
+              <div className="g2 frm">
+                <div><label className="fl">Appointment Date</label>
+                  <input type="date" className="fi" value={date} onChange={e => setDate(e.target.value)} />
+                </div>
+                <div><label className="fl">CPT Codes</label>
+                  <input className="fi" value={cpt} onChange={e => setCpt(e.target.value)} placeholder="e.g. 99214, 90833" />
+                </div>
+              </div>
+
+              <div className="csm-payment-row" style={{ marginTop: 4 }}>
+                <div className="csm-field">
+                  <label>Cost-Share Classification</label>
+                  <select value={paymentType} onChange={e => setPaymentType(e.target.value)}>
+                    <option value="">— Select —</option>
+                    {PT_CSC_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div className="csm-field" style={{ maxWidth: 130 }}>
+                  <label>Rate {paymentType === 'Coinsurance' ? '(%)' : '($)'}</label>
+                  <input value={paymentRate} onChange={e => setPaymentRate(e.target.value)}
+                    placeholder={paymentType === 'Coinsurance' ? 'e.g. 20%' : 'e.g. 30'} />
+                </div>
+                <div className="csm-field" style={{ maxWidth: 130 }}>
+                  <label>Collect ($)</label>
+                  <input className="fi" value={paymentAmount} placeholder="0" onChange={e => setPaymentAmount(e.target.value)} />
+                </div>
+                <div className="csm-chks">
+                  <label className="dp-chk" style={{ color: paymentCollected ? '#16A34A' : '#3D768A' }}>
+                    <input type="checkbox" checked={paymentCollected} onChange={e => toggleCollected(e.target.checked)} />
+                    Collected
+                  </label>
+                  <label className="dp-chk" style={{ color: paymentFailed ? '#DC2626' : '#3D768A' }}>
+                    <input type="checkbox" checked={paymentFailed} onChange={e => toggleFailed(e.target.checked)} />
+                    Failed
+                  </label>
+                </div>
+                <div className="dp-platform-row" style={{ marginTop: 0 }}>
+                  <span className="dp-platform-lbl">💳 Payment Processing Channel</span>
+                  <select className="dp-platform-sel" value={dropVal}
+                    onChange={e => setPaymentPlatform(e.target.value === 'Other' ? 'other' : e.target.value)}>
+                    <option value="">—</option>
+                    {PAYMENT_PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+                    <option value="Other">Other…</option>
+                  </select>
+                  {isOther && (
+                    <input className="dp-platform-other" placeholder="describe…" value={otherTxt}
+                      onChange={e => setPaymentPlatform(e.target.value || 'other')} />
+                  )}
+                </div>
+                {(paymentCollected || paymentFailed) && (
+                  <div className={`dp-date-wrap ${paymentCollected ? 'coll' : 'fail'}`}>
+                    <span className="dp-date-lbl">{paymentCollected ? '📅 Date Received' : '📅 Date Attempted'}</span>
+                    <input type="date" className="dp-date-inp" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} />
+                  </div>
+                )}
+              </div>
+
+              <div className="g2 frm">
+                <div><label className="fl">Status</label>
+                  <select className="fi" value={status} onChange={e => setStatus(e.target.value)}>
+                    <option value="">— Auto (from Collected/Failed) —</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Declined">Declined</option>
+                    <option value="Reversed">Reversed</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 8 }}>
+                  <label className="dp-chk" style={{ color: paymentPlan ? '#BE992A' : '#3D768A' }}>
+                    <input type="checkbox" checked={paymentPlan} onChange={e => setPaymentPlan(e.target.checked)} />
+                    Part of a payment plan
+                  </label>
+                </div>
+              </div>
+
+              <div className="frm">
+                <label className="fl">Comments</label>
+                <textarea className="fi" rows={2} value={comments} onChange={e => setComments(e.target.value)} placeholder="Optional notes…" />
+              </div>
+
+              {err && <div style={{ fontSize: 12, color: '#DC2626', marginTop: 4 }}>{err}</div>}
+            </div>
+            <div className="m-foot">
+              <button className="btn btn-s" onClick={onClose}>Cancel</button>
+              <button className="btn btn-p" onClick={handleSave} disabled={saving || !patient.trim() || !provID}>
+                {saving ? 'Saving…' : 'Add Entry'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     function PaymentTracker({ onClose, provFilter }) {
       const [rows, setRows] = useState(null);   // null = loading
       const [loading, setLoading] = useState(true);
@@ -13637,6 +13822,7 @@
       const [fAmount, setFAmount] = useState('');
       const [fPlatform, setFPlatform] = useState('');
       const [localComments, setLocalComments] = useState({});
+      const [showAddModal, setShowAddModal] = useState(false);
 
       useEffect(() => {
         setLoading(true);
@@ -13692,7 +13878,7 @@
                   {provFilter
                     ? `Provider: ${provFilter.charAt(0).toUpperCase() + provFilter.slice(1)}`
                     : 'All Providers'}
-                  {' · '}Cost-Share Collections · View-Only
+                  {' · '}Cost-Share Collections
                 </div>
               </div>
               <div className="cl-hdr-controls">
@@ -13714,9 +13900,22 @@
                   onClick={() => setFiltersOpen(o => !o)}>
                   {filtersOpen ? '▴' : '▾'} Filters{anyFilterActive ? ' •' : ''}
                 </button>
+                <button className="pt-filters-btn" onClick={() => setShowAddModal(true)}>
+                  + Add Entry
+                </button>
                 <button className="cl-close-btn" onClick={onClose}>✕ Close</button>
               </div>
             </div>
+
+            {showAddModal && (
+              <AddPaymentManualEntryModal
+                onClose={() => setShowAddModal(false)}
+                onSave={row => {
+                  setRows(prev => [row, ...(prev || [])]);
+                  setShowAddModal(false);
+                }}
+              />
+            )}
 
             {/* ── Collapsible filter row ── */}
             {filtersOpen && (

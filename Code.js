@@ -2320,6 +2320,83 @@ function savePaymentManualComment(rowIndex, patient, comment) {
   }
 }
 
+// provID everywhere in JS-land is the lowercase short id ('jodene'); the
+// PaymentTrackerManual sheet's own convention (set by the original 252-row
+// import) is a capitalized first name ('Jodene'). Only used at the write
+// boundary — reads already normalize back to lowercase via
+// getPaymentTrackerManualData.
+function _ptProvDisplayName(provID) {
+  var p = String(provID || '').trim();
+  return p ? p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : '';
+}
+
+/* ── addPaymentManualEntry — new hand-entered exception row ───────────────
+   Appends a row to PaymentTrackerManual, always Source: 'Manual Entry'.
+   Column order matches getPaymentTrackerManualData's read (see that
+   function's header comment). Returns the row shaped the same way that
+   function returns rows, so the frontend can splice it straight into its
+   already-loaded list without a full refetch.
+──────────────────────────────────────────────────────────────────────── */
+function addPaymentManualEntry(entryJson) {
+  try {
+    var entry = JSON.parse(entryJson);
+    var patient = String((entry && entry.patient) || '').trim();
+    var provID  = String((entry && entry.provID) || '').trim().toLowerCase();
+    if (!patient) return JSON.stringify({ error: 'Patient name is required' });
+    if (!provID)  return JSON.stringify({ error: 'Provider is required' });
+
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_PAYMENT_MANUAL);
+    if (!sheet) return JSON.stringify({ error: 'PaymentTrackerManual sheet not found' });
+
+    sheet.appendRow([
+      entry.paymentDate || '',                 // PaymentDate
+      _ptProvDisplayName(provID),               // ProvID
+      patient,                                  // Patient
+      entry.date || 'N/A',                      // ApptDate
+      entry.cpt || '',                          // CPTCodes
+      entry.paymentType || '',                  // CostShareClass (display label, e.g. "Copay")
+      entry.paymentRate || '',                  // CostShareRate
+      entry.paymentAmount || '',                // CostShareCollectedAmt
+      entry.paymentCollected ? true : false,     // PaymentCollected
+      entry.paymentFailed ? true : false,        // PaymentFailed
+      entry.paymentPlatform || '',               // PaymentProcessingChannel
+      entry.paymentPlan ? true : false,          // PaymentPlan
+      entry.status || '',                        // Status
+      entry.comments || '',                       // Comments
+      'Manual Entry',                             // Source
+      '',                                          // ImportNotes
+    ]);
+    var rowIndex = sheet.getLastRow();
+
+    return JSON.stringify({
+      ok: true,
+      row: {
+        source:           'Manual Entry',
+        provID:           provID,
+        rowIndex:         rowIndex,
+        patient:          patient,
+        date:             entry.date || 'N/A',
+        cpt:              entry.cpt ? String(entry.cpt).split(/[|,;]/).map(function(s){return s.trim();}).filter(Boolean) : [],
+        paymentType:      String(entry.paymentType || '').trim().toLowerCase().replace(/\s+/g, '-'),
+        paymentRate:      entry.paymentRate || '',
+        paymentAmount:    entry.paymentAmount || '',
+        paymentCollected: !!entry.paymentCollected,
+        paymentFailed:    !!entry.paymentFailed,
+        paymentDate:      entry.paymentDate || '',
+        paymentPlatform:  entry.paymentPlatform || '',
+        paymentPlan:      entry.paymentPlan ? 'TRUE' : '',
+        status:           entry.status || '',
+        comments:         entry.comments || '',
+        importNotes:      '',
+      }
+    });
+  } catch (e) {
+    Logger.log('addPaymentManualEntry error: ' + e.message);
+    return JSON.stringify({ error: e.message });
+  }
+}
+
 // Sort key for Payment Tracker's `date` field. Most rows are clean ISO
 // 'YYYY-MM-DD' strings and compare correctly against each other as plain
 // strings — but PaymentTrackerManual has real rows where that field is
