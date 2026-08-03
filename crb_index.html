@@ -8178,6 +8178,45 @@
       background: #065F46;
     }
 
+    /* ── Payment Tracker FAB (Provider [Jodene only]/Assistant Views) ──
+       Position set inline per-view like .cl-fab/.nb-fab above. */
+    .pt-fab {
+      position: fixed;
+      bottom: 10px;
+      right: 300px;
+      z-index: 140;
+      background: #BE992A;
+      color: #09371F;
+      border: none;
+      border-radius: 0;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(9, 55, 31, .25);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: background .15s, transform .15s, box-shadow .15s;
+      font-family: inherit;
+      letter-spacing: .2px;
+    }
+
+    .pt-fab:hover {
+      background: #BE992A;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(190, 153, 42, .42);
+    }
+
+    .pt-fab.open {
+      background: #09371F;
+      color: #F2EDDB;
+    }
+
+    .pt-fab.open:hover {
+      background: #09371F;
+    }
+
     /* ── Import Payments FAB (Billing View only) ─────────────────────────── */
     .imp-fab {
       position: fixed;
@@ -10135,15 +10174,16 @@
         padding: 7px 8px
       }
 
-      /* ── Bottom action buttons (Billing's 4, Provider's 2, Assistant's 1) ──
+      /* ── Bottom action buttons (Billing's 5, Provider's 2-3, Assistant's 2) ──
          On desktop these are individual FABs (Billing's .billing-fab-bar row,
-         plus the legacy per-view .cl-fab/.nb-fab). Stacked/spread out
+         plus the legacy per-view .cl-fab/.nb-fab/.pt-fab). Stacked/spread out
          like that on a narrow phone, they end up covering appointment rows.
          Hide all of them here and show the single MobileToolsMenu button
          (.mtm-wrap) instead — same actions, one button + a drop-up list. */
       .billing-fab-bar,
       .cl-fab,
-      .nb-fab {
+      .nb-fab,
+      .pt-fab {
         display: none;
       }
 
@@ -14043,12 +14083,13 @@
       );
     }
 
-    function ProviderView({ appts, date, prov, onUpdate, onSignNote, totalUnsigned, onClearPhantom, userRole, onForceRefresh, patientDb }) {
+    function ProviderView({ appts, date, prov, onUpdate, onSignNote, totalUnsigned, onClearPhantom, userRole, userProvID, onForceRefresh, patientDb }) {
       const [cptModal, setCptModal] = useState(null);
       const [rxModal, setRxModal] = useState(null);
       const [notesDraft, setNotesDraft] = useState({});
       const [showLedger, setShowLedger] = useState(false);
       const [showNoteBoard, setShowNoteBoard] = useState(false);
+      const [showPaymentTracker, setShowPaymentTracker] = useState(false);
       const [pamModal, setPamModal] = useState(null); // ProviderApptModal from day view 💬 button
       const [infoModalId, setInfoModalId] = useState(null); // PatientInfoModal — store ID for live lookup
 
@@ -14511,7 +14552,10 @@
           {/* ── Note Board panel ── */}
           {showNoteBoard && <NoteBoardPanel onClose={() => setShowNoteBoard(false)} role={userRole || 'provider'} provFilter={prov} />}
 
-          {/* Claims Ledger — right:24; Note Board — right:158 (Rate Analysis removed) */}
+          {/* ── Payment Tracker — Jodene only, per Dean's instruction ── */}
+          {userProvID === 'jodene' && showPaymentTracker && <PaymentTracker onClose={() => setShowPaymentTracker(false)} provFilter={prov} />}
+
+          {/* Claims Ledger — right:24; Note Board — right:158; Payment Tracker — right:300 (Jodene only) */}
           <button
             className={`cl-fab${showLedger ? ' open' : ''}`}
             style={{ right: 24 }}
@@ -14526,11 +14570,21 @@
             title="Note Board — clinic note formatting status">
             📝 {showNoteBoard ? 'Close Notes' : 'Note Board'}
           </button>
+          {userProvID === 'jodene' && (
+            <button
+              className={`pt-fab${showPaymentTracker ? ' open' : ''}`}
+              style={{ right: 300 }}
+              onClick={e => { e.stopPropagation(); setShowPaymentTracker(o => !o); }}
+              title="Payment Tracker — Cost-Share Collections">
+              💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
+            </button>
+          )}
 
-          {/* Phone-only equivalent of the 2 buttons above (see MobileToolsMenu) */}
+          {/* Phone-only equivalent of the buttons above (see MobileToolsMenu) */}
           <MobileToolsMenu items={[
             { key: 'ledger', label: 'Claims Ledger', icon: '📋', active: showLedger, onClick: () => setShowLedger(o => !o) },
             { key: 'notes', label: 'Note Board', icon: '📝', active: showNoteBoard, onClick: () => setShowNoteBoard(o => !o) },
+            ...(userProvID === 'jodene' ? [{ key: 'payment', label: 'Payment Tracker', icon: '💳', active: showPaymentTracker, onClick: () => setShowPaymentTracker(o => !o) }] : []),
           ]} />
         </div>
       );
@@ -15192,6 +15246,7 @@
       const [bulkAction, setBulkAction] = useState('valid');
       const [voidOpen, setVoidOpen] = useState(false);
       const [showNoteBoard, setShowNoteBoard] = useState(false);
+      const [showPaymentTracker, setShowPaymentTracker] = useState(false);
 
       // ── FIX (2026-07-26): the column header row used to be a sticky <thead>
       // inside the SAME scrolling table as the data rows — sticky positioning
@@ -15513,7 +15568,10 @@
           {/* ── Note Board panel ── */}
           {showNoteBoard && <NoteBoardPanel onClose={() => setShowNoteBoard(false)} role="assistant" provFilter="" />}
 
-          {/* Note Board FAB */}
+          {/* ── Payment Tracker panel ── */}
+          {showPaymentTracker && <PaymentTracker onClose={() => setShowPaymentTracker(false)} provFilter="" />}
+
+          {/* Note Board — right:24; Payment Tracker — right:158 */}
           <button
             className={`nb-fab${showNoteBoard ? ' open' : ''}`}
             style={{ right: 24 }}
@@ -15521,10 +15579,18 @@
             title="Note Board — clinic note formatting status">
             📝 {showNoteBoard ? 'Close Notes' : 'Note Board'}
           </button>
+          <button
+            className={`pt-fab${showPaymentTracker ? ' open' : ''}`}
+            style={{ right: 158 }}
+            onClick={e => { e.stopPropagation(); setShowPaymentTracker(o => !o); }}
+            title="Payment Tracker — Cost-Share Collections">
+            💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
+          </button>
 
-          {/* Phone-only equivalent of the button above (see MobileToolsMenu) */}
+          {/* Phone-only equivalent of the buttons above (see MobileToolsMenu) */}
           <MobileToolsMenu items={[
             { key: 'notes', label: 'Note Board', icon: '📝', active: showNoteBoard, onClick: () => setShowNoteBoard(o => !o) },
+            { key: 'payment', label: 'Payment Tracker', icon: '💳', active: showPaymentTracker, onClick: () => setShowPaymentTracker(o => !o) },
           ]} />
         </div>
       );
@@ -17257,6 +17323,7 @@
       const [showNoteBoard, setShowNoteBoard] = useState(false);
       const [showImportPanel, setShowImportPanel] = useState(false);
       const [showBillingChannels, setShowBillingChannels] = useState(false);
+      const [showPaymentTracker, setShowPaymentTracker] = useState(false);
       // ── Claims banner filter — clicking a stat in ClaimDayBanner narrows
       // the row sections below to that status. null = no filter (default).
       // Resets whenever the viewed date changes, same as everything else in
@@ -17855,6 +17922,9 @@
           )}
           {showLedger && <ClaimsLedger onClose={() => setShowLedger(false)} provFilter="" />}
 
+          {/* ── Payment Tracker panel ── */}
+          {showPaymentTracker && <PaymentTracker onClose={() => setShowPaymentTracker(false)} provFilter="" />}
+
           <div className="billing-fab-bar">
             <button
               className={`bfab-btn${showBillingChannels ? ' open' : ''}`}
@@ -17883,14 +17953,22 @@
               title="Import payment amounts from CRB_Import.csv">
               📥 {showImportPanel ? 'Close Import' : 'Import Payments'}
             </button>
+
+            <button
+              className={`bfab-btn${showPaymentTracker ? ' open' : ''}`}
+              onClick={e => { e.stopPropagation(); setShowPaymentTracker(o => !o); }}
+              title="Payment Tracker — Cost-Share Collections">
+              💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
+            </button>
           </div>
 
-          {/* Phone-only equivalent of the 4 buttons above (see MobileToolsMenu) */}
+          {/* Phone-only equivalent of the 5 buttons above (see MobileToolsMenu) */}
           <MobileToolsMenu items={[
             { key: 'channel', label: 'Assign Channel', icon: '🔀', active: showBillingChannels, onClick: () => setShowBillingChannels(o => !o) },
             { key: 'ledger', label: 'Claims Ledger', icon: '📋', active: showLedger, onClick: () => setShowLedger(o => !o) },
             { key: 'notes', label: 'Note Board', icon: '📝', active: showNoteBoard, onClick: () => setShowNoteBoard(o => !o) },
             { key: 'import', label: 'Import Payments', icon: '📥', active: showImportPanel, onClick: () => setShowImportPanel(o => !o) },
+            { key: 'payment', label: 'Payment Tracker', icon: '💳', active: showPaymentTracker, onClick: () => setShowPaymentTracker(o => !o) },
           ]} />
         </div>
       );
@@ -19264,7 +19342,7 @@
               <div className="page-loading"><div className="spinner" /><span>Loading appointments…</span></div>
             ) : (
               <>
-                {view === 'provider' && period === 'day' && <ProviderView appts={appts} date={date} prov={prov} onUpdate={updateAppt} onSignNote={signNote} totalUnsigned={totalUnsigned} onClearPhantom={clearPhantom} userRole={userRole} onForceRefresh={forceRefreshDay} patientDb={patientDb} />}
+                {view === 'provider' && period === 'day' && <ProviderView appts={appts} date={date} prov={prov} onUpdate={updateAppt} onSignNote={signNote} totalUnsigned={totalUnsigned} onClearPhantom={clearPhantom} userRole={userRole} userProvID={userProvID} onForceRefresh={forceRefreshDay} patientDb={patientDb} />}
                 {view === 'provider' && period === 'week' && <WeekView prov={prov} date={date} data={data} onUpdateForDate={updateApptForDate} onSwitchToDay={switchToDay} onDeleteForDate={deleteApptForDate} totalUnsigned={totalUnsigned} />}
                 {view === 'assistant' && period === 'day' && <AssistantView appts={appts} date={date} onUpdate={updateAppt} onAdd={addAppt} onDelete={deleteAppt} patientDb={patientDb} />}
                 {view === 'assistant' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} onUpdateForDate={updateApptForDate} />}
