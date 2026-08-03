@@ -298,16 +298,14 @@ function getAppointments(prov, date) {
     if (dayAppts.length === 0) return JSON.stringify([]);
 
     // ── Dynamically compute unsigned[] for each patient ─────────────
-    // Column V (UnsignedDates) is no longer read — Signed + TebraStatus are
-    // the only source of truth (clinic standard set 2026-07-24). We scan
-    // EVERY row for each patient present today and rebuild unsigned[] fresh
-    // from actual Signed=FALSE rows whose visit actually occurred.
+    // Signed + TebraStatus + the row's own date/time are the source of
+    // truth (revised 2026-08-04, see _isUnsignedEligible). We scan EVERY
+    // row for each patient present today and rebuild unsigned[] fresh from
+    // rows that actually need a signed note right now.
     //
     // Rules:
-    //   • Only rows where Signed != TRUE (i.e. FALSE or blank)
-    //   • Only rows where the visit actually occurred — TebraStatus is
-    //     "Confirmed" or "Checked Out" (_visitOccurred). "Scheduled" and
-    //     void statuses (No-show/Rescheduled/Cancelled) never contribute.
+    //   • A row needs a note once its own date+time has passed and it's
+    //     not void, and Signed != TRUE (_isUnsignedEligible)
     //   • Only dates strictly before 'date' (today's slot is excluded —
     //     it is recorded as unsigned in the sheet but NOT shown in the
     //     banner; filterDisplayUnsigned on the front-end handles this
@@ -328,14 +326,11 @@ function getAppointments(prov, date) {
       var rPatNorm = _normName(String(r[4] || ''));
       if (rProv !== prov) return;                          // different provider
       if (!patientSet[rPatNorm]) return;                   // not in today's list
-      if (!_visitOccurred(String(r[34] || ''))) return;     // no completed visit — never unsigned
-
-      var signed = r[25];
-      var isSigned = (signed === true || String(signed).toUpperCase() === 'TRUE');
-      if (isSigned) return;                                // already signed
 
       var rDate = _fmtDate(r[1]);  // YYYY-MM-DD
       if (!rDate || rDate >= date) return;                 // future or same day — skip
+
+      if (!_isUnsignedEligible(String(r[34] || ''), r[1], r[3], r[25])) return;
 
       var dateStr = _toUnsignedDateStr(rDate);             // → MM/DD/YY
       if (!dateStr) return;
@@ -407,25 +402,22 @@ function getWeekAppointments(prov, weekStartDate) {
     });
 
     // Build normName → Set<MM/DD/YY> of unsigned dates strictly before weekEnd.
-    // Only rows where the visit actually occurred (_visitOccurred — Confirmed
-    // or Checked Out) count; "Scheduled" and void statuses never contribute.
+    // A row needs a note once its own date+time has passed and it's not void
+    // (revised 2026-08-04, see _isUnsignedEligible).
     const patientUnsigned = {};
     allRows.forEach(function (r) {
       var rProv = String(r[0] || '');
       var rPatNorm = _normName(String(r[4] || ''));
       if (rProv !== prov) return;
       if (!patientSet[rPatNorm]) return;
-      if (!_visitOccurred(String(r[34] || ''))) return;
-
-      var signed = r[25];
-      var isSigned = (signed === true || String(signed).toUpperCase() === 'TRUE');
-      if (isSigned) return;
 
       var rDate = _fmtDate(r[1]);
       if (!rDate) return;
       // Include unsigned dates up through the last day of the week
       // (each day's slot filters its own date via filterDisplayUnsigned on FE)
       if (rDate > weekEnd) return;
+
+      if (!_isUnsignedEligible(String(r[34] || ''), r[1], r[3], r[25])) return;
 
       var dateStr = _toUnsignedDateStr(rDate);
       if (!dateStr) return;
@@ -499,23 +491,20 @@ function getAllWeekAppointments(weekStartDate) {
       });
     });
 
-    // Build provID+normName → Set<MM/DD/YY> of unsigned dates. Only rows
-    // where the visit actually occurred (_visitOccurred — Confirmed or
-    // Checked Out) count; "Scheduled" and void statuses never contribute.
+    // Build provID+normName → Set<MM/DD/YY> of unsigned dates. A row needs a
+    // note once its own date+time has passed and it's not void (revised
+    // 2026-08-04, see _isUnsignedEligible).
     var patientUnsigned = {};
     allRows.forEach(function (r) {
       var rProv = String(r[0] || '');
       var rPatNorm = _normName(String(r[4] || ''));
       var key = rProv + '||' + rPatNorm;
       if (!patientSet[key]) return;
-      if (!_visitOccurred(String(r[34] || ''))) return;
-
-      var signed = r[25];
-      var isSigned = (signed === true || String(signed).toUpperCase() === 'TRUE');
-      if (isSigned) return;
 
       var rDate = _fmtDate(r[1]);
       if (!rDate || rDate > weekEnd) return;
+
+      if (!_isUnsignedEligible(String(r[34] || ''), r[1], r[3], r[25])) return;
 
       var dateStr = _toUnsignedDateStr(rDate);
       if (!dateStr) return;
@@ -708,14 +697,12 @@ function saveAppointment(prov, date, apptJson) {
 
     if (targetRow > 0) {
       // ── UPDATE path ──
-      // Column V (UnsignedDates) is no longer maintained — Signed + TebraStatus
-      // are the only source of truth for "does this row need a signed note"
-      // (clinic standard set 2026-07-24; see _visitOccurred). apptToRow() still
-      // writes appt.unsigned to col V for the row's own cell, so we explicitly
-      // clear it here rather than carry forward whatever the client last loaded
-      // — no back-filling other rows, no accumulation, nothing to go stale.
+      // Column V (UnsignedDates) is physically maintained now (2026-08-04) —
+      // full patient-wide recomputation is expensive, so routine saves just
+      // preserve whatever's already on the sheet rather than recomputing it.
+      // Full-cascade reconciliation only happens on Mark Note Signed
+      // (_reconcilePatientUnsignedDates) and the nightly sweep.
       var apptData = Object.assign({}, appt);   // mutable copy — don't mutate parsed JSON
-      apptData.unsigned = [];
 
       // ── Stamp InsuranceCarrier + PatientState from Patient DB ────────────
       // Always refresh from the source of truth so records stay accurate even
@@ -742,6 +729,14 @@ function saveAppointment(prov, date, apptJson) {
         if (sheetTebra) rowData[TS_IDX] = sheetTebra;
       }
 
+      // ── Preserve UnsignedDates as-is ──
+      // Not recomputed on routine saves (see comment above) — carry forward
+      // whatever's already on the sheet for this row.
+      const UNSIGNED_IDX = APPT_COLS.indexOf('UnsignedDates'); // 0-based
+      const sheetRowForV = values[targetRow - 1];
+      rowData[UNSIGNED_IDX] = sheetRowForV && sheetRowForV.length > UNSIGNED_IDX
+        ? String(sheetRowForV[UNSIGNED_IDX] || '') : '';
+
       sheet.getRange(targetRow, TIME_COL).setNumberFormat('@');
       sheet.getRange(targetRow, UNSIGNED_COL).setNumberFormat('@');
       // Force plain-text format on date fields to prevent Sheets auto-converting
@@ -751,15 +746,11 @@ function saveAppointment(prov, date, apptJson) {
       _audit(ss, 'UPDATE', `${apptData.patient} | ${apptData.time} | ${date} | ${prov}`);
     } else {
       // ── CREATE path ──
-      // Column V (UnsignedDates) is no longer maintained. A newly created
-      // appointment's own date is never seeded as "unsigned" here — whether
-      // it counts is decided dynamically at read time, and only once
-      // TebraStatus shows the visit actually happened (Confirmed/Checked
-      // Out), never while it's still just "Scheduled" or in the future
-      // (clinic standard set 2026-07-24; see _visitOccurred). This is what
-      // fixes future-dated appointments showing up as unsigned before
-      // they've even happened.
-      appt.unsigned = [];
+      // Seed UnsignedDates with every other currently-outstanding unsigned
+      // date this same patient already has (e.g. scheduling a follow-up
+      // while an earlier visit's note is still unsigned) — a single-patient
+      // scoped scan, cheap enough to run on every create (2026-08-04).
+      appt.unsigned = _computeUnsignedDatesForNewAppt(values, _normName(appt.patient), prov, _fmtDate(date));
 
       // ── Stamp InsuranceCarrier + PatientState from Patient DB ────────────
       var patInfoNew = _lookupPatient(ss, appt.patient);
@@ -861,18 +852,27 @@ function signNoteAndClearUnsigned(apptId, signedISO, patient) {
 
     var COL_ID = APPT_COLS.indexOf('ApptID') + 1;  // C = 3
     var COL_SIGNED = APPT_COLS.indexOf('Signed') + 1;  // Z = 26
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');       // 0-based, A = 0
+    var SIGNED_IDX = COL_SIGNED - 1;                    // 0-based
 
     var data = sheet.getDataRange().getValues();
     var idN = String(apptId || '').trim();
 
     var signed = 0;
+    var reconciled = 0;
     for (var i = 1; i < data.length; i++) {
       var rowId = String(data[i][COL_ID - 1] || '').trim();
       if (rowId !== idN) continue;
       sheet.getRange(i + 1, COL_SIGNED).setValue(true);
+      data[i][SIGNED_IDX] = true;  // keep in-memory copy in sync for the reconcile pass below
       signed++;
       Logger.log('signNoteAndClearUnsigned: row ' + (i + 1) + ' marked Signed=TRUE ' +
         '(ApptID=' + idN + ', patient="' + patient + '", date=' + signedISO + ')');
+
+      // Physically clean this date out of every other UnsignedDates cell for
+      // this patient+provider now that it's signed (2026-08-04).
+      var provID = String(data[i][PROV_IDX] || '');
+      reconciled = _reconcilePatientUnsignedDates(sheet, data, _normName(patient), provID);
       break; // ApptID is unique — no need to keep scanning once found
     }
 
@@ -880,7 +880,7 @@ function signNoteAndClearUnsigned(apptId, signedISO, patient) {
 
     _audit(ss, 'SIGN', 'Patient: ' + patient + ' | Date: ' + signedISO + ' | Signed: ' + signed);
 
-    return JSON.stringify({ ok: true, signed: signed, cleared: 0, affected: [] });
+    return JSON.stringify({ ok: true, signed: signed, cleared: reconciled, affected: [] });
   } catch (e) {
     Logger.log('signNoteAndClearUnsigned ERROR: ' + e.message + '\n' + e.stack);
     return JSON.stringify({ ok: false, error: e.message });
@@ -1038,10 +1038,211 @@ function _isCheckedOutStatus(tebraStatus) {
   var n = _normalizeStatusWord(tebraStatus);
   return n === 'checkout' || n === 'checkedout' || n === 'checkoutcomplete';
 }
-/** True only for statuses that represent an actual completed visit — the
- *  only two states a "needs a signed note" evaluation should ever apply to. */
+/** True only for statuses that represent an actual completed visit per
+ *  Tebra's own status field. Still used for auto-sign-on-Checkout
+ *  reconciliation (Tebra sync) and getOverdueDirectPay — NOT used for
+ *  unsigned-note eligibility anymore, see _isUnsignedEligible below. */
 function _visitOccurred(tebraStatus) {
   return _isConfirmedStatus(tebraStatus) || _isCheckedOutStatus(tebraStatus);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   UNSIGNED-NOTE ELIGIBILITY (revised 2026-08-04, replaces the
+   _visitOccurred-based rule above for this purpose specifically) —
+   Dean's report: gating on Tebra's own ConfirmationStatus reaching
+   "Confirmed" silently under-counted, because nothing in SolBoard ever
+   advances that field except Tebra's own sync feed. A real, completed,
+   still-unsigned visit whose status was never manually confirmed inside
+   Tebra — or is older than the 90-day full-sync window — sat at
+   "Scheduled" forever and never counted, no matter how overdue.
+
+   New rule: an appointment needs a signed note once its OWN scheduled
+   date+time has passed, full stop — independent of whatever Tebra's
+   status field says. Void appointments (No Show/Rescheduled/Cancelled)
+   still never need one. This is the one shared rule every read/count
+   function below uses, plus the audit/correction function — so they
+   can never drift apart from each other the way the badge and the V1
+   audit tab once did.
+════════════════════════════════════════════════════════════════════ */
+
+// 'YYYY-MM-DDTHH:MM' for an appointment's own date+time — string-comparable,
+// no Date() construction (avoids UTC/local-timezone drift, same reasoning
+// _fmtDate/_toUnsignedDateStr already use elsewhere in this file).
+function _apptDateTimeKey(dateVal, timeVal) {
+  var d = _fmtDate(dateVal);
+  if (!d) return '';
+  var t = _fmtTime(timeVal);
+  return d + 'T' + (t || '00:00');
+}
+
+function _nowDateTimeKey() {
+  var tz = Session.getScriptTimeZone();
+  var now = new Date();
+  return Utilities.formatDate(now, tz, 'yyyy-MM-dd') + 'T' + Utilities.formatDate(now, tz, 'HH:mm');
+}
+
+/** True once THIS SPECIFIC appointment's own scheduled date+time is in the
+ *  past (or right now) — independent of TebraStatus. */
+function _apptTimeHasPassed(dateVal, timeVal) {
+  var key = _apptDateTimeKey(dateVal, timeVal);
+  if (!key) return false;
+  return key <= _nowDateTimeKey();
+}
+
+/** The one shared "does this row need a signed note right now" rule. */
+function _isUnsignedEligible(tebraStatus, dateVal, timeVal, signedVal) {
+  if (_isVoidStatus(tebraStatus)) return false;
+  if (!_apptTimeHasPassed(dateVal, timeVal)) return false;
+  var isSigned = signedVal === true || String(signedVal).trim().toUpperCase() === 'TRUE';
+  return !isSigned;
+}
+
+/** What the Signed cell SHOULD contain for a row that isn't itself TRUE:
+ *  blank if the appointment hasn't happened yet, FALSE once it has, and
+ *  blank (never FALSE) for a void appointment since it will never need a
+ *  note. Callers must check for an existing TRUE themselves first — this
+ *  is never used to downgrade a real TRUE. */
+function _expectedSignedValue(tebraStatus, dateVal, timeVal) {
+  if (_isVoidStatus(tebraStatus)) return '';
+  return _apptTimeHasPassed(dateVal, timeVal) ? false : '';
+}
+
+/** The correct UnsignedDates value for a brand-new row being added for
+ *  patient+provider on ownDate: every OTHER currently-outstanding
+ *  unsigned-eligible date for that same patient+provider strictly before
+ *  ownDate, as an array of MM/DD/YY strings (caller joins with ','). */
+function _computeUnsignedDatesForNewAppt(rows, patientNorm, provID, ownDate) {
+  var outstanding = {};
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    if (String(r[0] || '') !== provID) continue;
+    if (_normName(String(r[4] || '')) !== patientNorm) continue;
+    var rDate = _fmtDate(r[1]);
+    if (!rDate || rDate >= ownDate) continue;
+    if (!_isUnsignedEligible(String(r[34] || ''), r[1], r[3], r[25])) continue;
+    outstanding[rDate] = true;
+  }
+  return Object.keys(outstanding).sort().map(_toUnsignedDateStr);
+}
+
+/** Recomputes and writes the correct UnsignedDates value on EVERY row
+ *  belonging to one patient+provider, based on the current Signed/
+ *  TebraStatus/date state of every other row for that same patient+
+ *  provider. Only writes cells that actually differ from their current
+ *  value. Returns the number of cells changed. `allRows` must be a fresh
+ *  getDataRange().getValues() read (header included, 0-indexed). */
+function _reconcilePatientUnsignedDates(sheet, allRows, patientNorm, provID) {
+  var UNSIGNED_COL = APPT_COLS.indexOf('UnsignedDates') + 1;
+  var matches = [];
+  for (var i = 1; i < allRows.length; i++) {
+    var r = allRows[i];
+    if (String(r[0] || '') !== provID) continue;
+    if (_normName(String(r[4] || '')) !== patientNorm) continue;
+    matches.push({
+      sheetRow: i + 1,
+      date: _fmtDate(r[1]),
+      time: r[3],
+      tebraStatus: String(r[34] || ''),
+      signed: r[25],
+      currentV: String(r[UNSIGNED_COL - 1] || ''),
+    });
+  }
+  if (matches.length === 0) return 0;
+
+  var outstandingDates = matches
+    .filter(function (m) { return m.date && _isUnsignedEligible(m.tebraStatus, m.date, m.time, m.signed); })
+    .map(function (m) { return m.date; });
+
+  var changed = 0;
+  matches.forEach(function (m) {
+    if (!m.date) return;
+    var priorDates = outstandingDates.filter(function (d) { return d < m.date; }).sort();
+    var expectedV = priorDates.map(_toUnsignedDateStr).join(',');
+    if (expectedV !== m.currentV) {
+      sheet.getRange(m.sheetRow, UNSIGNED_COL).setValue(expectedV);
+      changed++;
+    }
+  });
+  return changed;
+}
+
+/** Nightly comprehensive safety net (2026-08-04), called from
+ *  overnightSyncTebraApi() right after the Tebra import completes.
+ *
+ *  Pass 1: flips any genuinely-blank Signed cells to FALSE once their own
+ *  appointment date+time has passed and the status isn't void. Never
+ *  touches a cell that's already TRUE or FALSE.
+ *
+ *  Pass 2: re-reads the sheet and runs a full UnsignedDates reconciliation
+ *  for every provider+patient group, so column V stays accurate even for
+ *  rows created outside the normal saveAppointment/signNote flow (e.g. the
+ *  Tebra import path, which doesn't compute V itself — see apptToRow).
+ *
+ *  Returns a summary object; also logs via Logger.log and _audit. */
+function nightlyReconcileUnsignedNotes() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(TAB_APPT);
+  var summary = { flipped: 0, patientsReconciled: 0, cellsChanged: 0 };
+  if (!sheet || sheet.getLastRow() < 2) {
+    Logger.log('nightlyReconcileUnsignedNotes: no appointment rows — nothing to do.');
+    return summary;
+  }
+
+  var PROV_IDX = APPT_COLS.indexOf('ProvID');
+  var DATE_IDX = APPT_COLS.indexOf('Date');
+  var TIME_IDX = APPT_COLS.indexOf('Time');
+  var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+  var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+  var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+  var SIGNED_COL = SIGNED_IDX + 1;
+
+  var rows = sheet.getDataRange().getValues();
+
+  // ── Pass 1: blank → FALSE once the appointment's own time has passed ──
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    var signedVal = r[SIGNED_IDX];
+    var isBlank = signedVal !== true && signedVal !== false &&
+      String(signedVal).trim().toUpperCase() !== 'TRUE' &&
+      String(signedVal).trim().toUpperCase() !== 'FALSE';
+    if (!isBlank) continue;
+
+    var tebraStatus = String(r[TEBRA_IDX] || '');
+    var expected = _expectedSignedValue(tebraStatus, r[DATE_IDX], r[TIME_IDX]);
+    if (expected === false) {
+      sheet.getRange(i + 1, SIGNED_COL).setValue(false);
+      r[SIGNED_IDX] = false;  // keep in-memory copy in sync for pass 2
+      summary.flipped++;
+    }
+  }
+
+  // ── Pass 2: full UnsignedDates reconciliation, every provider+patient ──
+  var PLACEHOLDER_NAMES = PLACEHOLDER_PATIENT_NAMES;
+  var seen = {};
+  for (var j = 1; j < rows.length; j++) {
+    var row = rows[j];
+    var provID = String(row[PROV_IDX] || '');
+    var patName = String(row[PATIENT_IDX] || '').trim();
+    if (!patName || PLACEHOLDER_NAMES.indexOf(patName.toUpperCase()) !== -1) continue;
+    var patNorm = _normName(patName);
+    var key = provID + '||' + patNorm;
+    if (seen[key]) continue;
+    seen[key] = true;
+
+    var changed = _reconcilePatientUnsignedDates(sheet, rows, patNorm, provID);
+    summary.cellsChanged += changed;
+    summary.patientsReconciled++;
+  }
+
+  SpreadsheetApp.flush();
+
+  var msg = 'nightlyReconcileUnsignedNotes: flipped ' + summary.flipped +
+    ' blank Signed cells to FALSE, reconciled ' + summary.patientsReconciled +
+    ' patients, changed ' + summary.cellsChanged + ' UnsignedDates cells.';
+  Logger.log(msg);
+  _audit(ss, 'UNSIGNED_RECONCILE', msg);
+
+  return summary;
 }
 
 function getTotalUnsignedCount(prov) {
@@ -1051,12 +1252,10 @@ function getTotalUnsignedCount(prov) {
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ count: 0 });
 
     var PROV_IDX = APPT_COLS.indexOf('ProvID');        // 0  (col A)
-    var DATE_IDX = APPT_COLS.indexOf('Date');          // 1  (col B)
+    var TIME_IDX = APPT_COLS.indexOf('Time');          // 3  (col D)
     var SIGNED_IDX = APPT_COLS.indexOf('Signed');        // 25 (col Z)
     var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');   // 34 (col AI)
 
-    var tz = Session.getScriptTimeZone();
-    var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
     var rows = sheet.getDataRange().getValues();
     var count = 0;
 
@@ -1064,6 +1263,7 @@ function getTotalUnsignedCount(prov) {
     // blocks, etc.) and must never count toward unsigned note totals.
     var PLACEHOLDER_NAMES = PLACEHOLDER_PATIENT_NAMES;  // shared list — see top of file
     var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+    var DATE_IDX = APPT_COLS.indexOf('Date');
 
     for (var i = 1; i < rows.length; i++) {
       var r = rows[i];
@@ -1072,29 +1272,18 @@ function getTotalUnsignedCount(prov) {
       var rowProv = String(r[PROV_IDX] || '').trim();
       if (prov && rowProv !== String(prov).trim()) continue;
 
-      // Only past appointments (strictly before today — today's notes don't count yet)
-      var rowDate = _fmtDate(r[DATE_IDX]);
-      if (!rowDate || rowDate >= today) continue;
-
-      // Clinic standard (2026-07-24): only "Confirmed" (visit happened, not yet
-      // signed) or "Checked Out" (visit happened, note signed) represent an actual
-      // completed visit. "Scheduled" means the visit hasn't happened yet — never
-      // needs a note. No-show/Rescheduled/Cancelled are void. Anything else
-      // (blank, unrecognized status) is treated the same as "not yet occurred."
-      var tebraStatus = TEBRA_IDX >= 0 ? String(r[TEBRA_IDX] || '') : '';
-      if (!_visitOccurred(tebraStatus)) continue;
-
       // Skip placeholder patients (calendar blocks / personal day holds)
       if (PATIENT_IDX >= 0) {
         var patName = String(r[PATIENT_IDX] || '').trim().toUpperCase();
         if (PLACEHOLDER_NAMES.indexOf(patName) !== -1) continue;
       }
 
-      // Count if the note has NOT been signed
-      var signedVal = r[SIGNED_IDX];
-      var isSigned = signedVal === true ||
-        String(signedVal).trim().toUpperCase() === 'TRUE';
-      if (!isSigned) count++;
+      // Needs a signed note once its OWN date+time has passed — see
+      // _isUnsignedEligible (2026-08-04). Not gated on TebraStatus reaching
+      // "Confirmed" anymore; that silently under-counted real unsigned
+      // visits whose Tebra status was never manually advanced.
+      var tebraStatus = TEBRA_IDX >= 0 ? String(r[TEBRA_IDX] || '') : '';
+      if (_isUnsignedEligible(tebraStatus, r[DATE_IDX], r[TIME_IDX], r[SIGNED_IDX])) count++;
     }
 
     return JSON.stringify({ count: count });
@@ -1581,6 +1770,214 @@ function auditUnsignedNotesV2() {
     ' | Checked Out (should be 0!) = ' + byStatusBucket['Checked Out'] +
     ' | Other = ' + byStatusBucket['Other'] +
     '. See the "UnsignedNotesAudit2" tab.');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   auditAndFixUnsignedNotes (2026-08-04) — Dean's explicit request for a
+   full reconcile-and-cleanup pass, not a read-only report. Scans EVERY
+   row in the Appointments sheet and, for both Signed (col Z) and
+   UnsignedDates (col V), corrects any cell that doesn't match what the
+   main tool's own rule would produce (_expectedSignedValue /
+   _isUnsignedEligible — the exact same functions saveAppointment,
+   signNoteAndClearUnsigned, and the nightly sweep all use, so this
+   audit can never drift from the live behavior the way the old V1
+   audit and the live badge once did).
+
+   Rules applied (never violated):
+     • An existing Signed = TRUE is NEVER downgraded — this function only
+       ever writes TRUE by preserving it, never by inferring it.
+     • Signed is corrected to blank/FALSE per _expectedSignedValue when it
+       doesn't already match (covers rows stuck wrongly blank, wrongly
+       FALSE before their time, or wrongly FALSE on a void appointment).
+     • UnsignedDates is fully recomputed per provider+patient group from
+       the (now-corrected) Signed/TebraStatus/date state of every row in
+       that group, exactly like _reconcilePatientUnsignedDates.
+
+   Produces a detailed before/after report on a fresh 'UnsignedNotesFix'
+   tab (red tab, grand-total summary, full correction tables) — this is
+   NOT read-only, unlike auditUnsignedNotesV2 above.
+
+   HOW TO RUN:
+     1. Apps Script editor → function dropdown → auditAndFixUnsignedNotes
+     2. Click ▶ Run
+     3. Check the 'UnsignedNotesFix' tab and Logger output for results.
+
+   Idempotent — a second run on an already-correct sheet finds nothing
+   to change and reports zero corrections.
+════════════════════════════════════════════════════════════════════ */
+function auditAndFixUnsignedNotes() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(TAB_APPT);
+  if (!sheet || sheet.getLastRow() < 2) {
+    Logger.log('auditAndFixUnsignedNotes: no appointment data found.');
+    return JSON.stringify({ ok: true, signedCorrections: 0, unsignedDatesCorrections: 0 });
+  }
+
+  var PROV_IDX = APPT_COLS.indexOf('ProvID');
+  var DATE_IDX = APPT_COLS.indexOf('Date');
+  var TIME_IDX = APPT_COLS.indexOf('Time');
+  var APPTID_IDX = APPT_COLS.indexOf('ApptID');
+  var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+  var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+  var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+  var UNSIGNED_IDX = APPT_COLS.indexOf('UnsignedDates');
+  var SIGNED_COL = SIGNED_IDX + 1;
+  var UNSIGNED_COL = UNSIGNED_IDX + 1;
+
+  var rows = sheet.getDataRange().getValues();
+  var PLACEHOLDER_NAMES = PLACEHOLDER_PATIENT_NAMES;
+
+  // ── Pass 1: correct Signed (col Z) ──────────────────────────────────
+  var signedCorrections = [];
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    var patName = String(r[PATIENT_IDX] || '').trim();
+    if (!patName || PLACEHOLDER_NAMES.indexOf(patName.toUpperCase()) !== -1) continue;
+
+    var currentSigned = r[SIGNED_IDX];
+    var isTrue = currentSigned === true || String(currentSigned).trim().toUpperCase() === 'TRUE';
+    var tebraStatus = String(r[TEBRA_IDX] || '');
+
+    var expectedSigned = isTrue ? true : _expectedSignedValue(tebraStatus, r[DATE_IDX], r[TIME_IDX]);
+    var normalizedCurrent = isTrue ? true :
+      (currentSigned === false || String(currentSigned).trim().toUpperCase() === 'FALSE' ? false : '');
+
+    if (normalizedCurrent !== expectedSigned) {
+      sheet.getRange(i + 1, SIGNED_COL).setValue(expectedSigned);
+      r[SIGNED_IDX] = expectedSigned;  // keep in-memory copy in sync for pass 2
+      signedCorrections.push({
+        row: i + 1,
+        patient: patName,
+        prov: String(r[PROV_IDX] || ''),
+        date: _fmtDate(r[DATE_IDX]),
+        apptId: String(r[APPTID_IDX] || ''),
+        tebraStatus: tebraStatus.trim() || '(blank)',
+        from: normalizedCurrent === '' ? '(blank)' : String(normalizedCurrent).toUpperCase(),
+        to: expectedSigned === '' ? '(blank)' : String(expectedSigned).toUpperCase(),
+      });
+    }
+  }
+
+  // ── Pass 2: correct UnsignedDates (col V), per provider+patient group ──
+  var unsignedDatesCorrections = [];
+  var seen = {};
+  for (var j = 1; j < rows.length; j++) {
+    var row0 = rows[j];
+    var patName0 = String(row0[PATIENT_IDX] || '').trim();
+    if (!patName0 || PLACEHOLDER_NAMES.indexOf(patName0.toUpperCase()) !== -1) continue;
+    var provID = String(row0[PROV_IDX] || '');
+    var patNorm = _normName(patName0);
+    var key = provID + '||' + patNorm;
+    if (seen[key]) continue;
+    seen[key] = true;
+
+    var matches = [];
+    for (var k = 1; k < rows.length; k++) {
+      var r2 = rows[k];
+      if (String(r2[PROV_IDX] || '') !== provID) continue;
+      if (_normName(String(r2[PATIENT_IDX] || '')) !== patNorm) continue;
+      matches.push({
+        sheetRow: k + 1,
+        apptId: String(r2[APPTID_IDX] || ''),
+        date: _fmtDate(r2[DATE_IDX]),
+        time: r2[TIME_IDX],
+        tebraStatus: String(r2[TEBRA_IDX] || ''),
+        signed: r2[SIGNED_IDX],
+        currentV: String(r2[UNSIGNED_IDX] || ''),
+      });
+    }
+    if (matches.length === 0) continue;
+
+    var outstandingDates = matches
+      .filter(function (m) { return m.date && _isUnsignedEligible(m.tebraStatus, m.date, m.time, m.signed); })
+      .map(function (m) { return m.date; });
+
+    matches.forEach(function (m) {
+      if (!m.date) return;
+      var priorDates = outstandingDates.filter(function (d) { return d < m.date; }).sort();
+      var expectedV = priorDates.map(_toUnsignedDateStr).join(',');
+      if (expectedV !== m.currentV) {
+        sheet.getRange(m.sheetRow, UNSIGNED_COL).setValue(expectedV);
+        unsignedDatesCorrections.push({
+          row: m.sheetRow,
+          patient: patName0,
+          prov: provID,
+          date: m.date,
+          apptId: m.apptId,
+          from: m.currentV || '(blank)',
+          to: expectedV || '(blank)',
+        });
+      }
+    });
+  }
+
+  SpreadsheetApp.flush();
+
+  // ── Write report to a fresh 'UnsignedNotesFix' tab ──
+  var reportName = 'UnsignedNotesFix';
+  var existing = ss.getSheetByName(reportName);
+  if (existing) ss.deleteSheet(existing);
+  var report = ss.insertSheet(reportName);
+  report.setTabColor('#DC2626');
+
+  var out = [];
+  var boldRows = [];
+  function pushHeader(text) {
+    boldRows.push(out.length);
+    out.push([text]);
+  }
+
+  pushHeader('Unsigned Notes Audit & Fix — generated ' + new Date().toLocaleString());
+  out.push(['This report MAKES CORRECTIONS to the Appointments tab — it is not read-only.']);
+  out.push(['Rule: an existing Signed = TRUE is never downgraded. Everything else is corrected to match the live tool\'s own rule.']);
+  out.push([]);
+
+  pushHeader('GRAND TOTAL');
+  out.push(['Rows scanned', rows.length - 1]);
+  out.push(['Signed (col Z) corrections', signedCorrections.length]);
+  out.push(['UnsignedDates (col V) corrections', unsignedDatesCorrections.length]);
+  out.push([]);
+
+  pushHeader('Signed corrections');
+  out.push(['Patient', 'Date', 'Provider', 'ApptID', 'TebraStatus', 'From', 'To']);
+  signedCorrections
+    .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })
+    .forEach(function (c) {
+      out.push([c.patient, c.date, c.prov, c.apptId, c.tebraStatus, c.from, c.to]);
+    });
+  out.push([]);
+
+  pushHeader('UnsignedDates corrections');
+  out.push(['Patient', 'Date', 'Provider', 'ApptID', 'Old Value', 'New Value']);
+  unsignedDatesCorrections
+    .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })
+    .forEach(function (c) {
+      out.push([c.patient, c.date, c.prov, c.apptId, c.from, c.to]);
+    });
+
+  var maxCols = out.reduce(function (m, row) { return Math.max(m, row.length); }, 1);
+  out.forEach(function (row) { while (row.length < maxCols) row.push(''); });
+
+  report.getRange(1, 1, out.length, maxCols).setValues(out);
+  boldRows.forEach(function (idx) {
+    report.getRange(idx + 1, 1, 1, maxCols).setFontWeight('bold').setBackground('#F2EDDB');
+  });
+  report.getRange(1, 1, 1, maxCols).setFontSize(13);
+  report.setFrozenRows(0);
+  report.autoResizeColumns(1, maxCols);
+
+  var summaryMsg = 'auditAndFixUnsignedNotes: scanned ' + (rows.length - 1) +
+    ' rows | Signed corrections = ' + signedCorrections.length +
+    ' | UnsignedDates corrections = ' + unsignedDatesCorrections.length +
+    '. See the "UnsignedNotesFix" tab.';
+  Logger.log(summaryMsg);
+  _audit(ss, 'UNSIGNED_AUDIT_FIX', summaryMsg);
+
+  return JSON.stringify({
+    ok: true,
+    signedCorrections: signedCorrections.length,
+    unsignedDatesCorrections: unsignedDatesCorrections.length,
+  });
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2985,7 +3382,10 @@ function apptToRow(appt, prov, date) {
     (appt.cpt || []).join('|'),
     appt.billing || 'pending',
     appt.status || 'pending',
-    appt.out ? true : false,
+    // Signed (col Z): TRUE if already marked signed; otherwise blank until
+    // this appointment's own date+time passes, then FALSE — never downgrades
+    // an existing TRUE. See _expectedSignedValue (2026-08-04).
+    appt.out ? true : _expectedSignedValue(appt.tebraStatus || '', date, appt.time),
     appt.paymentType || '',
     _sv(appt.paymentRate),    // _sv preserves '0' / numeric 0 ($0 copay)
     appt.paymentAmount || '',
@@ -4461,12 +4861,15 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     // the active booking.
     //
     // Priority (higher number wins):
-    //   Check-out (10) > Scheduled (8) > Confirmed (7) > In Office (6)
+    //   Check-out (10) > Confirmed (8) > Scheduled (7) > In Office (6)
     //   > No Show (3) > Rescheduled (2) > Cancelled/Deleted (1/0)
+    // (2026-08-04: Confirmed and Scheduled were swapped — the lifecycle is
+    // Scheduled → Confirmed → Checked-out, so a synced "Confirmed" status
+    // must never be overwritten back down to "Scheduled" by dedup.)
     var _STATUS_PRI = {
       'check-out': 10, 'checkout': 10, 'checked out': 10, 'checkedout': 10,
-      'scheduled': 8,
-      'confirmed': 7,
+      'confirmed': 8,
+      'scheduled': 7,
       'in office': 6, 'inoffice': 6,
       'no show': 3, 'noshow': 3, 'no-show': 3,
       'rescheduled': 2,
@@ -5281,6 +5684,17 @@ function overnightSyncTebraApi() {
     _audit(SpreadsheetApp.getActiveSpreadsheet(),
       'OVERNIGHT_SYNC_FAILED',
       'Overnight Tebra sync failed: ' + e.message);
+  }
+
+  // Unsigned-note Signed/UnsignedDates safety net — piggybacks on this
+  // existing nightly trigger rather than a new dedicated one (2026-08-04).
+  try {
+    nightlyReconcileUnsignedNotes();
+  } catch (e) {
+    Logger.log('❌ nightlyReconcileUnsignedNotes FAILED: ' + e.message);
+    _audit(SpreadsheetApp.getActiveSpreadsheet(),
+      'UNSIGNED_RECONCILE_FAILED',
+      'Nightly unsigned-notes reconcile failed: ' + e.message);
   }
 }
 
