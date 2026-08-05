@@ -3047,10 +3047,10 @@ function getPaymentTrackerAll(provFilter) {
    duplicates are suspected, e.g. after a fresh legacy-sheet import.
 ──────────────────────────────────────────────────────────────────────── */
 function auditPaymentTrackerDuplicates() {
-  var autoRows   = JSON.parse(getPaymentTrackerData(''));
+  var autoRows = JSON.parse(getPaymentTrackerData(''));
   var manualRows = JSON.parse(getPaymentTrackerManualData(''));
 
-  if (!Array.isArray(autoRows))   { Logger.log('getPaymentTrackerData error: ' + JSON.stringify(autoRows)); return; }
+  if (!Array.isArray(autoRows)) { Logger.log('getPaymentTrackerData error: ' + JSON.stringify(autoRows)); return; }
   if (!Array.isArray(manualRows)) { Logger.log('getPaymentTrackerManualData error: ' + JSON.stringify(manualRows)); return; }
 
   var all = autoRows.concat(manualRows);
@@ -3059,20 +3059,20 @@ function auditPaymentTrackerDuplicates() {
   // "payment plan", and multi-date payment-plan entries would otherwise
   // false-match every other row sharing the same non-date value.
   var groups = {};
-  all.forEach(function(r) {
+  all.forEach(function (r) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(r.date || '')) return;
     var key = _normName(r.patient) + '|' + String(r.provID || '').toLowerCase() + '|' + r.date;
     (groups[key] = groups[key] || []).push(r);
   });
 
   var dupGroupCount = 0, dupRowCount = 0;
-  Object.keys(groups).forEach(function(key) {
+  Object.keys(groups).forEach(function (key) {
     var g = groups[key];
     if (g.length < 2) return;
     dupGroupCount++;
     dupRowCount += g.length;
     Logger.log('── DUPLICATE: ' + key + ' (' + g.length + ' rows) ──');
-    g.forEach(function(r) {
+    g.forEach(function (r) {
       Logger.log(
         '  source=' + r.source +
         ' id=' + (r.id || '') +
@@ -3116,29 +3116,29 @@ function auditPaymentTrackerDuplicates() {
 ──────────────────────────────────────────────────────────────────────── */
 function cleanupPaymentTrackerDuplicates() {
   try {
-    var autoRows   = JSON.parse(getPaymentTrackerData(''));
+    var autoRows = JSON.parse(getPaymentTrackerData(''));
     var manualRows = JSON.parse(getPaymentTrackerManualData(''));
 
-    if (!Array.isArray(autoRows))   { Logger.log('getPaymentTrackerData error: ' + JSON.stringify(autoRows)); return; }
+    if (!Array.isArray(autoRows)) { Logger.log('getPaymentTrackerData error: ' + JSON.stringify(autoRows)); return; }
     if (!Array.isArray(manualRows)) { Logger.log('getPaymentTrackerManualData error: ' + JSON.stringify(manualRows)); return; }
 
     var groups = {};
-    autoRows.concat(manualRows).forEach(function(r) {
+    autoRows.concat(manualRows).forEach(function (r) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(r.date || '')) return;
       var key = _normName(r.patient) + '|' + String(r.provID || '').toLowerCase() + '|' + r.date;
       (groups[key] = groups[key] || []).push(r);
     });
 
     var toDelete = [];
-    Object.keys(groups).forEach(function(key) {
+    Object.keys(groups).forEach(function (key) {
       var g = groups[key];
       if (g.length !== 2) return;
-      var auto   = g.filter(function(r) { return r.source === 'SolBoard Auto'; });
-      var legacy = g.filter(function(r) { return r.source === 'Legacy Import'; });
+      var auto = g.filter(function (r) { return r.source === 'SolBoard Auto'; });
+      var legacy = g.filter(function (r) { return r.source === 'Legacy Import'; });
       if (auto.length !== 1 || legacy.length !== 1) return;
       if (legacy[0].status !== 'Paid') return;
 
-      var autoAmt   = parseFloat(auto[0].paymentAmount);
+      var autoAmt = parseFloat(auto[0].paymentAmount);
       var legacyAmt = parseFloat(legacy[0].paymentAmount);
       if (isNaN(autoAmt) || isNaN(legacyAmt) || autoAmt !== legacyAmt) return;
 
@@ -3153,14 +3153,14 @@ function cleanupPaymentTrackerDuplicates() {
 
     // Delete highest row index first so earlier deletions don't shift
     // the row numbers of ones still pending.
-    toDelete.sort(function(a, b) { return b.rowIndex - a.rowIndex; });
+    toDelete.sort(function (a, b) { return b.rowIndex - a.rowIndex; });
 
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_PAYMENT_MANUAL);
     if (!sheet) { Logger.log('PaymentTrackerManual sheet not found'); return; }
 
     var deletedCount = 0;
-    toDelete.forEach(function(d) {
+    toDelete.forEach(function (d) {
       // Re-verify the row's Patient still matches right before deleting —
       // same drift guard savePaymentManualComment uses.
       var rowPatient = String(sheet.getRange(d.rowIndex, 3).getValue() || '').trim();
