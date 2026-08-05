@@ -2454,6 +2454,12 @@ function getNoteBoard(provFilter) {
         provID: appt.provID,
         noteStatus: appt.noteStatus || '',
         signed: appt.out || false,
+        // Standalone columns (66-69) — read directly by number, not via
+        // rowToAppt, since they're deliberately kept out of APPT_COLS.
+        noteInProgressBy: String(r[NOTE_PROGRESS_BY_COL - 1] || ''),
+        noteInProgressAt: String(r[NOTE_PROGRESS_AT_COL - 1] || ''),
+        noteReadyBy: String(r[NOTE_READY_BY_COL - 1] || ''),
+        noteReadyAt: String(r[NOTE_READY_AT_COL - 1] || ''),
       });
     }
     // Sort by date then time
@@ -2473,6 +2479,12 @@ function getNoteBoard(provFilter) {
    Lightweight update — writes only the NoteStatus column for a
    given appointment ID. Called by the Note Board panel so assistants
    can update note status without a full appointment save.
+   Also stamps who made the In Progress / Ready transition and when,
+   into the standalone attribution columns (66-69, NOTE_PROGRESS_BY_COL
+   through NOTE_READY_AT_COL) — captured server-side from the session, never from the client, so
+   it can't be spoofed or mistyped. These columns are intentionally
+   outside APPT_COLS (see the comment above NOTE_PROGRESS_BY_COL) so
+   a normal full-appointment save never touches them.
 ────────────────────────────────────────────────────────────────── */
 function saveNoteStatus(apptId, noteStatus) {
   try {
@@ -2483,11 +2495,34 @@ function saveNoteStatus(apptId, noteStatus) {
     var ID_IDX = APPT_COLS.indexOf('ApptID');     // column C (index 2)
     var NS_IDX = APPT_COLS.indexOf('NoteStatus'); // column index 55
     if (NS_IDX < 0) return JSON.stringify({ ok: false, err: 'NoteStatus column not found' });
+
+    var email = Session.getActiveUser().getEmail();
+    var staff = _getStaffRecord(ss, email);
+    var who = (staff && staff.displayName) ? staff.displayName : email;
+    var now = new Date().toISOString();
+
     for (var i = 1; i < data.length; i++) {
       if (String(data[i][ID_IDX] || '').trim() === String(apptId).trim()) {
-        sheet.getRange(i + 1, NS_IDX + 1).setValue(noteStatus || '');
+        var rowNum = i + 1;
+        sheet.getRange(rowNum, NS_IDX + 1).setValue(noteStatus || '');
+
+        if (noteStatus === 'in_progress') {
+          sheet.getRange(rowNum, NOTE_PROGRESS_BY_COL).setValue(who);
+          sheet.getRange(rowNum, NOTE_PROGRESS_AT_COL).setValue(now);
+        } else if (noteStatus === 'ready') {
+          sheet.getRange(rowNum, NOTE_READY_BY_COL).setValue(who);
+          sheet.getRange(rowNum, NOTE_READY_AT_COL).setValue(now);
+        } else {
+          // Reset to Not Started — clear both stamps so the badge doesn't
+          // show stale attribution from a previous pass at this note.
+          sheet.getRange(rowNum, NOTE_PROGRESS_BY_COL).setValue('');
+          sheet.getRange(rowNum, NOTE_PROGRESS_AT_COL).setValue('');
+          sheet.getRange(rowNum, NOTE_READY_BY_COL).setValue('');
+          sheet.getRange(rowNum, NOTE_READY_AT_COL).setValue('');
+        }
+
         _audit(ss, 'NOTE_STATUS_UPDATED',
-          'Appt ' + apptId + ' → noteStatus=' + (noteStatus || '(cleared)'));
+          'Appt ' + apptId + ' → noteStatus=' + (noteStatus || '(cleared)') + ' by ' + email);
         return JSON.stringify({ ok: true });
       }
     }
@@ -2495,6 +2530,70 @@ function saveNoteStatus(apptId, noteStatus) {
   } catch (e) {
     Logger.log('saveNoteStatus ERROR: ' + e.message);
     return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   OVERRIDE NOTE ATTRIBUTION
+   Lets an assistant correct who gets credit for a note-status
+   transition (e.g. the wrong person got picked by mistake). This
+   does NOT touch the note status itself, and only writes to the
+   standalone columns 66-69 — never APPT_COLS. Every correction is
+   itself audited (old value, new value, who made the correction).
+   `which` must be 'inProgress' or 'ready'.
+────────────────────────────────────────────────────────────────── */
+function overrideNoteAttribution(apptId, which, staffEmail) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+
+    var BY_COL = which === 'inProgress' ? NOTE_PROGRESS_BY_COL : which === 'ready' ? NOTE_READY_BY_COL : null;
+    if (!BY_COL) return JSON.stringify({ ok: false, err: 'Invalid attribution target: ' + which });
+
+    var staff = _getStaffRecord(ss, staffEmail);
+    var who = staff ? staff.displayName : staffEmail;
+
+    var data = sheet.getDataRange().getValues();
+    var ID_IDX = APPT_COLS.indexOf('ApptID');
+
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][ID_IDX] || '').trim() === String(apptId).trim()) {
+        var oldVal = String(data[i][BY_COL - 1] || '(blank)');
+        sheet.getRange(i + 1, BY_COL).setValue(who);
+        _audit(ss, 'NOTE_ATTRIBUTION_CORRECTED',
+          'Appt ' + apptId + ' → col ' + BY_COL + ': "' + oldVal + '" → "' + who + '" (corrected by ' + Session.getActiveUser().getEmail() + ')');
+        return JSON.stringify({ ok: true });
+      }
+    }
+    return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+  } catch (e) {
+    Logger.log('overrideNoteAttribution ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   GET ASSISTANT LIST
+   Returns [{ email, displayName }] for every Staff-tab row with
+   role='assistant' — used to populate the correction dropdown on
+   the Note Board so a mis-attributed note can be reassigned.
+────────────────────────────────────────────────────────────────── */
+function getAssistantList() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_STAFF);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify([]);
+    var rows = sheet.getDataRange().getValues().slice(1);
+    var out = rows
+      .filter(function (r) { return String(r[1] || '').trim() === 'assistant'; })
+      .map(function (r) {
+        return { email: String(r[0] || '').trim(), displayName: String(r[3] || '').trim() };
+      });
+    return JSON.stringify(out);
+  } catch (e) {
+    Logger.log('getAssistantList ERROR: ' + e.message);
+    return JSON.stringify([]);
   }
 }
 
@@ -2663,6 +2762,22 @@ function saveClaimNotes(provId, dateStr, apptId, notes) {
    touch it, or anything from column 60 onward.
 ════════════════════════════════════════════════════════════════ */
 var PAYMENT_COMMENTS_COL = 64;
+
+/* ── NOTE STATUS ATTRIBUTION — standalone columns, same reasoning as
+   PAYMENT_COMMENTS_COL above. Columns 60-64 are the documented
+   reserved zone (3 dead headers, the external system's live PatientID
+   column, and the Payment Tracker Comments column) — after the
+   2026-08-05 incident where extending APPT_COLS into that zone
+   collided with it, these live at 66-69 instead, with column 65 left
+   as a buffer. Read/written directly by column number in
+   saveNoteStatus/overrideNoteAttribution/getNoteBoard — intentionally
+   NOT part of APPT_COLS, so ordinary appointment saves never touch
+   them. Confirmed empty via inspectAppointmentColumns() on 2026-08-05
+   before first use. ── */
+var NOTE_PROGRESS_BY_COL = 66;  // BN
+var NOTE_PROGRESS_AT_COL = 67;  // BO
+var NOTE_READY_BY_COL = 68;     // BP
+var NOTE_READY_AT_COL = 69;     // BQ
 
 function savePaymentComment(provId, dateStr, apptId, comment) {
   try {
