@@ -293,7 +293,17 @@ function getAppointments(prov, date) {
     // ── Day's appointments (raw, before unsigned override) ──────────
     const dayAppts = rows
       .filter(r => String(r[0]) === prov && _fmtDate(r[1]) === date)
-      .map(rowToAppt);
+      .map(function (r) {
+        var a = rowToAppt(r);
+        // Standalone attribution columns (66-69) — read directly by number,
+        // not via rowToAppt, since they're deliberately kept out of
+        // APPT_COLS (see the comment above NOTE_PROGRESS_BY_COL).
+        a.noteInProgressBy = String(r[NOTE_PROGRESS_BY_COL - 1] || '');
+        a.noteInProgressAt = String(r[NOTE_PROGRESS_AT_COL - 1] || '');
+        a.noteReadyBy = String(r[NOTE_READY_BY_COL - 1] || '');
+        a.noteReadyAt = String(r[NOTE_READY_AT_COL - 1] || '');
+        return a;
+      });
 
     if (dayAppts.length === 0) return JSON.stringify([]);
 
@@ -744,6 +754,39 @@ function saveAppointment(prov, date, apptJson) {
       [36, 40, 44, 48].forEach(function (c) { sheet.getRange(targetRow, c).setNumberFormat('@'); });
       sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
       _audit(ss, 'UPDATE', `${apptData.patient} | ${apptData.time} | ${date} | ${prov}`);
+
+      // ── Note Status Attribution ────────────────────────────────────────
+      // The inline "NOTE STATUS" column in the Assistant day view saves
+      // through this full-appointment path, not saveNoteStatus — so
+      // attribution has to be stamped here too. Only fires when noteStatus
+      // actually changed from what was already on the sheet; an unrelated
+      // field edit that happens to re-save the same noteStatus value must
+      // NOT reset who gets credit. Standalone columns 66-69 — see the
+      // comment above NOTE_PROGRESS_BY_COL for why they're kept out of
+      // APPT_COLS.
+      var NS_IDX_FOR_ATTRIB = APPT_COLS.indexOf('NoteStatus');
+      var oldNoteStatus = String(values[targetRow - 1][NS_IDX_FOR_ATTRIB] || '');
+      var newNoteStatus = String(apptData.noteStatus || '');
+      if (newNoteStatus !== oldNoteStatus) {
+        var attribEmail = Session.getActiveUser().getEmail();
+        var attribStaff = _getStaffRecord(ss, attribEmail);
+        var attribWho = (attribStaff && attribStaff.displayName) ? attribStaff.displayName : attribEmail;
+        var attribNow = new Date().toISOString();
+        if (newNoteStatus === 'in_progress') {
+          sheet.getRange(targetRow, NOTE_PROGRESS_BY_COL).setValue(attribWho);
+          sheet.getRange(targetRow, NOTE_PROGRESS_AT_COL).setValue(attribNow);
+        } else if (newNoteStatus === 'ready') {
+          sheet.getRange(targetRow, NOTE_READY_BY_COL).setValue(attribWho);
+          sheet.getRange(targetRow, NOTE_READY_AT_COL).setValue(attribNow);
+        } else {
+          sheet.getRange(targetRow, NOTE_PROGRESS_BY_COL).setValue('');
+          sheet.getRange(targetRow, NOTE_PROGRESS_AT_COL).setValue('');
+          sheet.getRange(targetRow, NOTE_READY_BY_COL).setValue('');
+          sheet.getRange(targetRow, NOTE_READY_AT_COL).setValue('');
+        }
+        _audit(ss, 'NOTE_STATUS_UPDATED',
+          'Appt ' + appt.id + ' → noteStatus=' + (newNoteStatus || '(cleared)') + ' by ' + attribEmail + ' (via saveAppointment)');
+      }
     } else {
       // ── CREATE path ──
       // Seed UnsignedDates with every other currently-outstanding unsigned
