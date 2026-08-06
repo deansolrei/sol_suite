@@ -2980,35 +2980,12 @@
     /* ── Claims banner filter buttons — active/selected state, same
        background-inversion pattern as .mthd-btn.on-* (Billing Channel
        selector): fill with the stat's own color, flip text to white. ── */
-    .cds-nosub.cds-active {
-      background: #BE992A;
-      color: #FFFFFF
-    }
-
-    .cds-pend.cds-active {
-      background: #BE992A;
-      color: #FFFFFF
-    }
-
-    .cds-paid.cds-active {
-      background: #16A34A;
-      color: #FFFFFF
-    }
-
-    .cds-denied.cds-active {
-      background: #DC2626;
-      color: #FFFFFF
-    }
-
-    .cds-resub.cds-active {
-      background: #7494AA;
-      color: #FFFFFF
-    }
-
-    .cds-signed.cds-active {
-      background: #0F766E;
-      color: #FFFFFF
-    }
+    .cds-nosub.cds-active { background: #BE992A; color: #FFFFFF }
+    .cds-pend.cds-active   { background: #BE992A; color: #FFFFFF }
+    .cds-paid.cds-active   { background: #16A34A; color: #FFFFFF }
+    .cds-denied.cds-active { background: #DC2626; color: #FFFFFF }
+    .cds-resub.cds-active  { background: #7494AA; color: #FFFFFF }
+    .cds-signed.cds-active { background: #0F766E; color: #FFFFFF }
 
     /* ── Per-appointment claim status badge (Billing day view) ─────────── */
     .csb-wrap {
@@ -8453,55 +8430,8 @@
 
     .nb-cell-ns {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 3px;
-    }
-
-    .nb-attrib {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-    }
-
-    .nb-attrib-line {
-      font-size: 9px;
-      font-weight: 600;
-      color: #777355;
-      line-height: 1.4;
-    }
-
-    .nb-attrib-edit {
-      border: none;
-      background: none;
-      cursor: pointer;
-      font-size: 9px;
-      color: #3D768A;
-      padding: 0 0 0 4px;
-      opacity: .55;
-    }
-
-    .nb-attrib-edit:hover {
-      opacity: 1;
-    }
-
-    .nb-attrib-sel {
-      font-size: 10px;
-      padding: 1px 3px;
-      border: 1px solid #E5E0C8;
-      border-radius: 4px;
-      background: #FBFBF3;
-      color: #2B2716;
-    }
-
-    body.dark .nb-attrib-line {
-      color: #6B9E8A;
-    }
-
-    body.dark .nb-attrib-sel {
-      background: #051F11;
-      border-color: #09371F;
-      color: #F0FDF4;
+      align-items: center;
+      gap: 6px;
     }
 
     .nb-cell-signed {
@@ -10361,7 +10291,6 @@
       .cl-table {
         min-width: 640px;
       }
-
       .cl-body {
         -webkit-overflow-scrolling: touch;
       }
@@ -10401,7 +10330,6 @@
       .hdr-mobile .theme-toggle {
         position: relative;
       }
-
       .hdr-mobile .date-btn::after,
       .hdr-mobile .hdr-icon-btn::after,
       .hdr-mobile .hdr-cal-btn::after,
@@ -10420,7 +10348,6 @@
       .rate-copy-icon {
         position: relative;
       }
-
       .hdr-mobile-more-btn::after,
       .cal-nav-btn::after,
       .rate-copy-icon::after {
@@ -13144,65 +13071,10 @@
       );
     }
 
-    /* ── Small attribution line under the Note Board status badge — shows
-       which assistant started/completed a note. Read-only for everyone;
-       assistants get a ✎ control to correct a mis-attributed note (fixes
-       the credit only, never the note status itself). ── */
-    function NoteAttribution({ row, attrib, canEdit, assistants, editing, setEditing, onCorrect }) {
-      const progressBy = attrib.noteInProgressBy !== undefined ? attrib.noteInProgressBy : (row.noteInProgressBy || '');
-      const readyBy = attrib.noteReadyBy !== undefined ? attrib.noteReadyBy : (row.noteReadyBy || '');
-
-      function AttribLine({ which, label, current }) {
-        const isEditing = editing && editing.rowId === row.id && editing.which === which;
-        if (isEditing) {
-          return (
-            <span className="nb-attrib-line">
-              {label}: <select
-                className="nb-attrib-sel"
-                autoFocus
-                defaultValue=""
-                onBlur={() => setEditing(null)}
-                onChange={e => {
-                  const [email, name] = e.target.value.split('|');
-                  if (email) onCorrect(row, which, email, name);
-                }}>
-                <option value="">Reassign to…</option>
-                {assistants.map(a => (
-                  <option key={a.email} value={`${a.email}|${a.displayName}`}>{a.displayName || a.email}</option>
-                ))}
-              </select>
-            </span>
-          );
-        }
-        return (
-          <span className="nb-attrib-line">
-            {label}: {current}
-            {canEdit && (
-              <button
-                className="nb-attrib-edit"
-                title="Correct attribution"
-                onClick={() => setEditing({ rowId: row.id, which })}>✎</button>
-            )}
-          </span>
-        );
-      }
-
-      if (!progressBy && !readyBy) return null;
-      return (
-        <div className="nb-attrib">
-          {progressBy && <AttribLine which="inProgress" label="Started" current={progressBy} />}
-          {readyBy && <AttribLine which="ready" label="Ready" current={readyBy} />}
-        </div>
-      );
-    }
-
     function NoteBoardPanel({ onClose, role, provFilter }) {
       const [rows, setRows] = useState(null);
       const [loading, setLoading] = useState(true);
       const [localNs, setLocalNs] = useState({});  // optimistic local overrides
-      const [localAttrib, setLocalAttrib] = useState({}); // optimistic attribution overrides
-      const [assistants, setAssistants] = useState([]);   // for the correction dropdown
-      const [editingAttrib, setEditingAttrib] = useState(null); // { rowId, which } | null
       const [dateFilter, setDateFilter] = useState('');
       const [provFilterLocal, setProvFilterLocal] = useState(provFilter || '');
       const [signedFilter, setSignedFilter] = useState(''); // '' = all, 'signed', 'unsigned'
@@ -13219,43 +13091,12 @@
           .catch(() => { setRows([]); setLoading(false); });
       }, [provFilterLocal]);
 
-      // Only assistants can correct attribution, so only they need the staff list.
-      useEffect(() => {
-        if (!canEdit) return;
-        gsr('getAssistantList')
-          .then(json => {
-            try { setAssistants(JSON.parse(json) || []); } catch (e) { setAssistants([]); }
-          })
-          .catch(() => { });
-      }, [canEdit]);
-
       function cycleStatus(row) {
         if (!canEdit) return;
         const cur = localNs[row.id] !== undefined ? localNs[row.id] : (row.noteStatus || '');
         const next = NS_CYCLE[(NS_CYCLE.indexOf(cur) + 1) % NS_CYCLE.length];
         setLocalNs(p => ({ ...p, [row.id]: next }));
-        // Optimistic attribution — the server stamps the same thing
-        // independently from the session; this just makes the UI feel instant.
-        const me = _crbUser.display || _crbUser.email || '';
-        setLocalAttrib(p => {
-          const prior = p[row.id] || {};
-          if (next === 'in_progress') return { ...p, [row.id]: { ...prior, noteInProgressBy: me } };
-          if (next === 'ready') return { ...p, [row.id]: { ...prior, noteReadyBy: me } };
-          return { ...p, [row.id]: { noteInProgressBy: '', noteReadyBy: '' } }; // reset to Not Started
-        });
         gsr('saveNoteStatus', row.id, next).catch(() => { });
-      }
-
-      function correctAttribution(row, which, staffEmail, staffName) {
-        setLocalAttrib(p => ({
-          ...p,
-          [row.id]: {
-            ...(p[row.id] || {}),
-            [which === 'inProgress' ? 'noteInProgressBy' : 'noteReadyBy']: staffName,
-          },
-        }));
-        setEditingAttrib(null);
-        gsr('overrideNoteAttribution', row.id, which, staffEmail).catch(() => { });
       }
 
       const allRows = rows || [];
@@ -13351,15 +13192,6 @@
                           ) : (
                             <span className={`ns-badge ${info.cls}`}>{info.icon} {info.label}</span>
                           )}
-                          <NoteAttribution
-                            row={row}
-                            attrib={localAttrib[row.id] || {}}
-                            canEdit={canEdit}
-                            assistants={assistants}
-                            editing={editingAttrib}
-                            setEditing={setEditingAttrib}
-                            onCorrect={correctAttribution}
-                          />
                         </div>
                         <div className="nb-cell-signed">
                           {row.signed ? '✓ Signed' : ''}
@@ -14995,23 +14827,7 @@
                           }
                           const ns = a.noteStatus || '';
                           const info = (NS_LABELS[ns] || NS_LABELS['']);
-                          if (ns === 'in_progress' || ns === 'ready') {
-                            console.log('[NOTE-ATTRIB] ProviderView rendering', a.id, 'ns=', ns, 'noteInProgressBy=', a.noteInProgressBy, 'noteReadyBy=', a.noteReadyBy);
-                          }
-                          return (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
-                              <span className={`ns-badge ${info.cls}`}>{info.icon} {info.label}</span>
-                              <NoteAttribution
-                                row={a}
-                                attrib={{}}
-                                canEdit={false}
-                                assistants={[]}
-                                editing={null}
-                                setEditing={() => { }}
-                                onCorrect={() => { }}
-                              />
-                            </div>
-                          );
+                          return <span className={`ns-badge ${info.cls}`}>{info.icon} {info.label}</span>;
                         })()}
                         <button className="pv-details-toggle" onClick={toggleDetail} aria-label="Toggle details">
                           {detailOpen ? '▲' : '▼'}
@@ -15851,38 +15667,13 @@
       );
     }
 
-    function AssistantView({ appts, date, onUpdate, onAdd, onDelete, patientDb, onForceRefresh }) {
+    function AssistantView({ appts, date, onUpdate, onAdd, onDelete, patientDb }) {
       const [modal, setModal] = useState(null);
       const [selectedIds, setSelectedIds] = useState(new Set());
       const [bulkAction, setBulkAction] = useState('valid');
       const [voidOpen, setVoidOpen] = useState(false);
       const [showNoteBoard, setShowNoteBoard] = useState(false);
       const [showPaymentTracker, setShowPaymentTracker] = useState(false);
-      const [localAttrib, setLocalAttrib] = useState({}); // optimistic note-status attribution overrides, keyed by appt id
-      const [editingAttrib, setEditingAttrib] = useState(null); // { rowId, which } | null
-      const [assistants, setAssistants] = useState([]); // for the attribution-correction dropdown
-
-      useEffect(() => {
-        gsr('getAssistantList')
-          .then(json => {
-            try { setAssistants(JSON.parse(json) || []); } catch (e) { setAssistants([]); }
-          })
-          .catch(() => { });
-      }, []);
-
-      function correctAttribution(row, which, staffEmail, staffName) {
-        setLocalAttrib(p => ({
-          ...p,
-          [row.id]: {
-            ...(p[row.id] || {}),
-            [which === 'inProgress' ? 'noteInProgressBy' : 'noteReadyBy']: staffName,
-          },
-        }));
-        setEditingAttrib(null);
-        gsr('overrideNoteAttribution', row.id, which, staffEmail)
-          .then(() => { if (onForceRefresh) onForceRefresh(); })
-          .catch(() => { });
-      }
 
       // ── FIX (2026-07-26): the column header row used to be a sticky <thead>
       // inside the SAME scrolling table as the data rows — sticky positioning
@@ -16118,46 +15909,16 @@
                             const info = NS_LABELS[ns] || NS_LABELS[''];
                             function cycleNs() {
                               const next = NS_CYCLE[(NS_CYCLE.indexOf(ns) + 1) % NS_CYCLE.length];
-                              // Optimistic attribution — saveAppointment stamps the same
-                              // thing server-side from the session; this just makes the
-                              // UI feel instant instead of waiting on the round trip.
-                              const me = _crbUser.display || _crbUser.email || '';
-                              setLocalAttrib(p => {
-                                const prior = p[a.id] || {};
-                                if (next === 'in_progress') return { ...p, [a.id]: { ...prior, noteInProgressBy: me } };
-                                if (next === 'ready') return { ...p, [a.id]: { ...prior, noteReadyBy: me } };
-                                return { ...p, [a.id]: { noteInProgressBy: '', noteReadyBy: '' } }; // reset
-                              });
-                              const saveP = onUpdate({ ...a, noteStatus: next });
-                              // The shared appointment cache is read directly (no local
-                              // overlay) by the Provider window — without this refetch it
-                              // would keep showing stale (blank) attribution until some
-                              // unrelated refresh happened to occur.
-                              console.log('[NOTE-ATTRIB] cycleNs fired, saveP=', saveP, 'has .then?', !!(saveP && saveP.then), 'onForceRefresh=', typeof onForceRefresh);
-                              if (saveP && saveP.then) saveP.then((res) => {
-                                console.log('[NOTE-ATTRIB] save resolved, res=', res, '— calling onForceRefresh now');
-                                if (onForceRefresh) onForceRefresh();
-                              });
+                              onUpdate({ ...a, noteStatus: next });
                             }
                             return (
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
-                                <button
-                                  className={`ns-badge ${info.cls}`}
-                                  style={{ cursor: 'pointer', border: 'none', font: 'inherit', padding: '3px 8px' }}
-                                  onClick={cycleNs}
-                                  title="Click to advance note status">
-                                  {info.icon} {info.label}
-                                </button>
-                                <NoteAttribution
-                                  row={a}
-                                  attrib={localAttrib[a.id] || {}}
-                                  canEdit={true}
-                                  assistants={assistants}
-                                  editing={editingAttrib}
-                                  setEditing={setEditingAttrib}
-                                  onCorrect={correctAttribution}
-                                />
-                              </div>
+                              <button
+                                className={`ns-badge ${info.cls}`}
+                                style={{ cursor: 'pointer', border: 'none', font: 'inherit', padding: '3px 8px' }}
+                                onClick={cycleNs}
+                                title="Click to advance note status">
+                                {info.icon} {info.label}
+                              </button>
                             );
                           })()}
                         </td>
@@ -19063,7 +18824,6 @@
         if (initLoading || !IS_GAS) return;
         if (period === 'week') return;
         const k = dkey(prov, date);
-        console.log('[NOTE-ATTRIB] fetch effect ran, refreshTick=', refreshTick, 'k=', k, 'already fetched?', fetchedRef.current.has(k));
         if (fetchedRef.current.has(k)) return;
         // Only show the loading spinner on the FIRST load for this date+prov.
         // Background refreshes (auto-refresh, re-sync) update silently so that
@@ -19073,12 +18833,7 @@
         if (isFirstLoad) setApptLoading(true);
         gsr('getAppointments', prov, date)
           .then(json => {
-            try {
-              const a = JSON.parse(json);
-              console.log('[NOTE-ATTRIB] getAppointments returned', a.length, 'appts; sample attribution fields:',
-                a.map(x => ({ id: x.id, noteStatus: x.noteStatus, noteInProgressBy: x.noteInProgressBy, noteReadyBy: x.noteReadyBy })));
-              if (Array.isArray(a)) setData(p => ({ ...p, [k]: a }));
-            } catch (e) { console.log('[NOTE-ATTRIB] parse error', e); }
+            try { const a = JSON.parse(json); if (Array.isArray(a)) setData(p => ({ ...p, [k]: a })); } catch (e) { }
             setApptLoading(false);
           })
           .catch(() => setApptLoading(false));
@@ -19259,7 +19014,6 @@
 
       // Force-refresh the current day from GAS (used by ProviderView when opening PatientInfoModal)
       function forceRefreshDay() {
-        console.log('[NOTE-ATTRIB] forceRefreshDay called, key=', key, 'was in fetchedRef?', fetchedRef.current.has(key));
         fetchedRef.current.delete(key);
         setRefreshTick(t => t + 1);
       }
@@ -20036,7 +19790,7 @@
               <>
                 {view === 'provider' && period === 'day' && <ProviderView appts={appts} date={date} prov={prov} onUpdate={updateAppt} onSignNote={signNote} totalUnsigned={totalUnsigned} onClearPhantom={clearPhantom} userRole={userRole} userProvID={userProvID} onForceRefresh={forceRefreshDay} patientDb={patientDb} dayMode={providerDayMode} setDayMode={setProviderDayMode} />}
                 {view === 'provider' && period === 'week' && <WeekView prov={prov} date={date} data={data} onUpdateForDate={updateApptForDate} onSwitchToDay={switchToDay} onDeleteForDate={deleteApptForDate} totalUnsigned={totalUnsigned} />}
-                {view === 'assistant' && period === 'day' && <AssistantView appts={appts} date={date} onUpdate={updateAppt} onAdd={addAppt} onDelete={deleteAppt} patientDb={patientDb} onForceRefresh={forceRefreshDay} />}
+                {view === 'assistant' && period === 'day' && <AssistantView appts={appts} date={date} onUpdate={updateAppt} onAdd={addAppt} onDelete={deleteAppt} patientDb={patientDb} />}
                 {view === 'assistant' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} onUpdateForDate={updateApptForDate} />}
                 {view === 'billing' && period === 'day' && <BillingView appts={appts} date={date} onUpdate={updateAppt} patientDb={patientDb} onRefreshPatients={refreshPatientDb} />}
                 {view === 'billing' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} view="billing" onUpdateForDate={updateApptForDate} />}

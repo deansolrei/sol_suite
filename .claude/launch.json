@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pt-harness",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8935", "--directory", "/private/tmp/claude-501/-Users-deanpedersen-Projects-claude-code-sol-suite/bdf70d9e-e3f8-427f-977a-beda79624507/scratchpad"],
+      "port": 8935
+    }
+  ]
+}
