@@ -12519,6 +12519,7 @@
                                         carrier={d.insuranceCarrier}
                                         state={d.patientState || ''}
                                         cpts={lastCodedCpts.length ? lastCodedCpts.join(',') : '99214,90833'}
+                                        provider={d.provID}
                                         onResult={setBestChannelData}
                                     />
                                 )}
@@ -15220,7 +15221,7 @@
         }
 
         // ── Best Channel Hint Component ──────────────────────────
-        function BestChannelHint({ carrier, state, cpts, onResult }) {
+        function BestChannelHint({ carrier, state, cpts, provider, onResult }) {
             const [data, setData] = React.useState(null);
             const [loading, setLoading] = React.useState(false);
             React.useEffect(() => {
@@ -15231,7 +15232,7 @@
                 }
                 setLoading(true); setData(null);
                 fetch(BEST_CHANNEL_API_BASE + '/api/best-channel?carrier=' + encodeURIComponent(carrier) +
-                    '&state=' + encodeURIComponent(state) + '&cpts=' + encodeURIComponent(cpts || '99214,90833,90836,90838'))
+                    '&state=' + encodeURIComponent(state) + '&cpts=' + encodeURIComponent(cpts || '99214,90833,90836,90838') + '&provider=' + encodeURIComponent(provider || ''))
                     .then(r => r.json()).then(d => {
                         setLoading(false); setData(d);
                         if (onResult) onResult(d);
@@ -15240,7 +15241,7 @@
                         setLoading(false);
                         if (onResult) onResult(null);
                     });
-            }, [carrier, state, cpts]);
+            }, [carrier, state, cpts, provider]);
             if (!loading && !data) return null;
             const C = { 'Clinic Submit': { bg: '#7494AA', bd: '#7494AA', tx: '#FFFFFF', lb: 'CLINIC' }, 'Headway': { bg: '#87D1B0', bd: '#87D1B0', tx: '#2B2716', lb: 'HEADWAY' }, 'Alma': { bg: '#0C4A34', bd: '#0C4A34', tx: '#FFFFFF', lb: 'ALMA' }, 'Grow Therapy': { bg: '#B06D12', bd: '#B06D12', tx: '#FFFFFF', lb: 'GROW' } };
             return (
@@ -16485,7 +16486,7 @@
                 if (!insurance || !patientState || insurance.toLowerCase().includes('cash')) { setBestChannel(null); return; }
                 setBestChannelLoading(true); setBestChannel(null);
                 fetch(BEST_CHANNEL_API_BASE + '/api/best-channel?carrier=' + encodeURIComponent(insurance) +
-                    '&state=' + encodeURIComponent(patientState) + '&cpts=' + encodeURIComponent(normCpt(localAppt.cpt).join(',') || '99214'))
+                    '&state=' + encodeURIComponent(patientState) + '&cpts=' + encodeURIComponent(normCpt(localAppt.cpt).join(',') || '99214') + '&provider=' + encodeURIComponent(appt.provID || ''))
                     .then(r => r.json()).then(d => { setBestChannelLoading(false); setBestChannel(d); })
                     .catch(() => setBestChannelLoading(false));
             }, [insurance, patientState]);
@@ -17546,6 +17547,7 @@
                                         carrier={d.insuranceCarrier}
                                         state={ptRec.patientState || ''}
                                         cpts={normCpt(d.cpt).join(',')}
+                                        provider={d.provID}
                                         onResult={setBestChannelData}
                                     />
                                 )}
