@@ -912,6 +912,14 @@ function signNoteAndClearUnsigned(apptId, signedISO, patient) {
       Logger.log('signNoteAndClearUnsigned: row ' + (i + 1) + ' marked Signed=TRUE ' +
         '(ApptID=' + idN + ', patient="' + patient + '", date=' + signedISO + ')');
 
+      // Note-signed attribution (Stage 1, 2026-08-09) — who/when the SIGN
+      // action itself happened, distinct from signedISO above (which is the
+      // appointment's own date, not a timestamp) and from the Signed
+      // boolean. Reuses the staff lookup already done for the auth check.
+      var signedWho = (staff && staff.displayName) ? staff.displayName : email;
+      sheet.getRange(i + 1, NOTE_SIGNED_BY_COL).setValue(signedWho);
+      sheet.getRange(i + 1, NOTE_SIGNED_AT_COL).setValue(new Date().toISOString());
+
       // Physically clean this date out of every other UnsignedDates cell for
       // this patient+provider now that it's signed (2026-08-04).
       var provID = String(data[i][PROV_IDX] || '');
@@ -2822,6 +2830,418 @@ var NOTE_PROGRESS_AT_COL = 67;  // BO
 var NOTE_READY_BY_COL = 68;     // BP
 var NOTE_READY_AT_COL = 69;     // BQ
 
+/* ── APPOINTMENT FLOW ATTRIBUTION (Stage 1, 2026-08-09) — standalone
+   columns, same reasoning as NOTE_PROGRESS_BY_COL etc. above. Column 65
+   is the existing buffer; these pick up immediately after the Note
+   Status attribution block (66-69), starting at 70. Each pair is
+   session-stamped server-side (never client-supplied) by its own
+   dedicated save function, and — like the Note Status columns — kept
+   OUT of APPT_COLS so an ordinary full-row appointment save never
+   touches them. Confirmed empty by grepping this file for any
+   reference to columns 65 or ≥70 before first use; no
+   inspectAppointmentColumns()-equivalent tool exists in this codebase
+   to re-verify against the live sheet directly, so re-check the sheet
+   itself if this ever looks wrong. ── */
+var STATUS_BY_COL = 70;                // BR — Status (Valid/Issue/In Process)
+var STATUS_AT_COL = 71;                // BS
+var CCEHR_BY_COL = 72;                 // BT — Credit Card on File in Tebra
+var CCEHR_AT_COL = 73;                 // BU
+var CLAIM_STATUS_BY_COL = 74;          // BV
+var CLAIM_STATUS_AT_COL = 75;          // BW
+var CLAIM_SUBMITTED_BY_COL = 76;       // BX — who/when the submission was recorded;
+var CLAIM_SUBMITTED_AT_COL = 77;       // BY   distinct from the ClaimSubmittedDate business field
+var NOTE_SIGNED_BY_COL = 78;           // BZ — distinct from the Signed boolean itself
+var NOTE_SIGNED_AT_COL = 79;           // CA
+var SCR_DATA_BY_COL = 80;              // CB — last-edited by/at for the whole
+var SCR_DATA_AT_COL = 81;              // CC   ScrData blob, not per individual score
+var BEST_RATE_CONFIRMED_COL = 82;      // CD — HVA confirmed the auto-computed
+var BEST_RATE_CONFIRMED_BY_COL = 83;   // CE   best-channel recommendation
+var BEST_RATE_CONFIRMED_AT_COL = 84;   // CF
+var UNSIGNED_CONFIRMED_COL = 85;       // CG — this row's own (unsigned) date has
+var UNSIGNED_CONFIRMED_BY_COL = 86;    // CH   been reviewed; row IS the unsigned date,
+var UNSIGNED_CONFIRMED_AT_COL = 87;    // CI   no separate date list needed
+
+/* ── Attribution stamp helper — writes the current session's staff
+   displayName (or raw email if unrecognized) plus an ISO timestamp
+   into a by/at column pair. Shared by every save function below so
+   the who/when logic can't drift between them. Session-derived only,
+   same as saveNoteStatus — never takes who/when from the client. ── */
+function _stampAttribution(ss, sheet, rowNum, byCol, atCol) {
+  var email = Session.getActiveUser().getEmail();
+  var staff = _getStaffRecord(ss, email);
+  var who = (staff && staff.displayName) ? staff.displayName : email;
+  var now = new Date().toISOString();
+  sheet.getRange(rowNum, byCol).setValue(who);
+  sheet.getRange(rowNum, atCol).setValue(now);
+  return now;
+}
+
+/** 1-based sheet row for a given ApptID, or -1 if not found. */
+function _findApptRow(sheet, apptId) {
+  var data = sheet.getDataRange().getValues();
+  var idN = String(apptId || '').trim();
+  var ID_IDX = APPT_COLS.indexOf('ApptID');
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][ID_IDX] || '').trim() === idN) return i + 1;
+  }
+  return -1;
+}
+
+/* ── Appointment Status (Valid/Issue/In Process) attribution ─────────── */
+function saveAppointmentStatus(apptId, status) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+    var rowNum = _findApptRow(sheet, apptId);
+    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    sheet.getRange(rowNum, APPT_COLS.indexOf('Status') + 1).setValue(status || '');
+    var now = _stampAttribution(ss, sheet, rowNum, STATUS_BY_COL, STATUS_AT_COL);
+
+    _audit(ss, 'STATUS_UPDATED', 'Appt ' + apptId + ' → status=' + (status || '(cleared)'));
+    return JSON.stringify({ ok: true, at: now });
+  } catch (e) {
+    Logger.log('saveAppointmentStatus ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+/* ── CCEHR (Credit Card on File in Tebra) attribution ─────────────────── */
+function saveCCEHR(apptId, value) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+    var rowNum = _findApptRow(sheet, apptId);
+    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    sheet.getRange(rowNum, APPT_COLS.indexOf('CCEHR') + 1).setValue(value || '');
+    var now = _stampAttribution(ss, sheet, rowNum, CCEHR_BY_COL, CCEHR_AT_COL);
+
+    _audit(ss, 'CCEHR_UPDATED', 'Appt ' + apptId + ' → ccEhr=' + (value || '(cleared)'));
+    return JSON.stringify({ ok: true, at: now });
+  } catch (e) {
+    Logger.log('saveCCEHR ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+/* ── ClaimStatus attribution ───────────────────────────────────────────── */
+function saveClaimStatus(apptId, claimStatus) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+    var rowNum = _findApptRow(sheet, apptId);
+    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    sheet.getRange(rowNum, APPT_COLS.indexOf('ClaimStatus') + 1).setValue(claimStatus || '');
+    var now = _stampAttribution(ss, sheet, rowNum, CLAIM_STATUS_BY_COL, CLAIM_STATUS_AT_COL);
+
+    _audit(ss, 'CLAIM_STATUS_UPDATED', 'Appt ' + apptId + ' → claimStatus=' + (claimStatus || '(cleared)'));
+    return JSON.stringify({ ok: true, at: now });
+  } catch (e) {
+    Logger.log('saveClaimStatus ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+/* ── Claim submission attribution — who/when the submission was recorded,
+   distinct from the ClaimSubmittedDate business field itself (which this
+   also writes, matching what ClaimSubmitModal currently sets via the
+   full-row save). ──────────────────────────────────────────────────── */
+function saveClaimSubmission(apptId, claimSubmittedDate) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+    var rowNum = _findApptRow(sheet, apptId);
+    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    sheet.getRange(rowNum, APPT_COLS.indexOf('ClaimSubmittedDate') + 1).setValue(claimSubmittedDate || '');
+    var now = _stampAttribution(ss, sheet, rowNum, CLAIM_SUBMITTED_BY_COL, CLAIM_SUBMITTED_AT_COL);
+
+    _audit(ss, 'CLAIM_SUBMITTED', 'Appt ' + apptId + ' → claimSubmittedDate=' + (claimSubmittedDate || '(cleared)'));
+    return JSON.stringify({ ok: true, at: now });
+  } catch (e) {
+    Logger.log('saveClaimSubmission ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+/* ── Screener data (ScrData) attribution — last-edited by/at for the
+   whole JSON blob, not per individual score. ──────────────────────── */
+function saveScrData(apptId, scrDataJson) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+    var rowNum = _findApptRow(sheet, apptId);
+    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    sheet.getRange(rowNum, APPT_COLS.indexOf('ScrData') + 1).setValue(scrDataJson || '');
+    var now = _stampAttribution(ss, sheet, rowNum, SCR_DATA_BY_COL, SCR_DATA_AT_COL);
+
+    _audit(ss, 'SCR_DATA_UPDATED', 'Appt ' + apptId);
+    return JSON.stringify({ ok: true, at: now });
+  } catch (e) {
+    Logger.log('saveScrData ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+/* ── Best-rate confirmation — an HVA explicitly confirming the
+   auto-computed best-channel recommendation, separate from the
+   recommendation itself (Patients sheet BestChannel column). ──────── */
+function saveBestRateConfirmed(apptId, confirmed) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+    var rowNum = _findApptRow(sheet, apptId);
+    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    sheet.getRange(rowNum, BEST_RATE_CONFIRMED_COL).setValue(!!confirmed);
+    var now = _stampAttribution(ss, sheet, rowNum, BEST_RATE_CONFIRMED_BY_COL, BEST_RATE_CONFIRMED_AT_COL);
+
+    _audit(ss, 'BEST_RATE_CONFIRMED', 'Appt ' + apptId + ' → confirmed=' + !!confirmed);
+    return JSON.stringify({ ok: true, at: now });
+  } catch (e) {
+    Logger.log('saveBestRateConfirmed ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+/* ── Unsigned-date confirmation — marks THIS row's own outstanding
+   unsigned date as reviewed. The row already IS the live-computed
+   unsigned entry (see _isUnsignedEligible); this never feeds back into
+   that computation, it's a pure annotation layer on top of it. ────── */
+function saveUnsignedConfirmed(apptId, confirmed) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+    var rowNum = _findApptRow(sheet, apptId);
+    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    sheet.getRange(rowNum, UNSIGNED_CONFIRMED_COL).setValue(!!confirmed);
+    var now = _stampAttribution(ss, sheet, rowNum, UNSIGNED_CONFIRMED_BY_COL, UNSIGNED_CONFIRMED_AT_COL);
+
+    _audit(ss, 'UNSIGNED_CONFIRMED', 'Appt ' + apptId + ' → confirmed=' + !!confirmed);
+    return JSON.stringify({ ok: true, at: now });
+  } catch (e) {
+    Logger.log('saveUnsignedConfirmed ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   APPOINTMENT FLOW — LIVE WINDOW / ARCHIVE (Stage 1, 2026-08-09)
+   ════════════════════════════════════════════════════════════════
+   Shared bounds: for a given provider, the live window runs from that
+   provider's oldest outstanding unsigned-note date (same eligibility
+   test as getTotalUnsignedCount — see _isUnsignedEligible) through 14
+   days from today. A provider with no outstanding unsigned notes has
+   no historical floor, so their window simply starts today. An
+   appointment whose claim has been submitted more than 1 day ago is
+   excluded from the live window regardless of date — it's settled and
+   belongs in the Archive instead. "More than 1 day ago" is measured
+   from ClaimSubmittedDate — the pre-existing business-date field —
+   deliberately NOT the new ClaimSubmittedAt attribution stamp, which
+   is blank on historical data and would misjudge it. See the comment
+   in _isInLiveWindow for the full reasoning.
+
+   getLiveWindowAppointments and searchArchiveAppointments share the
+   exact same bounds/exclusion logic (_liveWindowBounds / _isInLiveWindow)
+   so the two views can never disagree about which side of the line a
+   row falls on.
+════════════════════════════════════════════════════════════════ */
+
+/** Computes, per provider present in `data`, the oldest outstanding
+ *  unsigned-note date, plus the shared today/horizon strings. */
+function _liveWindowBounds(data, provFilter) {
+  var PROV_IDX = APPT_COLS.indexOf('ProvID');
+  var DATE_IDX = APPT_COLS.indexOf('Date');
+  var TIME_IDX = APPT_COLS.indexOf('Time');
+  var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+  var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+  var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+
+  var todayStr = _fmtDate(new Date());
+  var horizon = new Date();
+  horizon.setDate(horizon.getDate() + 14);
+  var horizonStr = _fmtDate(horizon);
+
+  var oldestUnsignedByProv = {};
+  for (var i = 1; i < data.length; i++) {
+    var r = data[i];
+    var prov = String(r[PROV_IDX] || '').trim();
+    if (!prov) continue;
+    if (provFilter && provFilter !== '*' && prov !== provFilter) continue;
+
+    // Placeholder patients (calendar blocks / personal day holds) never
+    // count toward unsigned totals — same exclusion as getTotalUnsignedCount.
+    var patName = String(r[PATIENT_IDX] || '').trim().toUpperCase();
+    if (PLACEHOLDER_PATIENT_NAMES.indexOf(patName) !== -1) continue;
+
+    var tebraStatus = TEBRA_IDX >= 0 ? String(r[TEBRA_IDX] || '') : '';
+    if (!_isUnsignedEligible(tebraStatus, r[DATE_IDX], r[TIME_IDX], r[SIGNED_IDX])) continue;
+
+    var dateStr = _fmtDate(r[DATE_IDX]);
+    if (!dateStr) continue;
+    if (!oldestUnsignedByProv[prov] || dateStr < oldestUnsignedByProv[prov]) {
+      oldestUnsignedByProv[prov] = dateStr;
+    }
+  }
+
+  return { todayStr: todayStr, horizonStr: horizonStr, oldestUnsignedByProv: oldestUnsignedByProv };
+}
+
+/** True if row `r` (0-based array, one row from getDataRange().getValues())
+ *  falls inside the live window for its own provider. */
+function _isInLiveWindow(r, bounds) {
+  var PROV_IDX = APPT_COLS.indexOf('ProvID');
+  var DATE_IDX = APPT_COLS.indexOf('Date');
+  var CLAIM_SUBMITTED_DATE_IDX = APPT_COLS.indexOf('ClaimSubmittedDate');
+
+  var prov = String(r[PROV_IDX] || '').trim();
+  var dateStr = _fmtDate(r[DATE_IDX]);
+  if (!prov || !dateStr) return false;
+
+  var windowStart = bounds.oldestUnsignedByProv[prov] || bounds.todayStr;
+  if (dateStr < windowStart || dateStr > bounds.horizonStr) return false;
+
+  // Gated on ClaimSubmittedDate alone — NOT on ClaimStatus, and NOT on the new
+  // ClaimSubmittedAt attribution stamp. ClaimSubmitModal's Submitted Date field
+  // and Status dropdown are independent controls (crb_index.html handleSave /
+  // buildFinalAppt) — a date can be saved via "Save" while Status is left on
+  // "— Select —" (blank), so gating on ClaimStatus would let an old, genuinely
+  // submitted claim with no status slip back into the live window. And
+  // ClaimSubmittedAt is blank on every row that predates this feature or was
+  // never re-touched through saveClaimSubmission(), so it can't be trusted
+  // either. ClaimSubmittedDate is the one field guaranteed to be populated
+  // wherever a claim was actually submitted, going back before this stage
+  // existed.
+  var refDate = r[CLAIM_SUBMITTED_DATE_IDX] ? new Date(_fmtDate(r[CLAIM_SUBMITTED_DATE_IDX])) : null;
+  if (refDate && !isNaN(refDate.getTime())) {
+    var ageMs = new Date().getTime() - refDate.getTime();
+    if (ageMs > 24 * 60 * 60 * 1000) return false; // submitted >1 day ago — settled, belongs in Archive
+  }
+
+  return true;
+}
+
+/** Appointment Flow's main-view dataset: every appointment currently
+ *  "live" for provFilter (or all providers if '' / omitted), per the
+ *  bounds/exclusion rule documented above. */
+function getLiveWindowAppointments(provFilter) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify([]);
+
+    var data = sheet.getDataRange().getValues();
+    var bounds = _liveWindowBounds(data, provFilter);
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');
+
+    var out = [];
+    for (var i = 1; i < data.length; i++) {
+      var r = data[i];
+      var prov = String(r[PROV_IDX] || '').trim();
+      if (!prov) continue;
+      if (provFilter && provFilter !== '*' && prov !== provFilter) continue;
+      if (!_isInLiveWindow(r, bounds)) continue;
+      out.push(rowToAppt(r));
+    }
+
+    out.sort(function (a, b) {
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      return a.time < b.time ? -1 : 1;
+    });
+
+    return JSON.stringify(out);
+  } catch (e) {
+    Logger.log('getLiveWindowAppointments ERROR: ' + e.message);
+    return JSON.stringify({ error: e.message });
+  }
+}
+
+/**
+ * Convenience wrapper — edit the provider ID here, then click ▶ Run.
+ * Prints a count + the full result via Logger.log (View → Logs) so you
+ * can verify it against what you see in the sheet.
+ */
+function runGetLiveWindowAppointments() {
+  var provFilter = 'jodene';   // ← CHANGE THIS (or '' for all providers)
+  var json = getLiveWindowAppointments(provFilter);
+  var result = JSON.parse(json);
+  Logger.log('getLiveWindowAppointments("' + provFilter + '") → ' +
+    (Array.isArray(result) ? result.length + ' appointments' : JSON.stringify(result)));
+  Logger.log(JSON.stringify(result, null, 2));
+}
+
+/** Appointment Flow's Archive search — the complement of
+ *  getLiveWindowAppointments: everything that falls OUTSIDE the live
+ *  window per the exact same bounds/exclusion rule, optionally
+ *  filtered by patient name (partial, case-insensitive) and/or an
+ *  exact date (YYYY-MM-DD). */
+function searchArchiveAppointments(patientName, dateStr, provFilter) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify([]);
+
+    var data = sheet.getDataRange().getValues();
+    var bounds = _liveWindowBounds(data, provFilter);
+
+    var nameFilter = String(patientName || '').trim().toLowerCase();
+    var dateFilter = String(dateStr || '').trim();
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');
+    var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+    var DATE_IDX = APPT_COLS.indexOf('Date');
+
+    var out = [];
+    for (var i = 1; i < data.length; i++) {
+      var r = data[i];
+      var prov = String(r[PROV_IDX] || '').trim();
+      if (!prov) continue;
+      if (provFilter && provFilter !== '*' && prov !== provFilter) continue;
+      if (_isInLiveWindow(r, bounds)) continue; // still live — not archived
+
+      if (nameFilter && String(r[PATIENT_IDX] || '').toLowerCase().indexOf(nameFilter) === -1) continue;
+      if (dateFilter && _fmtDate(r[DATE_IDX]) !== dateFilter) continue;
+
+      out.push(rowToAppt(r));
+    }
+
+    out.sort(function (a, b) {
+      if (a.date !== b.date) return a.date > b.date ? -1 : 1; // most recent first
+      return a.time < b.time ? -1 : 1;
+    });
+
+    return JSON.stringify(out);
+  } catch (e) {
+    Logger.log('searchArchiveAppointments ERROR: ' + e.message);
+    return JSON.stringify({ error: e.message });
+  }
+}
+
+/**
+ * Convenience wrapper — edit the search terms here, then click ▶ Run.
+ * Prints a count + the full result via Logger.log (View → Logs).
+ */
+function runSearchArchiveAppointments() {
+  var patientName = 'Jane Smith';   // ← CHANGE THIS (or '' to skip the name filter)
+  var dateStr = '';                 // ← CHANGE THIS, e.g. '2026-07-01' (or '' to skip the date filter)
+  var provFilter = '';              // ← CHANGE THIS (or '' for all providers)
+  var json = searchArchiveAppointments(patientName, dateStr, provFilter);
+  var result = JSON.parse(json);
+  Logger.log('searchArchiveAppointments("' + patientName + '", "' + dateStr + '", "' + provFilter + '") → ' +
+    (Array.isArray(result) ? result.length + ' appointments' : JSON.stringify(result)));
+  Logger.log(JSON.stringify(result, null, 2));
+}
+
 function savePaymentComment(provId, dateStr, apptId, comment) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -3349,12 +3769,12 @@ function getCurrentUserWithRole() {
     const staff = _getStaffRecord(ss, email);
     if (!staff) {
       Logger.log('Unrecognized user: ' + email);
-      return JSON.stringify({ email, role: 'unknown', provID: '', displayName: email });
+      return JSON.stringify({ email, role: 'unknown', provID: '', displayName: email, initials: '' });
     }
     return JSON.stringify(staff);
   } catch (e) {
     Logger.log('getCurrentUserWithRole error: ' + e.message);
-    return JSON.stringify({ email: '', role: 'unknown', provID: '', displayName: '' });
+    return JSON.stringify({ email: '', role: 'unknown', provID: '', displayName: '', initials: '' });
   }
 }
 
@@ -3374,6 +3794,7 @@ function _getStaffRecord(ss, email) {
     role: String(row[1] || 'unknown').trim(),
     provID: String(row[2] || '').trim(),
     displayName: String(row[3] || '').trim(),
+    initials: String(row[4] || '').trim(),
   };
 }
 
