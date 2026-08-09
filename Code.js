@@ -3132,6 +3132,37 @@ function _isInLiveWindow(r, bounds) {
   return true;
 }
 
+/** Appointment Flow only — layers the Stage 1 attribution columns (70-87,
+ *  intentionally outside APPT_COLS, see the block comment above
+ *  STATUS_BY_COL) on top of the standard rowToAppt() shape. Kept as a
+ *  separate function rather than extending rowToAppt() itself so every
+ *  other view in the app (WeekView, AllProviderWeekView, AssistantView,
+ *  ProviderView, BillingView, ClaimsLedger, getNoteBoard, etc.) doesn't
+ *  carry this extra payload weight on every load — only
+ *  getLiveWindowAppointments and searchArchiveAppointments call this. */
+function _rowToApptWithAttribution(r) {
+  var appt = rowToAppt(r);
+  appt.statusBy = String(r[STATUS_BY_COL - 1] || '');
+  appt.statusAt = String(r[STATUS_AT_COL - 1] || '');
+  appt.ccEhrBy = String(r[CCEHR_BY_COL - 1] || '');
+  appt.ccEhrAt = String(r[CCEHR_AT_COL - 1] || '');
+  appt.claimStatusBy = String(r[CLAIM_STATUS_BY_COL - 1] || '');
+  appt.claimStatusAt = String(r[CLAIM_STATUS_AT_COL - 1] || '');
+  appt.claimSubmittedBy = String(r[CLAIM_SUBMITTED_BY_COL - 1] || '');
+  appt.claimSubmittedAt = String(r[CLAIM_SUBMITTED_AT_COL - 1] || '');
+  appt.noteSignedBy = String(r[NOTE_SIGNED_BY_COL - 1] || '');
+  appt.noteSignedAt = String(r[NOTE_SIGNED_AT_COL - 1] || '');
+  appt.scrDataBy = String(r[SCR_DATA_BY_COL - 1] || '');
+  appt.scrDataAt = String(r[SCR_DATA_AT_COL - 1] || '');
+  appt.bestRateConfirmed = r[BEST_RATE_CONFIRMED_COL - 1] === true || r[BEST_RATE_CONFIRMED_COL - 1] === 'TRUE';
+  appt.bestRateConfirmedBy = String(r[BEST_RATE_CONFIRMED_BY_COL - 1] || '');
+  appt.bestRateConfirmedAt = String(r[BEST_RATE_CONFIRMED_AT_COL - 1] || '');
+  appt.unsignedConfirmed = r[UNSIGNED_CONFIRMED_COL - 1] === true || r[UNSIGNED_CONFIRMED_COL - 1] === 'TRUE';
+  appt.unsignedConfirmedBy = String(r[UNSIGNED_CONFIRMED_BY_COL - 1] || '');
+  appt.unsignedConfirmedAt = String(r[UNSIGNED_CONFIRMED_AT_COL - 1] || '');
+  return appt;
+}
+
 /** Appointment Flow's main-view dataset: every appointment currently
  *  "live" for provFilter (or all providers if '' / omitted), per the
  *  bounds/exclusion rule documented above. */
@@ -3152,7 +3183,7 @@ function getLiveWindowAppointments(provFilter) {
       if (!prov) continue;
       if (provFilter && provFilter !== '*' && prov !== provFilter) continue;
       if (!_isInLiveWindow(r, bounds)) continue;
-      out.push(rowToAppt(r));
+      out.push(_rowToApptWithAttribution(r));
     }
 
     out.sort(function (a, b) {
@@ -3212,7 +3243,7 @@ function searchArchiveAppointments(patientName, dateStr, provFilter) {
       if (nameFilter && String(r[PATIENT_IDX] || '').toLowerCase().indexOf(nameFilter) === -1) continue;
       if (dateFilter && _fmtDate(r[DATE_IDX]) !== dateFilter) continue;
 
-      out.push(rowToAppt(r));
+      out.push(_rowToApptWithAttribution(r));
     }
 
     out.sort(function (a, b) {
