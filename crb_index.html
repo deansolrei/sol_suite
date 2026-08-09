@@ -8574,6 +8574,246 @@
         }
 
         /* ══════════════════════════════════════════════════════════════
+       APPOINTMENT FLOW — shell mirrors .nb-* exactly (Stage 2)
+    ══════════════════════════════════════════════════════════════ */
+        .af-fab {
+            position: fixed;
+            bottom: 10px;
+            right: 442px;
+            z-index: 140;
+            background: #065F46;
+            color: #F2EDDB;
+            border: none;
+            border-radius: 0;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(9, 55, 31, .25);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            transition: background .15s, transform .15s, box-shadow .15s;
+            font-family: inherit;
+            letter-spacing: .2px;
+        }
+        .af-fab.open {
+            background: #3D768A;
+        }
+        .af-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(9, 55, 31, .45);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: cl-fade-in .18s ease;
+        }
+        .af-panel {
+            background: #FBFBF3;
+            border-radius: 14px;
+            box-shadow: 0 20px 70px rgba(9, 55, 31, .32);
+            width: 100%;
+            max-width: 860px;
+            height: calc(100vh - 40px);
+            height: calc(100dvh - 40px);
+            display: flex;
+            flex-direction: column;
+            animation: cl-slide-up .2s ease;
+        }
+        .af-hdr {
+            background: linear-gradient(135deg, #065F46, #065F46);
+            color: #FFFFFF;
+            border-radius: 14px 14px 0 0;
+            padding: 16px 20px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .af-hdr-title {
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: .3px;
+        }
+        .af-hdr-sub {
+            font-size: 10px;
+            font-weight: 600;
+            opacity: .65;
+            margin-top: 2px;
+            letter-spacing: .4px;
+        }
+        .af-close-btn {
+            background: rgba(242, 237, 219, .18);
+            border: none;
+            border-radius: 7px;
+            padding: 7px 14px;
+            color: #FFFFFF;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            letter-spacing: .2px;
+        }
+        .af-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+        .af-empty {
+            padding: 48px 24px;
+            text-align: center;
+            color: #777355;
+            font-size: 14px;
+        }
+        .af-row-wrap {
+            border-bottom: 1px solid #F2EDDB;
+        }
+        .af-row {
+            display: grid;
+            grid-template-columns: 18px 90px 1fr auto auto auto auto;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: background .1s;
+        }
+        .af-row:hover {
+            background: #FBFBF3;
+        }
+        .af-chevron {
+            font-size: 10px;
+            color: #777355;
+            transition: transform .15s;
+        }
+        .af-chevron.open {
+            transform: rotate(90deg);
+        }
+        .af-cell-dt {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        .af-cell-date {
+            font-size: 12px;
+            font-weight: 700;
+            color: #2B2716;
+        }
+        .af-cell-time {
+            font-size: 11px;
+            color: #777355;
+        }
+        .af-cell-pat {
+            font-size: 13px;
+            font-weight: 700;
+            color: #2B2716;
+        }
+        .af-cell-flags {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .af-unsigned-flag {
+            font-size: 10px;
+            font-weight: 800;
+            color: #DC2626;
+            background: #DC262614;
+            border: 1px solid #DC262640;
+            border-radius: 0;
+            padding: 3px 8px;
+            white-space: nowrap;
+        }
+        .af-cell-cpt {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .af-cell-empty {
+            color: #777355;
+            font-size: 12px;
+        }
+        .af-cell-signed,
+        .af-cell-claim {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+        }
+        .af-signed-yes {
+            font-size: 11px;
+            font-weight: 700;
+            color: #16A34A;
+        }
+        .af-signed-no {
+            font-size: 11px;
+            color: #777355;
+        }
+        .af-attrib-line {
+            font-size: 10px;
+            font-weight: 500;
+            color: #777355;
+        }
+        .af-detail {
+            padding: 12px 18px 18px 48px;
+            background: #FBFBF3;
+            border-bottom: 1px solid #F2EDDB;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .af-detail-row {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .af-detail-label {
+            font-size: 10px;
+            font-weight: 800;
+            color: #777355;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+        .af-detail-empty {
+            font-size: 12px;
+            color: #777355;
+        }
+        .af-scr-chip {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px;
+            background: #F2EDDB;
+            border: 1px solid #F2EDDB;
+            color: #2B2716;
+        }
+        body.dark .af-panel {
+            background: #051F11;
+        }
+        body.dark .af-row-wrap {
+            border-color: #09371F;
+        }
+        body.dark .af-row:hover {
+            background: #051F11;
+        }
+        body.dark .af-cell-pat,
+        body.dark .af-cell-date {
+            color: #F0FDF4;
+        }
+        body.dark .af-cell-time,
+        body.dark .af-attrib-line,
+        body.dark .af-detail-label,
+        body.dark .af-cell-empty,
+        body.dark .af-detail-empty {
+            color: #6B9E8A;
+        }
+        body.dark .af-detail {
+            background: #051F11;
+            border-color: #09371F;
+        }
+
+        /* ══════════════════════════════════════════════════════════════
        CLAIMS LEDGER
     ══════════════════════════════════════════════════════════════ */
         .cl-fab {
@@ -13813,6 +14053,214 @@
             );
         }
 
+        /* ═══════════════════════════════════════════════════════════════════
+           APPOINTMENT FLOW — Stage 2 (read-only, Provider window only)
+           Reuses the same overlay/panel shell as Note Board (.af-* mirrors
+           .nb-*), PatientName for name+state, NS_LABELS/CLAIM_BADGE_LABELS
+           for the same pill visual language already used in the Provider
+           Day View, .cpt-chip for CPT display, getScrResult for screener
+           interpretation (not reimplemented), and BestChannelHint for the
+           pre-visit rate estimate — same component ProviderApptModal/
+           BillerApptModal/PatientModal already use, same cpts fallback
+           PatientModal already uses when getLastCodedAppointment is empty.
+        ═══════════════════════════════════════════════════════════════════ */
+
+        /* Minimal ISO-timestamp → readable string, same date/time formatting
+           convention as buildComment's comment timestamps (M/D/YY, ET). No
+           existing helper does this for a plain ISO string, so this is new. */
+        function fmtAttribAt(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return '';
+            const ds = `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(-2)}`;
+            const ts = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
+            return `${ds} ${ts} ET`;
+        }
+
+        function AppointmentFlowPanel({ onClose, prov }) {
+            const [rows, setRows] = useState(null);   // null = loading
+            const [today, setToday] = useState('');   // server's own "today" (America/New_York) — see getLiveWindowAppointments
+            const [loading, setLoading] = useState(true);
+            const [expandedId, setExpandedId] = useState(null);
+
+            useEffect(() => {
+                setLoading(true);
+                gsr('getLiveWindowAppointments', prov || '')
+                    .then(json => {
+                        try {
+                            const d = JSON.parse(json);
+                            setRows(Array.isArray(d.appointments) ? d.appointments : []);
+                            setToday(d.today || '');
+                        } catch (e) { setRows([]); }
+                        setLoading(false);
+                    })
+                    .catch(() => { setRows([]); setLoading(false); });
+            }, [prov]);
+
+            const list = rows || [];
+
+            return (
+                <div className="af-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+                    <div className="af-panel">
+                        <div className="af-hdr">
+                            <div>
+                                <div className="af-hdr-title">🗓️ Appointment Flow</div>
+                                <div className="af-hdr-sub">Live window — oldest unsigned note through 14 days out</div>
+                            </div>
+                            <button className="af-close-btn" onClick={onClose}>✕ Close</button>
+                        </div>
+                        <div className="af-body">
+                            {loading && <div className="af-empty">Loading…</div>}
+                            {!loading && list.length === 0 && <div className="af-empty">No appointments in the live window.</div>}
+                            {!loading && list.map(appt => (
+                                <AppointmentFlowRow
+                                    key={appt.id}
+                                    appt={appt}
+                                    today={today}
+                                    expanded={expandedId === appt.id}
+                                    onToggle={() => setExpandedId(p => p === appt.id ? null : appt.id)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function AppointmentFlowRow({ appt, expanded, onToggle, today }) {
+            // "today" comes from the server (getLiveWindowAppointments), not
+            // new Date() in the browser — removes any client/server timezone
+            // disagreement about the pre-/post-visit boundary entirely.
+            const isPreVisit = appt.date >= today;
+            const nsInfo = NS_LABELS[appt.noteStatus] || NS_LABELS[''];
+            const claimInfo = CLAIM_BADGE_LABELS[appt.claimStatus] || CLAIM_BADGE_LABELS[''];
+
+            return (
+                <div className="af-row-wrap">
+                    <div className="af-row" onClick={onToggle}>
+                        <span className={`af-chevron${expanded ? ' open' : ''}`}>▶</span>
+                        <div className="af-cell-dt">
+                            <div className="af-cell-date">{fmtDate(appt.date)}</div>
+                            <div className="af-cell-time">{fmtTime(appt.time)}</div>
+                        </div>
+                        <div className="af-cell-pat">
+                            <PatientName name={appt.patient} state={appt.patientState} />
+                        </div>
+                        <div className="af-cell-flags">
+                            {appt.isUnsignedEligible && <span className="af-unsigned-flag" title="Outstanding unsigned note">⚠ Unsigned</span>}
+                            <span className={`ns-badge ${nsInfo.cls}`}>{nsInfo.icon} {nsInfo.label}</span>
+                        </div>
+                        <div className="af-cell-cpt">
+                            {appt.cpt && appt.cpt.length > 0
+                                ? appt.cpt.map(c => <span key={c} className="cpt-chip">{c}</span>)
+                                : <span className="af-cell-empty">—</span>}
+                        </div>
+                        <div className="af-cell-signed">
+                            {appt.out ? (
+                                <span className="af-signed-yes">
+                                    ✓ Signed
+                                    {appt.noteSignedBy && <span className="af-attrib-line"> — {appt.noteSignedBy}{appt.noteSignedAt ? ' · ' + fmtAttribAt(appt.noteSignedAt) : ''}</span>}
+                                </span>
+                            ) : <span className="af-signed-no">Unsigned</span>}
+                        </div>
+                        <div className="af-cell-claim">
+                            <span className={`ns-badge ${claimInfo.cls}`}>{claimInfo.icon} {claimInfo.label}</span>
+                            {appt.claimSubmittedBy && (
+                                <div className="af-attrib-line">{appt.claimSubmittedBy}{appt.claimSubmittedAt ? ' · ' + fmtAttribAt(appt.claimSubmittedAt) : ''}</div>
+                            )}
+                        </div>
+                    </div>
+                    {expanded && (
+                        isPreVisit
+                            ? <AppointmentFlowPreVisitDetail appt={appt} />
+                            : <AppointmentFlowPostVisitDetail appt={appt} />
+                    )}
+                </div>
+            );
+        }
+
+        function AppointmentFlowPostVisitDetail({ appt }) {
+            const scrData = appt.scrData || {};
+            const scrEntries = ['PHQ-9', 'GAD-7', 'PCL-5']
+                .map(name => ({ name, score: scrData[name] && scrData[name].score }))
+                .filter(e => e.score !== undefined && e.score !== '' && e.score !== null);
+
+            return (
+                <div className="af-detail">
+                    {appt.statusBy && (
+                        <div className="af-detail-row">
+                            <span className="af-detail-label">Status updated</span>
+                            <span>{appt.statusBy}{appt.statusAt ? ' · ' + fmtAttribAt(appt.statusAt) : ''}</span>
+                        </div>
+                    )}
+                    {(appt.claimPaidAmount || appt.claimPaidDate) && (
+                        <div className="af-detail-row">
+                            <span className="af-detail-label">Claim paid</span>
+                            <span>{appt.claimPaidAmount ? `$${appt.claimPaidAmount}` : ''}{appt.claimPaidDate ? ` on ${appt.claimPaidDate}` : ''}</span>
+                        </div>
+                    )}
+                    <div className="af-detail-row">
+                        <span className="af-detail-label">CC on file (Tebra)</span>
+                        <span>
+                            {appt.ccEhr === 'Y' ? '✅ Yes' : appt.ccEhr === 'N' ? '⚠️ No' : '—'}
+                            {appt.ccEhrBy && <span className="af-attrib-line"> — {appt.ccEhrBy}{appt.ccEhrAt ? ' · ' + fmtAttribAt(appt.ccEhrAt) : ''}</span>}
+                        </span>
+                    </div>
+                    {scrEntries.length > 0 && (
+                        <div className="af-detail-row">
+                            <span className="af-detail-label">Screeners</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {scrEntries.map(({ name, score }) => {
+                                    const result = getScrResult(name, score);
+                                    return (
+                                        <span
+                                            key={name}
+                                            className="af-scr-chip"
+                                            style={result ? { background: result.color + '1A', color: result.color, border: `1px solid ${result.color}40` } : undefined}>
+                                            {name}: {score}{result ? ` — ${result.text}` : ''}
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function AppointmentFlowPreVisitDetail({ appt }) {
+            const [cpts, setCpts] = useState(null);   // null = loading
+
+            useEffect(() => {
+                gsr('getLastCodedAppointment', appt.patient, appt.provID)
+                    .then(result => setCpts(Array.isArray(result) ? result : []))
+                    .catch(() => setCpts([]));
+            }, []);
+
+            return (
+                <div className="af-detail">
+                    <div className="af-detail-row">
+                        <span className="af-detail-label">CC on file (Tebra)</span>
+                        <span>
+                            {appt.ccEhr === 'Y' ? '✅ Yes' : appt.ccEhr === 'N' ? '⚠️ No' : '—'}
+                            {appt.ccEhrBy && <span className="af-attrib-line"> — {appt.ccEhrBy}{appt.ccEhrAt ? ' · ' + fmtAttribAt(appt.ccEhrAt) : ''}</span>}
+                        </span>
+                    </div>
+                    <div className="af-detail-row">
+                        <span className="af-detail-label">Best rate estimate</span>
+                        {cpts === null
+                            ? <span className="af-detail-empty">Loading…</span>
+                            : <BestChannelHint
+                                carrier={appt.insuranceCarrier}
+                                state={appt.patientState || ''}
+                                cpts={cpts.length ? cpts.join(',') : '99214,90833'}
+                                provider={appt.provID}
+                              />}
+                    </div>
+                </div>
+            );
+        }
+
         /* ─────────────────────────────────────────────────────────────────────
            PaymentTracker — Cost-Share Collection ledger (Phase 1: read-only).
            Merges two backend sources via getPaymentTrackerAll: "SolBoard Auto"
@@ -14633,6 +15081,7 @@
             const [showLedger, setShowLedger] = useState(false);
             const [showNoteBoard, setShowNoteBoard] = useState(false);
             const [showPaymentTracker, setShowPaymentTracker] = useState(false);
+            const [showAppointmentFlow, setShowAppointmentFlow] = useState(false);
             const [pamModal, setPamModal] = useState(null); // ProviderApptModal from day view 💬 button
             const [infoModalId, setInfoModalId] = useState(null); // PatientInfoModal — store ID for live lookup
 
@@ -15185,7 +15634,11 @@
                     {/* ── Payment Tracker — Jodene only, per Dean's instruction ── */}
                     {userProvID === 'jodene' && showPaymentTracker && <PaymentTracker onClose={() => setShowPaymentTracker(false)} provFilter={prov} />}
 
-                    {/* Claims Ledger — right:24; Note Board — right:158; Payment Tracker — right:300 (Jodene only) */}
+                    {/* ── Appointment Flow panel (Stage 2, read-only) ── */}
+                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} prov={prov} />}
+
+                    {/* Claims Ledger — right:24; Note Board — right:158; Payment Tracker — right:300 (Jodene only);
+                       Appointment Flow — right:442 (past the Jodene-only slot so it never collides) */}
                     <button
                         className={`cl-fab${showLedger ? ' open' : ''}`}
                         style={{ right: 24 }}
@@ -15209,12 +15662,20 @@
                             💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
                         </button>
                     )}
+                    <button
+                        className={`af-fab${showAppointmentFlow ? ' open' : ''}`}
+                        style={{ right: 442 }}
+                        onClick={e => { e.stopPropagation(); setShowAppointmentFlow(o => !o); }}
+                        title="Appointment Flow — live window">
+                        🗓️ {showAppointmentFlow ? 'Close Flow' : 'Appointment Flow'}
+                    </button>
 
                     {/* Phone-only equivalent of the buttons above (see MobileToolsMenu) */}
                     <MobileToolsMenu items={[
                         { key: 'ledger', label: 'Claims Ledger', icon: '📋', active: showLedger, onClick: () => setShowLedger(o => !o) },
                         { key: 'notes', label: 'Note Board', icon: '📝', active: showNoteBoard, onClick: () => setShowNoteBoard(o => !o) },
                         ...(userProvID === 'jodene' ? [{ key: 'payment', label: 'Payment Tracker', icon: '💳', active: showPaymentTracker, onClick: () => setShowPaymentTracker(o => !o) }] : []),
+                        { key: 'apptflow', label: 'Appointment Flow', icon: '🗓️', active: showAppointmentFlow, onClick: () => setShowAppointmentFlow(o => !o) },
                     ]} />
                 </div>
             );

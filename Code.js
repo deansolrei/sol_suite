@@ -3142,6 +3142,11 @@ function _isInLiveWindow(r, bounds) {
  *  getLiveWindowAppointments and searchArchiveAppointments call this. */
 function _rowToApptWithAttribution(r) {
   var appt = rowToAppt(r);
+  var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+  var DATE_IDX = APPT_COLS.indexOf('Date');
+  var TIME_IDX = APPT_COLS.indexOf('Time');
+  var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+  appt.isUnsignedEligible = _isUnsignedEligible(String(r[TEBRA_IDX] || ''), r[DATE_IDX], r[TIME_IDX], r[SIGNED_IDX]);
   appt.statusBy = String(r[STATUS_BY_COL - 1] || '');
   appt.statusAt = String(r[STATUS_AT_COL - 1] || '');
   appt.ccEhrBy = String(r[CCEHR_BY_COL - 1] || '');
@@ -3170,7 +3175,7 @@ function getLiveWindowAppointments(provFilter) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
-    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify([]);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ today: _fmtDate(new Date()), appointments: [] });
 
     var data = sheet.getDataRange().getValues();
     var bounds = _liveWindowBounds(data, provFilter);
@@ -3191,7 +3196,12 @@ function getLiveWindowAppointments(provFilter) {
       return a.time < b.time ? -1 : 1;
     });
 
-    return JSON.stringify(out);
+    // Returns {today, appointments} rather than a bare array — the client
+    // needs the server's own idea of "today" (America/New_York, per
+    // appsscript.json) to classify pre- vs. post-visit rows, so it doesn't
+    // have to compute its own via new Date() in the browser's local
+    // timezone, which could disagree with the server near the day boundary.
+    return JSON.stringify({ today: bounds.todayStr, appointments: out });
   } catch (e) {
     Logger.log('getLiveWindowAppointments ERROR: ' + e.message);
     return JSON.stringify({ error: e.message });
@@ -3207,8 +3217,9 @@ function runGetLiveWindowAppointments() {
   var provFilter = 'jodene';   // ← CHANGE THIS (or '' for all providers)
   var json = getLiveWindowAppointments(provFilter);
   var result = JSON.parse(json);
+  var appts = result && Array.isArray(result.appointments) ? result.appointments : null;
   Logger.log('getLiveWindowAppointments("' + provFilter + '") → ' +
-    (Array.isArray(result) ? result.length + ' appointments' : JSON.stringify(result)));
+    (appts ? appts.length + ' appointments (today=' + result.today + ')' : JSON.stringify(result)));
   Logger.log(JSON.stringify(result, null, 2));
 }
 
