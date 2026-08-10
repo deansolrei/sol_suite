@@ -8685,7 +8685,7 @@
         }
         .af-row {
             display: grid;
-            grid-template-columns: 18px 70px 1fr auto auto;
+            grid-template-columns: 18px 70px 1fr 90px 120px 110px 110px 90px auto 110px;
             gap: 12px;
             align-items: center;
             padding: 10px 18px;
@@ -8714,7 +8714,9 @@
         }
         .af-cell-otherdates {
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
         }
         .af-other-unsigned {
             font-size: 11px;
@@ -8722,30 +8724,38 @@
             color: #DC2626;
             white-space: nowrap;
         }
-        .af-cell-ready {
+        .af-cell-ready,
+        .af-cell-provider,
+        .af-cell-biller {
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+        }
+        .af-cell-insurance,
+        .af-cell-method {
+            font-size: 11px;
+            color: #2B2716;
         }
         .af-cell-cpt {
             display: flex;
             flex-wrap: wrap;
             gap: 4px;
         }
-        /* ── Pre-visit rate table & post-visit table — shared base, same
-           dark-header/alternating-row convention as BillingView's existing
-           per-channel rate table. ── */
-        .af-rate-table,
-        .af-post-table {
+        /* ── Pre-visit rate table (Table View) — dark-header/alternating-row
+           convention matching BillingView's existing per-channel rate table.
+           List View no longer has its own table (that was
+           AppointmentFlowPostVisitTable, removed in the List View rebuild —
+           these rules are Table View-only now, not shared with List. ── */
+        .af-rate-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 12px;
         }
-        .af-rate-table thead tr,
-        .af-post-table thead tr {
+        .af-rate-table thead tr {
             background: #09371F;
         }
-        .af-rate-table th,
-        .af-post-table th {
+        .af-rate-table th {
             padding: 6px 12px;
             text-align: left;
             color: rgba(242, 237, 219, .85);
@@ -8757,16 +8767,12 @@
         .af-rate-th {
             text-align: right !important;
         }
-        .af-rate-table td,
-        .af-post-table td {
+        .af-rate-table td {
             padding: 7px 12px;
             color: #2B2716;
         }
         .af-rate-table tbody tr:nth-child(even) {
             background: #F2EDDB;
-        }
-        .af-post-table tbody tr:not(.af-post-detail-row) {
-            border-bottom: 1px solid #F2EDDB;
         }
         .af-rate-cell {
             text-align: right;
@@ -8776,15 +8782,6 @@
             background: #87D1B033;
             font-weight: 800;
             color: #0C4A34;
-        }
-        .af-post-row {
-            cursor: pointer;
-        }
-        .af-post-row:hover {
-            background: #FBFBF3;
-        }
-        .af-post-detail-row td {
-            padding: 0;
         }
         .af-attrib-line {
             font-size: 10px;
@@ -8851,8 +8848,7 @@
         body.dark .af-list-block {
             border-color: #09371F;
         }
-        body.dark .af-rate-table td,
-        body.dark .af-post-table td {
+        body.dark .af-rate-table td {
             color: #F0FDF4;
         }
         body.dark .af-rate-cell {
@@ -8861,11 +8857,9 @@
         body.dark .af-rate-table tbody tr:nth-child(even) {
             background: #051F11;
         }
-        body.dark .af-post-table tbody tr:not(.af-post-detail-row) {
-            border-color: #09371F;
-        }
-        body.dark .af-post-row:hover {
-            background: #051F11;
+        body.dark .af-cell-insurance,
+        body.dark .af-cell-method {
+            color: #F0FDF4;
         }
 
         /* ══════════════════════════════════════════════════════════════
@@ -14208,33 +14202,38 @@
             const isPreVisit = date >= today;
             const onToggle = id => setExpandedId(p => p === id ? null : id);
 
+            // List View's row now renders identically for every day, pre- or
+            // post-visit — the same columns, just blank until each stage of
+            // the lifecycle has actually happened. Table View (Table's own
+            // rate table) is untouched: still Table View-only, still mounted
+            // only for pre-visit days, in the same place beneath the list.
             return (
                 <div className="af-day-section">
                     <div className="af-day-hdr">{fmtDate(date)}</div>
-                    {isPreVisit ? (
-                        <>
-                            <div className="af-list-block">
-                                {appts.map(appt => (
-                                    <AppointmentFlowRow key={appt.id} appt={appt} expanded={expandedId === appt.id} onToggle={() => onToggle(appt.id)} />
-                                ))}
-                            </div>
-                            <AppointmentFlowPreVisitTable appts={appts} />
-                        </>
-                    ) : (
-                        <AppointmentFlowPostVisitTable appts={appts} expandedId={expandedId} onToggle={onToggle} />
-                    )}
+                    <div className="af-list-block">
+                        {appts.map(appt => (
+                            <AppointmentFlowRow key={appt.id} appt={appt} expanded={expandedId === appt.id} onToggle={() => onToggle(appt.id)} />
+                        ))}
+                    </div>
+                    {isPreVisit && <AppointmentFlowPreVisitTable appts={appts} />}
                 </div>
             );
         }
 
-        /* Pre-visit list row — one appointment, expandable to screener detail.
-           No isUnsignedEligible flag here: a pre-visit appointment's own date
-           hasn't passed yet, so it can never itself be unsigned-eligible —
-           only otherUnsignedDates (this patient's OTHER outstanding unsigned
-           dates) is relevant in a pre-visit context. */
+        /* List View row — one appointment, expandable to screener detail only
+           (AppointmentFlowScreenerDetail below). Every column past
+           Time/Name/Unsigned-Dates renders blank until that lifecycle stage
+           has actually happened — no placeholder/dash. noteInProgressBy,
+           noteReadyBy, noteSignedBy, and claimSubmittedBy are already
+           initials at the source (Code.js's _stampAttribution/saveNoteStatus/
+           signNoteAndClearUnsigned all prefer staff.initials) — displayed
+           directly, no client-side derivation. */
         function AppointmentFlowRow({ appt, expanded, onToggle }) {
             const nsInfo = NS_LABELS[appt.noteStatus] || NS_LABELS[''];
-            const readyInitials = appt.noteStatus === 'ready' && appt.noteReadyBy ? appt.noteReadyBy : '';
+            const noteAttribBy = appt.noteStatus === 'ready' ? appt.noteReadyBy
+                : appt.noteStatus === 'in_progress' ? appt.noteInProgressBy : '';
+            const noteAttribAt = appt.noteStatus === 'ready' ? appt.noteReadyAt
+                : appt.noteStatus === 'in_progress' ? appt.noteInProgressAt : '';
             const otherDates = appt.otherUnsignedDates || [];
 
             return (
@@ -14246,12 +14245,28 @@
                             <PatientName name={appt.patient} state={appt.patientState} />
                         </div>
                         <div className="af-cell-otherdates">
-                            {otherDates.length > 0 && (
-                                <span className="af-other-unsigned">({otherDates.map(fmtShort).join(', ')})</span>
+                            {/* Already oldest-first — _liveWindowBounds sorts each
+                                patient's date list ascending before returning it. */}
+                            {otherDates.map((d, i) => <span key={i} className="af-other-unsigned">({fmtUnsignedDate(d)})</span>)}
+                        </div>
+                        <div className="af-cell-insurance">{appt.insuranceCarrier}</div>
+                        <div className="af-cell-ready">
+                            <span className={`ns-badge ${nsInfo.cls}`}>{nsInfo.label}</span>
+                            {noteAttribBy && (
+                                <span className="af-attrib-line">{noteAttribBy}{noteAttribAt ? ' · ' + fmtAttribAt(noteAttribAt) : ''}</span>
                             )}
                         </div>
-                        <div className="af-cell-ready">
-                            <span className={`ns-badge ${nsInfo.cls}`}>{nsInfo.label}{readyInitials ? ` (${readyInitials})` : ''}</span>
+                        <div className="af-cell-provider">
+                            {appt.noteSignedBy && <span>{appt.noteSignedBy}</span>}
+                            {appt.noteSignedAt && <span className="af-attrib-line">{fmtAttribAt(appt.noteSignedAt)}</span>}
+                        </div>
+                        <div className="af-cell-method">{METHOD_LABEL[appt.method] || appt.method}</div>
+                        <div className="af-cell-cpt">
+                            {appt.cpt && appt.cpt.length > 0 && appt.cpt.map(c => <span key={c} className="cpt-chip">{c}</span>)}
+                        </div>
+                        <div className="af-cell-biller">
+                            {appt.claimSubmittedBy && <span>{appt.claimSubmittedBy}</span>}
+                            {appt.claimSubmittedAt && <span className="af-attrib-line">{fmtAttribAt(appt.claimSubmittedAt)}</span>}
                         </div>
                     </div>
                     {expanded && <AppointmentFlowScreenerDetail appt={appt} />}
@@ -14259,10 +14274,9 @@
             );
         }
 
-        /* Shared expand content — used by both the pre-visit list row above
-           and the post-visit table row below, same pattern in both places.
-           Interpretation text/color comes directly from getScrResult, never
-           reimplemented. */
+        /* List View's expand content — every row, pre- or post-visit alike,
+           reveals only this. Interpretation text/color comes directly from
+           getScrResult, never reimplemented. */
         function AppointmentFlowScreenerDetail({ appt }) {
             const scrData = appt.scrData || {};
             const scrEntries = ['PHQ-9', 'GAD-7', 'PCL-5']
@@ -14371,61 +14385,6 @@
                     })}
                     <td className="af-rate-cell">{appt.ccEhr === 'Y' ? 'Yes' : appt.ccEhr === 'N' ? 'No' : ''}</td>
                 </tr>
-            );
-        }
-
-        /* Post-visit table — no list section, no CC-on-file column (pre-visit
-           only). Rows expand to the same AppointmentFlowScreenerDetail as the
-           pre-visit list rows. Empty cells render blank, not a placeholder —
-           confirmed requirement, not an oversight. */
-        function AppointmentFlowPostVisitTable({ appts, expandedId, onToggle }) {
-            return (
-                <table className="af-post-table">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>Time</th>
-                            <th>Name</th>
-                            <th>HVA</th>
-                            <th>CPT</th>
-                            <th>Provider</th>
-                            <th>Date Signed</th>
-                            <th>Biller</th>
-                            <th>Date Submitted</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {appts.map(appt => {
-                            const expanded = expandedId === appt.id;
-                            return (
-                                <React.Fragment key={appt.id}>
-                                    <tr className="af-post-row" onClick={() => onToggle(appt.id)}>
-                                        <td><span className={`af-chevron${expanded ? ' open' : ''}`}>▶</span></td>
-                                        <td>{fmtTime(appt.time)}</td>
-                                        <td><PatientName name={appt.patient} state={appt.patientState} /></td>
-                                        <td>{appt.noteReadyBy || ''}</td>
-                                        <td>
-                                            {appt.cpt && appt.cpt.length > 0 && (
-                                                <div className="af-cell-cpt">
-                                                    {appt.cpt.map(c => <span key={c} className="cpt-chip">{c}</span>)}
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td>{appt.noteSignedBy || ''}</td>
-                                        <td>{appt.noteSignedAt ? fmtAttribAt(appt.noteSignedAt) : ''}</td>
-                                        <td>{appt.claimSubmittedBy || ''}</td>
-                                        <td>{appt.claimSubmittedAt ? fmtAttribAt(appt.claimSubmittedAt) : ''}</td>
-                                    </tr>
-                                    {expanded && (
-                                        <tr className="af-post-detail-row">
-                                            <td colSpan={9}><AppointmentFlowScreenerDetail appt={appt} /></td>
-                                        </tr>
-                                    )}
-                                </React.Fragment>
-                            );
-                        })}
-                    </tbody>
-                </table>
             );
         }
 
