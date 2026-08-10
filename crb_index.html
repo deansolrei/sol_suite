@@ -17221,11 +17221,21 @@
                 const status = claimStatus || 'Pending';
                 if (!claimSubmittedDate) setClaimSubmittedDate(submittedDate);
                 if (!claimStatus) setClaimStatus(status);
-                onUpdate(buildFinalAppt({
+                const savePromise = onUpdate(buildFinalAppt({
                     billing: 'submitted',
                     claimSubmittedDate: submittedDate,
                     claimStatus: status,
                 }));
+                // Attribution stamp (Stage 1's saveClaimSubmission) — fired only
+                // after the primary save confirms success, never before and
+                // never on failure, so a save that never lands can't produce a
+                // phantom "submitted by X at Y" record. Fire-and-forget: doesn't
+                // block or delay the existing save/modal-close behavior above.
+                savePromise.then(result => {
+                    if (result && result.ok) {
+                        gsr('saveClaimSubmission', appt.id, submittedDate).catch(() => { });
+                    }
+                });
                 onClose();
             }
             function handleSave() {
@@ -18705,7 +18715,7 @@
             });
             function scrollSafeUpdate(updated) {
                 savedScrollRef.current = window.scrollY;
-                onUpdate(updated);
+                return onUpdate(updated);
             }
 
             function ClaimDayBanner() {
@@ -19089,6 +19099,9 @@
                                     {a.out
                                         ? <span style={{ background: '#FBFBF3', border: '1px solid #16A34A', color: '#16A34A', borderRadius: 0, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>✓ Note Signed</span>
                                         : <span style={{ background: '#FBFBF3', border: '1px solid #BE992A', color: '#BE992A', borderRadius: 0, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>⚠ Awaiting Signature</span>}
+                                    {a.out && a.noteSignedAt && (
+                                        <div style={{ fontSize: 10, color: '#777355', fontWeight: 600, marginTop: 2 }}>{fmtAttribAt(a.noteSignedAt)}</div>
+                                    )}
                                 </div>
                                 {/* 💰 Best Rate button — works for ALL billing methods */}
                                 {(
@@ -19187,11 +19200,18 @@
                                 ? <button className="sub-btn ready" onClick={e => {
                                     e.stopPropagation();
                                     const today = new Date().toISOString().slice(0, 10);
+                                    const submittedDate = a.claimSubmittedDate || today;
                                     scrollSafeUpdate({
                                         ...a,
                                         billing: 'submitted',
                                         claimStatus: 'Pending',
-                                        claimSubmittedDate: a.claimSubmittedDate || today,
+                                        claimSubmittedDate: submittedDate,
+                                    }).then(result => {
+                                        // Same sequencing as ClaimSubmitModal's handleSubmit — only
+                                        // stamp attribution once the primary save is confirmed.
+                                        if (result && result.ok) {
+                                            gsr('saveClaimSubmission', a.id, submittedDate).catch(() => { });
+                                        }
                                     });
                                 }}>Mark Claim Submitted</button>
                                 : null} />)}
@@ -19215,7 +19235,7 @@
                         <ClaimSubmitModal
                             appt={claimModal}
                             patientDb={patientDb}
-                            onUpdate={a => { onUpdate(a); setClaimModal(null); }}
+                            onUpdate={a => { const p = onUpdate(a); setClaimModal(null); return p; }}
                             onPaymentSave={onUpdate}
                             onClose={() => setClaimModal(null)}
                             onRefreshPatients={onRefreshPatients} />

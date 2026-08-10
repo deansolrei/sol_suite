@@ -302,6 +302,8 @@ function getAppointments(prov, date) {
         a.noteInProgressAt = String(r[NOTE_PROGRESS_AT_COL - 1] || '');
         a.noteReadyBy = String(r[NOTE_READY_BY_COL - 1] || '');
         a.noteReadyAt = String(r[NOTE_READY_AT_COL - 1] || '');
+        a.noteSignedBy = String(r[NOTE_SIGNED_BY_COL - 1] || '');
+        a.noteSignedAt = String(r[NOTE_SIGNED_AT_COL - 1] || '');
         return a;
       });
 
@@ -3151,6 +3153,41 @@ function _isInLiveWindow(r, bounds) {
   return true;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   APPOINTMENT FLOW — TABLE VIEW WINDOW (2026-08-10)
+   ════════════════════════════════════════════════════════════════
+   Deliberately independent of List's window (_liveWindowBounds /
+   _isInLiveWindow above): a fixed backward bound (today - 7 days,
+   NOT tied to any provider's oldest unsigned note) through a fixed
+   forward bound (today + 14 days), pure date comparison — no
+   claim-status exception. An appointment can be in List's window,
+   Table's window, both, or neither; the two are no longer the same
+   boolean anywhere downstream.
+════════════════════════════════════════════════════════════════ */
+
+/** Table View's fixed bounds. No `data` param — unlike List's bounds,
+ *  nothing here depends on the sheet contents, only on today's date. */
+function _tableWindowBounds() {
+  var today = new Date();
+  var backward = new Date(today);
+  backward.setDate(backward.getDate() - 7);
+  var forward = new Date(today);
+  forward.setDate(forward.getDate() + 14);
+  return {
+    todayStr: _fmtDate(today),
+    backwardBoundStr: _fmtDate(backward),
+    forwardBoundStr: _fmtDate(forward),
+  };
+}
+
+/** True if row `r`'s own date falls within Table's fixed window. */
+function _isInTableWindow(r, tableBounds) {
+  var DATE_IDX = APPT_COLS.indexOf('Date');
+  var dateStr = _fmtDate(r[DATE_IDX]);
+  if (!dateStr) return false;
+  return dateStr >= tableBounds.backwardBoundStr && dateStr <= tableBounds.forwardBoundStr;
+}
+
 /** Appointment Flow only — layers the Stage 1 attribution columns (70-87,
  *  intentionally outside APPT_COLS, see the block comment above
  *  STATUS_BY_COL) on top of the standard rowToAppt() shape. Kept as a
@@ -3158,9 +3195,15 @@ function _isInLiveWindow(r, bounds) {
  *  other view in the app (WeekView, AllProviderWeekView, AssistantView,
  *  ProviderView, BillingView, ClaimsLedger, getNoteBoard, etc.) doesn't
  *  carry this extra payload weight on every load — only
- *  getLiveWindowAppointments and searchArchiveAppointments call this. */
-function _rowToApptWithAttribution(r) {
+ *  getLiveWindowAppointments, getTableWindowAppointments, and
+ *  searchArchiveAppointments call this. Takes both List's bounds and
+ *  Table's bounds so every returned row carries both isInListWindow and
+ *  isInTableWindow, independent of which function's own filter it
+ *  passed to be included at all. */
+function _rowToApptWithAttribution(r, bounds, tableBounds) {
   var appt = rowToAppt(r);
+  appt.isInListWindow = _isInLiveWindow(r, bounds);
+  appt.isInTableWindow = _isInTableWindow(r, tableBounds);
   var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
   var DATE_IDX = APPT_COLS.indexOf('Date');
   var TIME_IDX = APPT_COLS.indexOf('Time');
@@ -3204,6 +3247,7 @@ function getLiveWindowAppointments(provFilter) {
 
     var data = sheet.getDataRange().getValues();
     var bounds = _liveWindowBounds(data, provFilter);
+    var tableBounds = _tableWindowBounds();
     var PROV_IDX = APPT_COLS.indexOf('ProvID');
 
     var out = [];
@@ -3213,7 +3257,7 @@ function getLiveWindowAppointments(provFilter) {
       if (!prov) continue;
       if (provFilter && provFilter !== '*' && prov !== provFilter) continue;
       if (!_isInLiveWindow(r, bounds)) continue;
-      var appt = _rowToApptWithAttribution(r);
+      var appt = _rowToApptWithAttribution(r, bounds, tableBounds);
       appt.otherUnsignedDates = (bounds.unsignedDatesByPatientProv[prov + '||' + _normName(appt.patient)] || [])
         .filter(function (d) { return d !== appt.date; });
       out.push(appt);
@@ -3229,6 +3273,10 @@ function getLiveWindowAppointments(provFilter) {
     // appsscript.json) to classify pre- vs. post-visit rows, so it doesn't
     // have to compute its own via new Date() in the browser's local
     // timezone, which could disagree with the server near the day boundary.
+    // Filtering/shape here is UNCHANGED from before this stage — still
+    // List's window only — so nothing about what the already-shipped
+    // frontend renders changes; each row now just also carries
+    // isInListWindow/isInTableWindow (see _rowToApptWithAttribution).
     return JSON.stringify({ today: bounds.todayStr, appointments: out });
   } catch (e) {
     Logger.log('getLiveWindowAppointments ERROR: ' + e.message);
@@ -3271,6 +3319,7 @@ function searchArchiveAppointments(patientName, dateStr, provFilter) {
 
     var data = sheet.getDataRange().getValues();
     var bounds = _liveWindowBounds(data, provFilter);
+    var tableBounds = _tableWindowBounds();
 
     var nameFilter = String(patientName || '').trim().toLowerCase();
     var dateFilter = String(dateStr || '').trim();
@@ -3289,7 +3338,7 @@ function searchArchiveAppointments(patientName, dateStr, provFilter) {
       if (nameFilter && String(r[PATIENT_IDX] || '').toLowerCase().indexOf(nameFilter) === -1) continue;
       if (dateFilter && _fmtDate(r[DATE_IDX]) !== dateFilter) continue;
 
-      var appt = _rowToApptWithAttribution(r);
+      var appt = _rowToApptWithAttribution(r, bounds, tableBounds);
       appt.otherUnsignedDates = (bounds.unsignedDatesByPatientProv[prov + '||' + _normName(appt.patient)] || [])
         .filter(function (d) { return d !== appt.date; });
       out.push(appt);
@@ -3320,6 +3369,117 @@ function runSearchArchiveAppointments() {
   Logger.log('searchArchiveAppointments("' + patientName + '", "' + dateStr + '", "' + provFilter + '") → ' +
     (Array.isArray(result) ? result.length + ' appointments' : JSON.stringify(result)));
   Logger.log(JSON.stringify(result, null, 2));
+}
+
+/** Table View's own dataset: every appointment within Table's fixed
+ *  window (today - 7 days through today + 14 days), independent of
+ *  List's window entirely — see the block comment above
+ *  _tableWindowBounds. provFilter '' or omitted returns all providers.
+ *  Each returned row carries both isInListWindow and isInTableWindow
+ *  (isInTableWindow is always true here, by construction of the filter
+ *  below; isInListWindow varies — a row can be in both). */
+function getTableWindowAppointments(provFilter) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) {
+      var emptyBounds = _tableWindowBounds();
+      return JSON.stringify({
+        today: emptyBounds.todayStr, backwardBound: emptyBounds.backwardBoundStr,
+        forwardBound: emptyBounds.forwardBoundStr, appointments: [],
+      });
+    }
+
+    var data = sheet.getDataRange().getValues();
+    var bounds = _liveWindowBounds(data, provFilter);
+    var tableBounds = _tableWindowBounds();
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');
+
+    var out = [];
+    for (var i = 1; i < data.length; i++) {
+      var r = data[i];
+      var prov = String(r[PROV_IDX] || '').trim();
+      if (!prov) continue;
+      if (provFilter && provFilter !== '*' && prov !== provFilter) continue;
+      if (!_isInTableWindow(r, tableBounds)) continue;
+      var appt = _rowToApptWithAttribution(r, bounds, tableBounds);
+      appt.otherUnsignedDates = (bounds.unsignedDatesByPatientProv[prov + '||' + _normName(appt.patient)] || [])
+        .filter(function (d) { return d !== appt.date; });
+      out.push(appt);
+    }
+
+    out.sort(function (a, b) {
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      return a.time < b.time ? -1 : 1;
+    });
+
+    return JSON.stringify({
+      today: tableBounds.todayStr,
+      backwardBound: tableBounds.backwardBoundStr,
+      forwardBound: tableBounds.forwardBoundStr,
+      appointments: out,
+    });
+  } catch (e) {
+    Logger.log('getTableWindowAppointments ERROR: ' + e.message);
+    return JSON.stringify({ error: e.message });
+  }
+}
+
+/**
+ * Convenience wrapper — edit the provider ID here, then click ▶ Run.
+ * Prints a count + the full result via Logger.log (View → Logs).
+ */
+function runGetTableWindowAppointments() {
+  var provFilter = 'jodene';   // ← CHANGE THIS (or '' for all providers)
+  var json = getTableWindowAppointments(provFilter);
+  var result = JSON.parse(json);
+  var appts = result && Array.isArray(result.appointments) ? result.appointments : null;
+  Logger.log('getTableWindowAppointments("' + provFilter + '") → ' +
+    (appts ? appts.length + ' appointments (today=' + result.today +
+      ', window=' + result.backwardBound + '..' + result.forwardBound + ')' : JSON.stringify(result)));
+  Logger.log(JSON.stringify(result, null, 2));
+}
+
+/**
+ * Manual verification for both windows together — edit the provider ID,
+ * click ▶ Run. Buckets every one of that provider's appointment rows
+ * into listOnly / tableOnly / both / neither and logs counts + a couple
+ * of real examples per bucket, so List's window and Table's window can
+ * be confirmed as genuinely independent rather than the same boolean.
+ */
+function runAppointmentFlowWindowsCheck() {
+  var provFilter = 'jodene';   // ← CHANGE THIS
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(TAB_APPT);
+  var data = sheet.getDataRange().getValues();
+  var bounds = _liveWindowBounds(data, provFilter);
+  var tableBounds = _tableWindowBounds();
+  Logger.log('List window: todayStr=' + bounds.todayStr + '  horizonStr=' + bounds.horizonStr +
+    '  (per-patient windowStart varies by oldest unsigned note)');
+  Logger.log('Table window: backwardBound=' + tableBounds.backwardBoundStr + '  forwardBound=' + tableBounds.forwardBoundStr);
+
+  var PROV_IDX = APPT_COLS.indexOf('ProvID');
+  var buckets = { listOnly: [], tableOnly: [], both: [], neither: [] };
+
+  for (var i = 1; i < data.length; i++) {
+    var r = data[i];
+    if (String(r[PROV_IDX] || '').trim() !== provFilter) continue;
+    var inList = _isInLiveWindow(r, bounds);
+    var inTable = _isInTableWindow(r, tableBounds);
+    var appt = rowToAppt(r);
+    var entry = { row: i + 1, date: appt.date, apptId: appt.id, patient: appt.patient };
+    if (inList && inTable) buckets.both.push(entry);
+    else if (inList) buckets.listOnly.push(entry);
+    else if (inTable) buckets.tableOnly.push(entry);
+    else buckets.neither.push(entry);
+  }
+
+  Logger.log('Counts — listOnly=' + buckets.listOnly.length + '  tableOnly=' + buckets.tableOnly.length +
+    '  both=' + buckets.both.length + '  neither=' + buckets.neither.length);
+  ['listOnly', 'tableOnly', 'both', 'neither'].forEach(function (k) {
+    Logger.log(k + ' examples: ' + JSON.stringify(buckets[k].slice(0, 3)));
+  });
 }
 
 function savePaymentComment(provId, dateStr, apptId, comment) {
