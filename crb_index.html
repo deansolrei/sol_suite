@@ -14354,7 +14354,12 @@
             return (
                 <tr className="af-rate-row">
                     <td>{fmtTime(appt.time)}</td>
-                    <td><PatientName name={appt.patient} state={appt.patientState} /></td>
+                    <td>
+                        <PatientName name={appt.patient} state={appt.patientState} />
+                        {rateData && rateData.mapped && rateData.canonical_payer && (
+                            <span className="af-attrib-line"> · {rateData.canonical_payer}</span>
+                        )}
+                    </td>
                     {AF_RATE_CHANNELS.map(ch => {
                         const total = channelTotals[ch.api];
                         const isBest = bestChannel === ch.api;
@@ -14399,8 +14404,12 @@
                                         <td>{fmtTime(appt.time)}</td>
                                         <td><PatientName name={appt.patient} state={appt.patientState} /></td>
                                         <td>{appt.noteReadyBy || ''}</td>
-                                        <td className="af-cell-cpt">
-                                            {appt.cpt && appt.cpt.length > 0 && appt.cpt.map(c => <span key={c} className="cpt-chip">{c}</span>)}
+                                        <td>
+                                            {appt.cpt && appt.cpt.length > 0 && (
+                                                <div className="af-cell-cpt">
+                                                    {appt.cpt.map(c => <span key={c} className="cpt-chip">{c}</span>)}
+                                                </div>
+                                            )}
                                         </td>
                                         <td>{appt.noteSignedBy || ''}</td>
                                         <td>{appt.noteSignedAt ? fmtAttribAt(appt.noteSignedAt) : ''}</td>
