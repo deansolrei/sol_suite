@@ -916,7 +916,7 @@ function signNoteAndClearUnsigned(apptId, signedISO, patient) {
       // action itself happened, distinct from signedISO above (which is the
       // appointment's own date, not a timestamp) and from the Signed
       // boolean. Reuses the staff lookup already done for the auth check.
-      var signedWho = (staff && staff.displayName) ? staff.displayName : email;
+      var signedWho = (staff && staff.initials) ? staff.initials : (staff && staff.displayName) ? staff.displayName : email;
       sheet.getRange(i + 1, NOTE_SIGNED_BY_COL).setValue(signedWho);
       sheet.getRange(i + 1, NOTE_SIGNED_AT_COL).setValue(new Date().toISOString());
 
@@ -2549,7 +2549,7 @@ function saveNoteStatus(apptId, noteStatus) {
 
     var email = Session.getActiveUser().getEmail();
     var staff = _getStaffRecord(ss, email);
-    var who = (staff && staff.displayName) ? staff.displayName : email;
+    var who = (staff && staff.initials) ? staff.initials : (staff && staff.displayName) ? staff.displayName : email;
     var now = new Date().toISOString();
 
     for (var i = 1; i < data.length; i++) {
@@ -2869,7 +2869,7 @@ var UNSIGNED_CONFIRMED_AT_COL = 87;    // CI   no separate date list needed
 function _stampAttribution(ss, sheet, rowNum, byCol, atCol) {
   var email = Session.getActiveUser().getEmail();
   var staff = _getStaffRecord(ss, email);
-  var who = (staff && staff.displayName) ? staff.displayName : email;
+  var who = (staff && staff.initials) ? staff.initials : (staff && staff.displayName) ? staff.displayName : email;
   var now = new Date().toISOString();
   sheet.getRange(rowNum, byCol).setValue(who);
   sheet.getRange(rowNum, atCol).setValue(now);
@@ -3074,6 +3074,12 @@ function _liveWindowBounds(data, provFilter) {
   var horizonStr = _fmtDate(horizon);
 
   var oldestUnsignedByProv = {};
+  // Per-patient list of every currently-outstanding unsigned date (a patient
+  // can have more than one), keyed exactly like _reconcilePatientUnsignedDates
+  // does: provID + '||' + _normName(patient). Built in this same pass — same
+  // eligibility check already being run per row for oldestUnsignedByProv — so
+  // this costs zero additional full-sheet scans.
+  var unsignedDatesByPatientProv = {};
   for (var i = 1; i < data.length; i++) {
     var r = data[i];
     var prov = String(r[PROV_IDX] || '').trim();
@@ -3093,9 +3099,22 @@ function _liveWindowBounds(data, provFilter) {
     if (!oldestUnsignedByProv[prov] || dateStr < oldestUnsignedByProv[prov]) {
       oldestUnsignedByProv[prov] = dateStr;
     }
+
+    var patientKey = prov + '||' + _normName(String(r[PATIENT_IDX] || ''));
+    if (!unsignedDatesByPatientProv[patientKey]) unsignedDatesByPatientProv[patientKey] = [];
+    unsignedDatesByPatientProv[patientKey].push(dateStr);
   }
 
-  return { todayStr: todayStr, horizonStr: horizonStr, oldestUnsignedByProv: oldestUnsignedByProv };
+  Object.keys(unsignedDatesByPatientProv).forEach(function (k) {
+    unsignedDatesByPatientProv[k].sort(); // 'YYYY-MM-DD' strings — lexicographic sort is chronological
+  });
+
+  return {
+    todayStr: todayStr,
+    horizonStr: horizonStr,
+    oldestUnsignedByProv: oldestUnsignedByProv,
+    unsignedDatesByPatientProv: unsignedDatesByPatientProv,
+  };
 }
 
 /** True if row `r` (0-based array, one row from getDataRange().getValues())
@@ -3147,6 +3166,12 @@ function _rowToApptWithAttribution(r) {
   var TIME_IDX = APPT_COLS.indexOf('Time');
   var SIGNED_IDX = APPT_COLS.indexOf('Signed');
   appt.isUnsignedEligible = _isUnsignedEligible(String(r[TEBRA_IDX] || ''), r[DATE_IDX], r[TIME_IDX], r[SIGNED_IDX]);
+  // Original Note Status attribution pair (columns 66-69, predates Stage 1) —
+  // not new columns, just not previously exposed through this function.
+  appt.noteInProgressBy = String(r[NOTE_PROGRESS_BY_COL - 1] || '');
+  appt.noteInProgressAt = String(r[NOTE_PROGRESS_AT_COL - 1] || '');
+  appt.noteReadyBy = String(r[NOTE_READY_BY_COL - 1] || '');
+  appt.noteReadyAt = String(r[NOTE_READY_AT_COL - 1] || '');
   appt.statusBy = String(r[STATUS_BY_COL - 1] || '');
   appt.statusAt = String(r[STATUS_AT_COL - 1] || '');
   appt.ccEhrBy = String(r[CCEHR_BY_COL - 1] || '');
@@ -3188,7 +3213,10 @@ function getLiveWindowAppointments(provFilter) {
       if (!prov) continue;
       if (provFilter && provFilter !== '*' && prov !== provFilter) continue;
       if (!_isInLiveWindow(r, bounds)) continue;
-      out.push(_rowToApptWithAttribution(r));
+      var appt = _rowToApptWithAttribution(r);
+      appt.otherUnsignedDates = (bounds.unsignedDatesByPatientProv[prov + '||' + _normName(appt.patient)] || [])
+        .filter(function (d) { return d !== appt.date; });
+      out.push(appt);
     }
 
     out.sort(function (a, b) {
@@ -3220,6 +3248,13 @@ function runGetLiveWindowAppointments() {
   var appts = result && Array.isArray(result.appointments) ? result.appointments : null;
   Logger.log('getLiveWindowAppointments("' + provFilter + '") → ' +
     (appts ? appts.length + ' appointments (today=' + result.today + ')' : JSON.stringify(result)));
+
+  if (appts) {
+    var withOther = appts.find(function (a) { return Array.isArray(a.otherUnsignedDates) && a.otherUnsignedDates.length > 0; });
+    Logger.log('First result with otherUnsignedDates: ' +
+      (withOther ? withOther.patient + ' (ApptID=' + withOther.id + ') → ' + JSON.stringify(withOther.otherUnsignedDates) : '(none found)'));
+  }
+
   Logger.log(JSON.stringify(result, null, 2));
 }
 
@@ -3254,7 +3289,10 @@ function searchArchiveAppointments(patientName, dateStr, provFilter) {
       if (nameFilter && String(r[PATIENT_IDX] || '').toLowerCase().indexOf(nameFilter) === -1) continue;
       if (dateFilter && _fmtDate(r[DATE_IDX]) !== dateFilter) continue;
 
-      out.push(_rowToApptWithAttribution(r));
+      var appt = _rowToApptWithAttribution(r);
+      appt.otherUnsignedDates = (bounds.unsignedDatesByPatientProv[prov + '||' + _normName(appt.patient)] || [])
+        .filter(function (d) { return d !== appt.date; });
+      out.push(appt);
     }
 
     out.sort(function (a, b) {

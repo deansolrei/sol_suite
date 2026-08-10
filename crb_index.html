@@ -8616,7 +8616,7 @@
             border-radius: 14px;
             box-shadow: 0 20px 70px rgba(9, 55, 31, .32);
             width: 100%;
-            max-width: 860px;
+            max-width: 80vw;
             height: calc(100vh - 40px);
             height: calc(100dvh - 40px);
             display: flex;
@@ -8670,9 +8670,22 @@
         .af-row-wrap {
             border-bottom: 1px solid #F2EDDB;
         }
+        .af-day-section {
+            border-bottom: 8px solid #F2EDDB;
+        }
+        .af-day-hdr {
+            padding: 14px 18px 8px;
+            font-size: 14px;
+            font-weight: 900;
+            color: #09371F;
+            letter-spacing: .2px;
+        }
+        .af-list-block {
+            border-bottom: 1px solid #F2EDDB;
+        }
         .af-row {
             display: grid;
-            grid-template-columns: 18px 90px 1fr auto auto auto auto;
+            grid-template-columns: 18px 70px 1fr auto auto;
             gap: 12px;
             align-items: center;
             padding: 10px 18px;
@@ -8690,16 +8703,6 @@
         .af-chevron.open {
             transform: rotate(90deg);
         }
-        .af-cell-dt {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-        }
-        .af-cell-date {
-            font-size: 12px;
-            font-weight: 700;
-            color: #2B2716;
-        }
         .af-cell-time {
             font-size: 11px;
             color: #777355;
@@ -8709,46 +8712,79 @@
             font-weight: 700;
             color: #2B2716;
         }
-        .af-cell-flags {
+        .af-cell-otherdates {
             display: flex;
             align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
         }
-        .af-unsigned-flag {
-            font-size: 10px;
+        .af-other-unsigned {
+            font-size: 11px;
             font-weight: 800;
             color: #DC2626;
-            background: #DC262614;
-            border: 1px solid #DC262640;
-            border-radius: 0;
-            padding: 3px 8px;
             white-space: nowrap;
+        }
+        .af-cell-ready {
+            display: flex;
+            align-items: center;
         }
         .af-cell-cpt {
             display: flex;
             flex-wrap: wrap;
             gap: 4px;
         }
-        .af-cell-empty {
-            color: #777355;
+        /* ── Pre-visit rate table & post-visit table — shared base, same
+           dark-header/alternating-row convention as BillingView's existing
+           per-channel rate table. ── */
+        .af-rate-table,
+        .af-post-table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 12px;
         }
-        .af-cell-signed,
-        .af-cell-claim {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 2px;
+        .af-rate-table thead tr,
+        .af-post-table thead tr {
+            background: #09371F;
         }
-        .af-signed-yes {
-            font-size: 11px;
+        .af-rate-table th,
+        .af-post-table th {
+            padding: 6px 12px;
+            text-align: left;
+            color: rgba(242, 237, 219, .85);
             font-weight: 700;
-            color: #16A34A;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
         }
-        .af-signed-no {
-            font-size: 11px;
+        .af-rate-th {
+            text-align: right !important;
+        }
+        .af-rate-table td,
+        .af-post-table td {
+            padding: 7px 12px;
+            color: #2B2716;
+        }
+        .af-rate-table tbody tr:nth-child(even) {
+            background: #F2EDDB;
+        }
+        .af-post-table tbody tr:not(.af-post-detail-row) {
+            border-bottom: 1px solid #F2EDDB;
+        }
+        .af-rate-cell {
+            text-align: right;
             color: #777355;
+        }
+        .af-rate-best {
+            background: #87D1B033;
+            font-weight: 800;
+            color: #0C4A34;
+        }
+        .af-post-row {
+            cursor: pointer;
+        }
+        .af-post-row:hover {
+            background: #FBFBF3;
+        }
+        .af-post-detail-row td {
+            padding: 0;
         }
         .af-attrib-line {
             font-size: 10px;
@@ -8798,19 +8834,38 @@
             background: #051F11;
         }
         body.dark .af-cell-pat,
-        body.dark .af-cell-date {
+        body.dark .af-day-hdr {
             color: #F0FDF4;
         }
         body.dark .af-cell-time,
         body.dark .af-attrib-line,
         body.dark .af-detail-label,
-        body.dark .af-cell-empty,
         body.dark .af-detail-empty {
             color: #6B9E8A;
         }
         body.dark .af-detail {
             background: #051F11;
             border-color: #09371F;
+        }
+        body.dark .af-day-section,
+        body.dark .af-list-block {
+            border-color: #09371F;
+        }
+        body.dark .af-rate-table td,
+        body.dark .af-post-table td {
+            color: #F0FDF4;
+        }
+        body.dark .af-rate-cell {
+            color: #6B9E8A;
+        }
+        body.dark .af-rate-table tbody tr:nth-child(even) {
+            background: #051F11;
+        }
+        body.dark .af-post-table tbody tr:not(.af-post-detail-row) {
+            border-color: #09371F;
+        }
+        body.dark .af-post-row:hover {
+            background: #051F11;
         }
 
         /* ══════════════════════════════════════════════════════════════
@@ -10988,7 +11043,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useCallback } = React;
+        const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
         const BEST_CHANNEL_API_BASE = 'http://192.168.88.178:8000';
 
@@ -14077,11 +14132,20 @@
             return `${ds} ${ts} ET`;
         }
 
+        // Channel column order/labels for the pre-visit rate table, and the
+        // exact API channel names (matches BEST_CHANNEL_METHOD_MAP's keys —
+        // same mapping already used for suggestedMethodIdFor).
+        const AF_RATE_CHANNELS = [
+            { label: 'Alma', api: 'Alma' },
+            { label: 'HW', api: 'Headway' },
+            { label: 'Grow', api: 'Grow Therapy' },
+            { label: 'Direct', api: 'Clinic Submit' },
+        ];
+
         function AppointmentFlowPanel({ onClose, prov }) {
             const [rows, setRows] = useState(null);   // null = loading
             const [today, setToday] = useState('');   // server's own "today" (America/New_York) — see getLiveWindowAppointments
             const [loading, setLoading] = useState(true);
-            const [expandedId, setExpandedId] = useState(null);
 
             useEffect(() => {
                 setLoading(true);
@@ -14099,6 +14163,22 @@
 
             const list = rows || [];
 
+            // Groups appointments by date, preserving the already-ascending
+            // server-side sort — no re-sort here, just a single pass that
+            // pushes each new date's group in first-seen order.
+            const dayGroups = useMemo(() => {
+                const groups = [];
+                const byDate = {};
+                list.forEach(appt => {
+                    if (!byDate[appt.date]) {
+                        byDate[appt.date] = { date: appt.date, appts: [] };
+                        groups.push(byDate[appt.date]);
+                    }
+                    byDate[appt.date].appts.push(appt);
+                });
+                return groups;
+            }, [list]);
+
             return (
                 <div className="af-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
                     <div className="af-panel">
@@ -14111,15 +14191,9 @@
                         </div>
                         <div className="af-body">
                             {loading && <div className="af-empty">Loading…</div>}
-                            {!loading && list.length === 0 && <div className="af-empty">No appointments in the live window.</div>}
-                            {!loading && list.map(appt => (
-                                <AppointmentFlowRow
-                                    key={appt.id}
-                                    appt={appt}
-                                    today={today}
-                                    expanded={expandedId === appt.id}
-                                    onToggle={() => setExpandedId(p => p === appt.id ? null : appt.id)}
-                                />
+                            {!loading && dayGroups.length === 0 && <div className="af-empty">No appointments in the live window.</div>}
+                            {!loading && dayGroups.map(g => (
+                                <AppointmentFlowDaySection key={g.date} date={g.date} appts={g.appts} today={today} />
                             ))}
                         </div>
                     </div>
@@ -14127,137 +14201,222 @@
             );
         }
 
-        function AppointmentFlowRow({ appt, expanded, onToggle, today }) {
-            // "today" comes from the server (getLiveWindowAppointments), not
-            // new Date() in the browser — removes any client/server timezone
-            // disagreement about the pre-/post-visit boundary entirely.
-            const isPreVisit = appt.date >= today;
+        function AppointmentFlowDaySection({ date, appts, today }) {
+            const [expandedId, setExpandedId] = useState(null);
+            // Same string-compare mechanism as before — date and today are
+            // both server-supplied 'YYYY-MM-DD' strings, never new Date().
+            const isPreVisit = date >= today;
+            const onToggle = id => setExpandedId(p => p === id ? null : id);
+
+            return (
+                <div className="af-day-section">
+                    <div className="af-day-hdr">{fmtDate(date)}</div>
+                    {isPreVisit ? (
+                        <>
+                            <div className="af-list-block">
+                                {appts.map(appt => (
+                                    <AppointmentFlowRow key={appt.id} appt={appt} expanded={expandedId === appt.id} onToggle={() => onToggle(appt.id)} />
+                                ))}
+                            </div>
+                            <AppointmentFlowPreVisitTable appts={appts} />
+                        </>
+                    ) : (
+                        <AppointmentFlowPostVisitTable appts={appts} expandedId={expandedId} onToggle={onToggle} />
+                    )}
+                </div>
+            );
+        }
+
+        /* Pre-visit list row — one appointment, expandable to screener detail.
+           No isUnsignedEligible flag here: a pre-visit appointment's own date
+           hasn't passed yet, so it can never itself be unsigned-eligible —
+           only otherUnsignedDates (this patient's OTHER outstanding unsigned
+           dates) is relevant in a pre-visit context. */
+        function AppointmentFlowRow({ appt, expanded, onToggle }) {
             const nsInfo = NS_LABELS[appt.noteStatus] || NS_LABELS[''];
-            const claimInfo = CLAIM_BADGE_LABELS[appt.claimStatus] || CLAIM_BADGE_LABELS[''];
+            const readyInitials = appt.noteStatus === 'ready' && appt.noteReadyBy ? appt.noteReadyBy : '';
+            const otherDates = appt.otherUnsignedDates || [];
 
             return (
                 <div className="af-row-wrap">
                     <div className="af-row" onClick={onToggle}>
                         <span className={`af-chevron${expanded ? ' open' : ''}`}>▶</span>
-                        <div className="af-cell-dt">
-                            <div className="af-cell-date">{fmtDate(appt.date)}</div>
-                            <div className="af-cell-time">{fmtTime(appt.time)}</div>
-                        </div>
+                        <div className="af-cell-time">{fmtTime(appt.time)}</div>
                         <div className="af-cell-pat">
                             <PatientName name={appt.patient} state={appt.patientState} />
                         </div>
-                        <div className="af-cell-flags">
-                            {appt.isUnsignedEligible && <span className="af-unsigned-flag" title="Outstanding unsigned note">⚠ Unsigned</span>}
-                            <span className={`ns-badge ${nsInfo.cls}`}>{nsInfo.icon} {nsInfo.label}</span>
-                        </div>
-                        <div className="af-cell-cpt">
-                            {appt.cpt && appt.cpt.length > 0
-                                ? appt.cpt.map(c => <span key={c} className="cpt-chip">{c}</span>)
-                                : <span className="af-cell-empty">—</span>}
-                        </div>
-                        <div className="af-cell-signed">
-                            {appt.out ? (
-                                <span className="af-signed-yes">
-                                    ✓ Signed
-                                    {appt.noteSignedBy && <span className="af-attrib-line"> — {appt.noteSignedBy}{appt.noteSignedAt ? ' · ' + fmtAttribAt(appt.noteSignedAt) : ''}</span>}
-                                </span>
-                            ) : <span className="af-signed-no">Unsigned</span>}
-                        </div>
-                        <div className="af-cell-claim">
-                            <span className={`ns-badge ${claimInfo.cls}`}>{claimInfo.icon} {claimInfo.label}</span>
-                            {appt.claimSubmittedBy && (
-                                <div className="af-attrib-line">{appt.claimSubmittedBy}{appt.claimSubmittedAt ? ' · ' + fmtAttribAt(appt.claimSubmittedAt) : ''}</div>
+                        <div className="af-cell-otherdates">
+                            {otherDates.length > 0 && (
+                                <span className="af-other-unsigned">({otherDates.map(fmtShort).join(', ')})</span>
                             )}
                         </div>
+                        <div className="af-cell-ready">
+                            <span className={`ns-badge ${nsInfo.cls}`}>{nsInfo.label}{readyInitials ? ` (${readyInitials})` : ''}</span>
+                        </div>
                     </div>
-                    {expanded && (
-                        isPreVisit
-                            ? <AppointmentFlowPreVisitDetail appt={appt} />
-                            : <AppointmentFlowPostVisitDetail appt={appt} />
-                    )}
+                    {expanded && <AppointmentFlowScreenerDetail appt={appt} />}
                 </div>
             );
         }
 
-        function AppointmentFlowPostVisitDetail({ appt }) {
+        /* Shared expand content — used by both the pre-visit list row above
+           and the post-visit table row below, same pattern in both places.
+           Interpretation text/color comes directly from getScrResult, never
+           reimplemented. */
+        function AppointmentFlowScreenerDetail({ appt }) {
             const scrData = appt.scrData || {};
             const scrEntries = ['PHQ-9', 'GAD-7', 'PCL-5']
                 .map(name => ({ name, score: scrData[name] && scrData[name].score }))
                 .filter(e => e.score !== undefined && e.score !== '' && e.score !== null);
 
+            if (scrEntries.length === 0) {
+                return <div className="af-detail"><span className="af-detail-empty">No screener data for this appointment.</span></div>;
+            }
+
             return (
                 <div className="af-detail">
-                    {appt.statusBy && (
-                        <div className="af-detail-row">
-                            <span className="af-detail-label">Status updated</span>
-                            <span>{appt.statusBy}{appt.statusAt ? ' · ' + fmtAttribAt(appt.statusAt) : ''}</span>
-                        </div>
-                    )}
-                    {(appt.claimPaidAmount || appt.claimPaidDate) && (
-                        <div className="af-detail-row">
-                            <span className="af-detail-label">Claim paid</span>
-                            <span>{appt.claimPaidAmount ? `$${appt.claimPaidAmount}` : ''}{appt.claimPaidDate ? ` on ${appt.claimPaidDate}` : ''}</span>
-                        </div>
-                    )}
-                    <div className="af-detail-row">
-                        <span className="af-detail-label">CC on file (Tebra)</span>
-                        <span>
-                            {appt.ccEhr === 'Y' ? '✅ Yes' : appt.ccEhr === 'N' ? '⚠️ No' : '—'}
-                            {appt.ccEhrBy && <span className="af-attrib-line"> — {appt.ccEhrBy}{appt.ccEhrAt ? ' · ' + fmtAttribAt(appt.ccEhrAt) : ''}</span>}
-                        </span>
-                    </div>
-                    {scrEntries.length > 0 && (
-                        <div className="af-detail-row">
-                            <span className="af-detail-label">Screeners</span>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                {scrEntries.map(({ name, score }) => {
-                                    const result = getScrResult(name, score);
-                                    return (
-                                        <span
-                                            key={name}
-                                            className="af-scr-chip"
-                                            style={result ? { background: result.color + '1A', color: result.color, border: `1px solid ${result.color}40` } : undefined}>
-                                            {name}: {score}{result ? ` — ${result.text}` : ''}
+                    {scrEntries.map(({ name, score }) => {
+                        const result = getScrResult(name, score);
+                        return (
+                            <div key={name} className="af-detail-row">
+                                <span className="af-detail-label">{name}</span>
+                                <span>
+                                    Score: {score}
+                                    {result && (
+                                        <span className="af-scr-chip" style={{ background: result.color + '1A', color: result.color, border: `1px solid ${result.color}40`, marginLeft: 6 }}>
+                                            {result.text}
                                         </span>
-                                    );
-                                })}
+                                    )}
+                                    {scrData.date && <span className="af-attrib-line"> — administered {fmtShort(scrData.date)}</span>}
+                                </span>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })}
                 </div>
             );
         }
 
-        function AppointmentFlowPreVisitDetail({ appt }) {
-            const [cpts, setCpts] = useState(null);   // null = loading
+        /* Pre-visit rate table — Alma/HW/Grow/Direct columns + CC on Tebra.
+           Not expandable; every row's rates fetch on mount (same
+           getLastCodedAppointment → BestChannelHint's own /api/best-channel
+           call pattern PatientModal already uses), since the mockup shows a
+           populated table for the whole day at once rather than one row
+           revealed at a time. */
+        function AppointmentFlowPreVisitTable({ appts }) {
+            return (
+                <table className="af-rate-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Name</th>
+                            {AF_RATE_CHANNELS.map(ch => <th key={ch.api} className="af-rate-th">{ch.label}</th>)}
+                            <th className="af-rate-th">CC on Tebra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {appts.map(appt => <AppointmentFlowRateRow key={appt.id} appt={appt} />)}
+                    </tbody>
+                </table>
+            );
+        }
+
+        function AppointmentFlowRateRow({ appt }) {
+            const [rateData, setRateData] = useState(null);   // null = loading
 
             useEffect(() => {
+                let cancelled = false;
                 gsr('getLastCodedAppointment', appt.patient, appt.provID)
-                    .then(result => setCpts(Array.isArray(result) ? result : []))
-                    .catch(() => setCpts([]));
+                    .then(cptsResult => {
+                        if (cancelled) return null;
+                        const cptsArr = Array.isArray(cptsResult) && cptsResult.length ? cptsResult : ['99214', '90833'];
+                        const carrier = appt.insuranceCarrier;
+                        const state = appt.patientState || '';
+                        if (!carrier || !state || carrier.toLowerCase().includes('cash')) {
+                            setRateData({ mapped: false });
+                            return null;
+                        }
+                        return fetch(BEST_CHANNEL_API_BASE + '/api/best-channel?carrier=' + encodeURIComponent(carrier) +
+                            '&state=' + encodeURIComponent(state) + '&cpts=' + encodeURIComponent(cptsArr.join(',')) +
+                            '&provider=' + encodeURIComponent(appt.provID || ''))
+                            .then(r => r.json());
+                    })
+                    .then(d => { if (!cancelled && d) setRateData(d); })
+                    .catch(() => { if (!cancelled) setRateData({ mapped: false, error: true }); });
+                return () => { cancelled = true; };
             }, []);
 
+            // channel_totals — same field BestChannelHint and the Billing Day
+            // View's TOTAL row already use; the total across every coded CPT
+            // for that channel, not any single CPT's rate.
+            const channelTotals = (rateData && rateData.channel_totals) || {};
+            const bestChannel = rateData && rateData.mapped ? rateData.overall_best_channel : null;
+
             return (
-                <div className="af-detail">
-                    <div className="af-detail-row">
-                        <span className="af-detail-label">CC on file (Tebra)</span>
-                        <span>
-                            {appt.ccEhr === 'Y' ? '✅ Yes' : appt.ccEhr === 'N' ? '⚠️ No' : '—'}
-                            {appt.ccEhrBy && <span className="af-attrib-line"> — {appt.ccEhrBy}{appt.ccEhrAt ? ' · ' + fmtAttribAt(appt.ccEhrAt) : ''}</span>}
-                        </span>
-                    </div>
-                    <div className="af-detail-row">
-                        <span className="af-detail-label">Best rate estimate</span>
-                        {cpts === null
-                            ? <span className="af-detail-empty">Loading…</span>
-                            : <BestChannelHint
-                                carrier={appt.insuranceCarrier}
-                                state={appt.patientState || ''}
-                                cpts={cpts.length ? cpts.join(',') : '99214,90833'}
-                                provider={appt.provID}
-                              />}
-                    </div>
-                </div>
+                <tr className="af-rate-row">
+                    <td>{fmtTime(appt.time)}</td>
+                    <td><PatientName name={appt.patient} state={appt.patientState} /></td>
+                    {AF_RATE_CHANNELS.map(ch => {
+                        const total = channelTotals[ch.api];
+                        const isBest = bestChannel === ch.api;
+                        return (
+                            <td key={ch.api} className={`af-rate-cell${isBest ? ' af-rate-best' : ''}`}>
+                                {rateData === null ? '…' : (total != null ? `$${total.toFixed(2)}` : '—')}
+                            </td>
+                        );
+                    })}
+                    <td className="af-rate-cell">{appt.ccEhr === 'Y' ? 'Yes' : appt.ccEhr === 'N' ? 'No' : ''}</td>
+                </tr>
+            );
+        }
+
+        /* Post-visit table — no list section, no CC-on-file column (pre-visit
+           only). Rows expand to the same AppointmentFlowScreenerDetail as the
+           pre-visit list rows. Empty cells render blank, not a placeholder —
+           confirmed requirement, not an oversight. */
+        function AppointmentFlowPostVisitTable({ appts, expandedId, onToggle }) {
+            return (
+                <table className="af-post-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Time</th>
+                            <th>Name</th>
+                            <th>HVA</th>
+                            <th>CPT</th>
+                            <th>Provider</th>
+                            <th>Date Signed</th>
+                            <th>Biller</th>
+                            <th>Date Submitted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {appts.map(appt => {
+                            const expanded = expandedId === appt.id;
+                            return (
+                                <React.Fragment key={appt.id}>
+                                    <tr className="af-post-row" onClick={() => onToggle(appt.id)}>
+                                        <td><span className={`af-chevron${expanded ? ' open' : ''}`}>▶</span></td>
+                                        <td>{fmtTime(appt.time)}</td>
+                                        <td><PatientName name={appt.patient} state={appt.patientState} /></td>
+                                        <td>{appt.noteReadyBy || ''}</td>
+                                        <td className="af-cell-cpt">
+                                            {appt.cpt && appt.cpt.length > 0 && appt.cpt.map(c => <span key={c} className="cpt-chip">{c}</span>)}
+                                        </td>
+                                        <td>{appt.noteSignedBy || ''}</td>
+                                        <td>{appt.noteSignedAt ? fmtAttribAt(appt.noteSignedAt) : ''}</td>
+                                        <td>{appt.claimSubmittedBy || ''}</td>
+                                        <td>{appt.claimSubmittedAt ? fmtAttribAt(appt.claimSubmittedAt) : ''}</td>
+                                    </tr>
+                                    {expanded && (
+                                        <tr className="af-post-detail-row">
+                                            <td colSpan={9}><AppointmentFlowScreenerDetail appt={appt} /></td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
+                    </tbody>
+                </table>
             );
         }
 
