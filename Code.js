@@ -2863,6 +2863,20 @@ var UNSIGNED_CONFIRMED_COL = 85;       // CG — this row's own (unsigned) date 
 var UNSIGNED_CONFIRMED_BY_COL = 86;    // CH   been reviewed; row IS the unsigned date,
 var UNSIGNED_CONFIRMED_AT_COL = 87;    // CI   no separate date list needed
 
+/* ── PRE-VISIT CHECKLIST ATTRIBUTION (2026-08-10) — Intake/InsVerified/
+   Autopay/ChecklistNote never had any by/at tracking at all before this;
+   these are new columns, not previously-unexposed old ones. Assistant-
+   entered, pre-visit, matches the same _stampAttribution pattern as
+   everything above. ── */
+var INTAKE_BY_COL = 88;                // CJ
+var INTAKE_AT_COL = 89;                // CK
+var INS_VERIFIED_BY_COL = 90;          // CL
+var INS_VERIFIED_AT_COL = 91;          // CM
+var AUTOPAY_BY_COL = 92;               // CN
+var AUTOPAY_AT_COL = 93;               // CO
+var CHECKLIST_NOTE_BY_COL = 94;        // CP
+var CHECKLIST_NOTE_AT_COL = 95;        // CQ
+
 /* ── Attribution stamp helper — writes the current session's staff
    displayName (or raw email if unrecognized) plus an ISO timestamp
    into a by/at column pair. Shared by every save function below so
@@ -3034,6 +3048,87 @@ function saveUnsignedConfirmed(apptId, confirmed) {
     return JSON.stringify({ ok: true, at: now });
   } catch (e) {
     Logger.log('saveUnsignedConfirmed ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+/* ── Pre-visit checklist attribution — Intake, InsVerified, Autopay,
+   ChecklistNote. All four are assistant-entered in PatientModal before
+   the appointment date; Table View surfaces whichever of these is an
+   issue (value === false, or a non-empty note) in the appointment's own
+   billing-channel column. ──────────────────────────────────────────── */
+function saveIntake(apptId, value) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+    var rowNum = _findApptRow(sheet, apptId);
+    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    sheet.getRange(rowNum, APPT_COLS.indexOf('Intake') + 1).setValue(value);
+    var now = _stampAttribution(ss, sheet, rowNum, INTAKE_BY_COL, INTAKE_AT_COL);
+
+    _audit(ss, 'INTAKE_UPDATED', 'Appt ' + apptId + ' → intake=' + value);
+    return JSON.stringify({ ok: true, at: now });
+  } catch (e) {
+    Logger.log('saveIntake ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+function saveInsVerified(apptId, value) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+    var rowNum = _findApptRow(sheet, apptId);
+    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    sheet.getRange(rowNum, APPT_COLS.indexOf('InsVerified') + 1).setValue(value);
+    var now = _stampAttribution(ss, sheet, rowNum, INS_VERIFIED_BY_COL, INS_VERIFIED_AT_COL);
+
+    _audit(ss, 'INS_VERIFIED_UPDATED', 'Appt ' + apptId + ' → ins=' + value);
+    return JSON.stringify({ ok: true, at: now });
+  } catch (e) {
+    Logger.log('saveInsVerified ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+function saveAutopay(apptId, value) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+    var rowNum = _findApptRow(sheet, apptId);
+    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    sheet.getRange(rowNum, APPT_COLS.indexOf('Autopay') + 1).setValue(value);
+    var now = _stampAttribution(ss, sheet, rowNum, AUTOPAY_BY_COL, AUTOPAY_AT_COL);
+
+    _audit(ss, 'AUTOPAY_UPDATED', 'Appt ' + apptId + ' → autopay=' + value);
+    return JSON.stringify({ ok: true, at: now });
+  } catch (e) {
+    Logger.log('saveAutopay ERROR: ' + e.message);
+    return JSON.stringify({ ok: false, err: e.message });
+  }
+}
+
+function saveChecklistNote(apptId, note) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
+    var rowNum = _findApptRow(sheet, apptId);
+    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    sheet.getRange(rowNum, APPT_COLS.indexOf('ChecklistNote') + 1).setValue(note || '');
+    var now = _stampAttribution(ss, sheet, rowNum, CHECKLIST_NOTE_BY_COL, CHECKLIST_NOTE_AT_COL);
+
+    _audit(ss, 'CHECKLIST_NOTE_UPDATED', 'Appt ' + apptId);
+    return JSON.stringify({ ok: true, at: now });
+  } catch (e) {
+    Logger.log('saveChecklistNote ERROR: ' + e.message);
     return JSON.stringify({ ok: false, err: e.message });
   }
 }
@@ -3233,6 +3328,17 @@ function _rowToApptWithAttribution(r, bounds, tableBounds) {
   appt.unsignedConfirmed = r[UNSIGNED_CONFIRMED_COL - 1] === true || r[UNSIGNED_CONFIRMED_COL - 1] === 'TRUE';
   appt.unsignedConfirmedBy = String(r[UNSIGNED_CONFIRMED_BY_COL - 1] || '');
   appt.unsignedConfirmedAt = String(r[UNSIGNED_CONFIRMED_AT_COL - 1] || '');
+  // Pre-visit checklist attribution — new columns, see the block comment
+  // above INTAKE_BY_COL. appt.intake/ins/autopay/checklistNote themselves
+  // already come from rowToAppt() above; these are just who/when.
+  appt.intakeBy = String(r[INTAKE_BY_COL - 1] || '');
+  appt.intakeAt = String(r[INTAKE_AT_COL - 1] || '');
+  appt.insBy = String(r[INS_VERIFIED_BY_COL - 1] || '');
+  appt.insAt = String(r[INS_VERIFIED_AT_COL - 1] || '');
+  appt.autopayBy = String(r[AUTOPAY_BY_COL - 1] || '');
+  appt.autopayAt = String(r[AUTOPAY_AT_COL - 1] || '');
+  appt.checklistNoteBy = String(r[CHECKLIST_NOTE_BY_COL - 1] || '');
+  appt.checklistNoteAt = String(r[CHECKLIST_NOTE_AT_COL - 1] || '');
   return appt;
 }
 

@@ -8670,24 +8670,6 @@
         .af-row-wrap {
             border-bottom: 1px solid #F2EDDB;
         }
-        .af-section-hdr {
-            padding: 14px 18px;
-            background: #F2EDDB;
-            border-top: 8px solid #F2EDDB;
-            border-bottom: 2px solid #09371F;
-            font-size: 13px;
-            font-weight: 900;
-            color: #09371F;
-            letter-spacing: .3px;
-            text-transform: uppercase;
-        }
-        .af-section-hdr-sub {
-            font-weight: 600;
-            text-transform: none;
-            color: #777355;
-            letter-spacing: 0;
-            margin-left: 6px;
-        }
         .af-day-section {
             border-bottom: 8px solid #F2EDDB;
         }
@@ -8801,6 +8783,36 @@
             font-weight: 800;
             color: #0C4A34;
         }
+        .af-rate-btn {
+            background: #09371F;
+            color: #F2EDDB;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .af-rate-btn:disabled {
+            background: #F2EDDB;
+            color: #777355;
+            cursor: default;
+        }
+        .af-rate-issues {
+            text-align: left;
+            margin-top: 3px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .af-rate-issue {
+            font-size: 10px;
+            font-weight: 700;
+            color: #DC2626;
+            white-space: normal;
+        }
         .af-attrib-line {
             font-size: 10px;
             font-weight: 500;
@@ -8851,14 +8863,6 @@
         body.dark .af-cell-pat,
         body.dark .af-day-hdr {
             color: #F0FDF4;
-        }
-        body.dark .af-section-hdr {
-            background: #09371F;
-            border-bottom-color: #6FBFA6;
-            color: #F0FDF4;
-        }
-        body.dark .af-section-hdr-sub {
-            color: #6B9E8A;
         }
         body.dark .af-cell-time,
         body.dark .af-attrib-line,
@@ -12726,7 +12730,20 @@
             }
             function syncField(field, val) {
                 setD(p => ({ ...p, [field]: val }));
-                if (onUpdate) onUpdate({ ...d, [field]: val });
+                if (onUpdate) return onUpdate({ ...d, [field]: val });
+            }
+            // Same as syncField, plus stamps ChecklistNote attribution once the
+            // primary save confirms — mirrors the sequencing already used for
+            // claim submission (fire only on {ok:true}, never before, never on
+            // failure). Kept separate from syncField itself since that's shared
+            // with scrNote, which doesn't get this treatment.
+            function syncChecklistNote(val) {
+                const p = syncField('checklistNote', val);
+                if (p && typeof p.then === 'function') {
+                    p.then(result => {
+                        if (result && result.ok) gsr('saveChecklistNote', appt.id, val).catch(() => { });
+                    });
+                }
             }
             function _msKeyOf(method) {
                 return method === 'alma' ? 'alma' : method === 'hw' ? 'hw' : method === 'grow' ? 'grow' : 'direct';
@@ -12749,7 +12766,27 @@
                 setUDate('');
             }
             function rmUDate(v) { setD(p => ({ ...p, unsigned: p.unsigned.filter(x => x !== v) })); }
-            function handleSave() { onSave({ ...d, status: computeStatus(d) }); }
+            function handleSave() {
+                // Intake/InsVerified/Autopay are batched in local state (d)
+                // until this Save click, unlike checklistNote which saves on
+                // blur — so attribution has to fire from here, and only for
+                // whichever of the three actually changed from the original
+                // appt this modal opened with. Sequenced after the primary
+                // save confirms {ok:true}, same pattern as everywhere else in
+                // this feature — no phantom stamp if the save fails.
+                const intakeChanged = d.intake !== appt.intake;
+                const insChanged = d.ins !== appt.ins;
+                const autopayChanged = d.autopay !== appt.autopay;
+                const savePromise = onSave({ ...d, status: computeStatus(d) });
+                if (savePromise && typeof savePromise.then === 'function' && (intakeChanged || insChanged || autopayChanged)) {
+                    savePromise.then(result => {
+                        if (!result || !result.ok) return;
+                        if (intakeChanged) gsr('saveIntake', appt.id, d.intake).catch(() => { });
+                        if (insChanged) gsr('saveInsVerified', appt.id, d.ins).catch(() => { });
+                        if (autopayChanged) gsr('saveAutopay', appt.id, d.autopay).catch(() => { });
+                    });
+                }
+            }
             const msKey = d.method === 'alma' ? 'alma' : d.method === 'hw' ? 'hw' : d.method === 'grow' ? 'grow' : 'direct';
             const ms = d[msKey] || { text: '', valid: null };
             function RadioRow({ label, field, req, onChange: onChangeProp }) {
@@ -12895,7 +12932,7 @@
                                             placeholder="Describe any issues with intake paperwork, insurance, or autopay (e.g. insurance expired, card declined, paperwork incomplete)…"
                                             value={d.checklistNote || ''}
                                             onChange={e => upd('checklistNote', e.target.value)}
-                                            onBlur={e => syncField('checklistNote', e.target.value)}
+                                            onBlur={e => syncChecklistNote(e.target.value)}
                                         />
                                     </div>
                                 </div>
@@ -14152,15 +14189,30 @@
             return `${ds} ${ts} ET`;
         }
 
-        // Channel column order/labels for the pre-visit rate table, and the
-        // exact API channel names (matches BEST_CHANNEL_METHOD_MAP's keys —
-        // same mapping already used for suggestedMethodIdFor).
+        // Channel column order/labels for Table View, the exact API channel
+        // names (matches BEST_CHANNEL_METHOD_MAP's keys), and methodId — the
+        // appt.method value that channel corresponds to, used to place a
+        // pre-visit checklist issue in the ONE column matching that
+        // appointment's actual billing channel, not all four.
         const AF_RATE_CHANNELS = [
-            { label: 'Alma', api: 'Alma' },
-            { label: 'HW', api: 'Headway' },
-            { label: 'Grow', api: 'Grow Therapy' },
-            { label: 'Direct', api: 'Clinic Submit' },
+            { label: 'Alma', api: 'Alma', methodId: 'alma' },
+            { label: 'Headway', api: 'Headway', methodId: 'hw' },
+            { label: 'Grow', api: 'Grow Therapy', methodId: 'grow' },
+            { label: 'Clinic', api: 'Clinic Submit', methodId: 'direct' },
         ];
+
+        // Pre-visit checklist issues for Table View's per-channel-cell
+        // display — Intake/InsVerified/Autopay flagged false (an explicit
+        // "issue" selection, not just unset/null), plus any Issue Note text,
+        // each carrying its own by/at attribution.
+        function apptIssues(appt) {
+            const issues = [];
+            if (appt.intake === false) issues.push({ label: 'Intake', by: appt.intakeBy, at: appt.intakeAt });
+            if (appt.ins === false) issues.push({ label: 'Insurance', by: appt.insBy, at: appt.insAt });
+            if (appt.autopay === false) issues.push({ label: 'Autopay/CC', by: appt.autopayBy, at: appt.autopayAt });
+            if (appt.checklistNote) issues.push({ label: 'Note', text: appt.checklistNote, by: appt.checklistNoteBy, at: appt.checklistNoteAt });
+            return issues;
+        }
 
         // Groups appointments by date, preserving whatever sort order they
         // arrived in (both getLiveWindowAppointments and
@@ -14182,76 +14234,95 @@
             return groups;
         }
 
+        // Combines List's day-groups and Table's day-groups into one
+        // chronologically sorted sequence, one entry per date that appears in
+        // EITHER — a date can carry listAppts, tableAppts, or both. 'YYYY-MM-DD'
+        // strings sort correctly with a plain .sort().
+        function mergeDayGroups(listGroups, tableGroups) {
+            const byDate = {};
+            listGroups.forEach(g => {
+                if (!byDate[g.date]) byDate[g.date] = { date: g.date, listAppts: null, tableAppts: null };
+                byDate[g.date].listAppts = g.appts;
+            });
+            tableGroups.forEach(g => {
+                if (!byDate[g.date]) byDate[g.date] = { date: g.date, listAppts: null, tableAppts: null };
+                byDate[g.date].tableAppts = g.appts;
+            });
+            return Object.values(byDate).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+        }
+
         function AppointmentFlowPanel({ onClose, prov }) {
-            const [rows, setRows] = useState(null);   // null = loading
+            const [listRows, setListRows] = useState(null);   // null = loading
+            const [tableRows, setTableRows] = useState(null); // null = loading
             const [loading, setLoading] = useState(true);
 
             useEffect(() => {
                 setLoading(true);
-                gsr('getLiveWindowAppointments', prov || '')
-                    .then(json => {
-                        try {
-                            const d = JSON.parse(json);
-                            setRows(Array.isArray(d.appointments) ? d.appointments : []);
-                        } catch (e) { setRows([]); }
-                        setLoading(false);
-                    })
-                    .catch(() => { setRows([]); setLoading(false); });
+                Promise.all([
+                    gsr('getLiveWindowAppointments', prov || ''),
+                    gsr('getTableWindowAppointments', prov || ''),
+                ]).then(([listJson, tableJson]) => {
+                    try {
+                        const ld = JSON.parse(listJson);
+                        setListRows(Array.isArray(ld.appointments) ? ld.appointments : []);
+                    } catch (e) { setListRows([]); }
+                    try {
+                        const td = JSON.parse(tableJson);
+                        setTableRows(Array.isArray(td.appointments) ? td.appointments : []);
+                    } catch (e) { setTableRows([]); }
+                    setLoading(false);
+                }).catch(() => { setListRows([]); setTableRows([]); setLoading(false); });
             }, [prov]);
 
-            const list = rows || [];
-            const dayGroups = useMemo(() => groupAppointmentsByDate(list), [list]);
+            const listGroups = useMemo(() => groupAppointmentsByDate(listRows || []), [listRows]);
+            const tableGroups = useMemo(() => groupAppointmentsByDate(tableRows || []), [tableRows]);
+            const combinedDays = useMemo(() => mergeDayGroups(listGroups, tableGroups), [listGroups, tableGroups]);
 
-            // List View and Table View are now two independent, only
-            // partially-overlapping windows (List: oldest unsigned note
-            // through +14 days; Table: fixed -7..+14 days) — stacked as their
-            // own clearly labeled sections in the same scrollable body rather
-            // than interleaved into one timeline, since a single day can
-            // belong to one, both, or neither window.
+            // ONE scroll, oldest at top, today+14 at bottom — List and Table are
+            // both per-day, independent of each other (a day can have List
+            // rows, a Table, or both), not two separate stacked sections.
             return (
                 <div className="af-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
                     <div className="af-panel">
                         <div className="af-hdr">
                             <div>
                                 <div className="af-hdr-title">🗓️ Appointment Flow</div>
-                                <div className="af-hdr-sub">Provider workflow — List and Table are independent windows, see each section below</div>
+                                <div className="af-hdr-sub">Oldest unsigned note through 14 days out</div>
                             </div>
                             <button className="af-close-btn" onClick={onClose}>✕ Close</button>
                         </div>
                         <div className="af-body">
-                            <div className="af-section-hdr">
-                                List View
-                                <span className="af-section-hdr-sub">— oldest unsigned note through 14 days out</span>
-                            </div>
                             {loading && <div className="af-empty">Loading…</div>}
-                            {!loading && dayGroups.length === 0 && <div className="af-empty">No appointments in the live window.</div>}
-                            {!loading && dayGroups.map(g => (
-                                <AppointmentFlowDaySection key={g.date} date={g.date} appts={g.appts} />
+                            {!loading && combinedDays.length === 0 && <div className="af-empty">No appointments in either window.</div>}
+                            {!loading && combinedDays.map(d => (
+                                <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} />
                             ))}
-                            <AppointmentFlowTableSection prov={prov} />
                         </div>
                     </div>
                 </div>
             );
         }
 
-        // List View's own per-day block — one appointment row per appt, same
-        // columns for every day now (pre- or post-visit alike). Table View no
-        // longer renders here at all (Stage C1): it's a fully independent,
-        // separately-fetched section mounted once in AppointmentFlowPanel,
-        // not per List day.
-        function AppointmentFlowDaySection({ date, appts }) {
+        // One combined per-day block: List's row-list (if this date is in
+        // List's window) and/or Table's rate-table (if this date is in
+        // Table's window) — a date can have either, neither is impossible
+        // once it's reached this component (mergeDayGroups only creates an
+        // entry when at least one is present), or both.
+        function AppointmentFlowDaySection({ date, listAppts, tableAppts }) {
             const [expandedId, setExpandedId] = useState(null);
             const onToggle = id => setExpandedId(p => p === id ? null : id);
 
             return (
                 <div className="af-day-section">
                     <div className="af-day-hdr">{fmtDate(date)}</div>
-                    <div className="af-list-block">
-                        {appts.map(appt => (
-                            <AppointmentFlowRow key={appt.id} appt={appt} expanded={expandedId === appt.id} onToggle={() => onToggle(appt.id)} />
-                        ))}
-                    </div>
+                    {listAppts && (
+                        <div className="af-list-block">
+                            {listAppts.map(appt => (
+                                <AppointmentFlowRow key={appt.id} appt={appt} expanded={expandedId === appt.id} onToggle={() => onToggle(appt.id)} />
+                            ))}
+                        </div>
+                    )}
+                    {tableAppts && <AppointmentFlowRateTable appts={tableAppts} />}
                 </div>
             );
         }
@@ -14346,79 +14417,67 @@
             );
         }
 
-        /* Table View — fully independent of List View (Stage C1): its own
-           fetch (getTableWindowAppointments), its own day-grouping (the
-           shared groupAppointmentsByDate helper List also uses), its own
-           section header stating its own fixed -7..+14 day window. No appts
-           prop from AppointmentFlowDaySection anymore — List's fetch/window
-           has nothing to do with what Table shows.
-           Table row content (columns/cells/styling — AppointmentFlowRateRow,
-           AF_RATE_CHANNELS, the table shell below) is UNCHANGED from before;
-           only the data source and grouping are new. That's deliberate —
-           this stage is structural only, per Dean's Stage C1 scope; changing
-           what a row displays is Stage C2. */
-        function AppointmentFlowTableSection({ prov }) {
-            const [rows, setRows] = useState(null);   // null = loading
-            const [tableBounds, setTableBounds] = useState({ backwardBound: '', forwardBound: '' });
-            const [loading, setLoading] = useState(true);
-
-            useEffect(() => {
-                setLoading(true);
-                gsr('getTableWindowAppointments', prov || '')
-                    .then(json => {
-                        try {
-                            const d = JSON.parse(json);
-                            setRows(Array.isArray(d.appointments) ? d.appointments : []);
-                            setTableBounds({ backwardBound: d.backwardBound || '', forwardBound: d.forwardBound || '' });
-                        } catch (e) { setRows([]); }
-                        setLoading(false);
-                    })
-                    .catch(() => { setRows([]); setLoading(false); });
-            }, [prov]);
-
-            const list = rows || [];
-            const dayGroups = useMemo(() => groupAppointmentsByDate(list), [list]);
-
+        /* Table View's per-day table shell — no fetch of its own, just the
+           header row + one AppointmentFlowRateRow per appt. Mounted by
+           AppointmentFlowDaySection for whichever days fall in Table's
+           window (tableAppts non-null). */
+        function AppointmentFlowRateTable({ appts }) {
             return (
-                <div className="af-table-section">
-                    <div className="af-section-hdr">
-                        Table View
-                        {tableBounds.backwardBound && tableBounds.forwardBound && (
-                            <span className="af-section-hdr-sub">— {fmtDate(tableBounds.backwardBound)} through {fmtDate(tableBounds.forwardBound)}</span>
-                        )}
-                    </div>
-                    {loading && <div className="af-empty">Loading…</div>}
-                    {!loading && dayGroups.length === 0 && <div className="af-empty">No appointments in Table's window.</div>}
-                    {!loading && dayGroups.map(g => (
-                        <div key={g.date} className="af-day-section">
-                            <div className="af-day-hdr">{fmtDate(g.date)}</div>
-                            <table className="af-rate-table">
-                                <thead>
-                                    <tr>
-                                        <th>Time</th>
-                                        <th>Name</th>
-                                        {AF_RATE_CHANNELS.map(ch => <th key={ch.api} className="af-rate-th">{ch.label}</th>)}
-                                        <th className="af-rate-th">CC on Tebra</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {g.appts.map(appt => <AppointmentFlowRateRow key={appt.id} appt={appt} />)}
-                                </tbody>
-                            </table>
-                        </div>
-                    ))}
-                </div>
+                <table className="af-rate-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Name</th>
+                            <th>Best Rate</th>
+                            {AF_RATE_CHANNELS.map(ch => <th key={ch.api} className="af-rate-th">{ch.label}</th>)}
+                            <th className="af-rate-th">Credit Card Tebra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {appts.map(appt => <AppointmentFlowRateRow key={appt.id} appt={appt} />)}
+                    </tbody>
+                </table>
             );
         }
 
+        /* Pre-visit checklist issues (apptIssues) render inside the ONE
+           channel cell matching appt.method — not repeated across all four —
+           since that's the channel this specific appointment is actually
+           billed through. Each issue line carries its own by/at attribution,
+           straight off the appt object (Intake/InsVerified/Autopay/
+           ChecklistNote attribution added alongside this rebuild — see
+           Code.js's INTAKE_BY_COL block). Never display:flex directly on a
+           <td> — that collapses an empty cell's height (see the CPT-cell
+           fix from a few stages back); all flex layout here lives on inner
+           <div>s instead.
+
+           No standalone Insurance column — removed per Dean's explicit
+           "Insurance Column is No more." In its place: a Best Rate button.
+           Default state shows no dollar amounts anywhere; the appt.method
+           cell shows the plain insuranceCarrier text (plus any issue
+           overlay) regardless of reveal state. The rate fetch itself
+           (getLastCodedAppointment, then /api/best-channel) does NOT run on
+           mount at all — no useEffect here — it only fires the first time
+           the button is clicked, one fetch per row, ever. This is the actual
+           fix for the eager-fetch-on-every-row concern, not just a display
+           deferral: previously this ran in a useEffect(..., []) that fired
+           for every row in the table the instant it mounted. */
         function AppointmentFlowRateRow({ appt }) {
-            const [rateData, setRateData] = useState(null);   // null = loading
+            const [revealed, setRevealed] = useState(false);
+            const [rateData, setRateData] = useState(null);   // null = not fetched yet
+            const mountedRef = useRef(true);
 
             useEffect(() => {
-                let cancelled = false;
+                mountedRef.current = true;
+                return () => { mountedRef.current = false; };
+            }, []);
+
+            function handleReveal() {
+                if (revealed) return; // one-way reveal, not a toggle
+                setRevealed(true);
                 gsr('getLastCodedAppointment', appt.patient, appt.provID)
                     .then(cptsResult => {
-                        if (cancelled) return null;
+                        if (!mountedRef.current) return null;
                         const cptsArr = Array.isArray(cptsResult) && cptsResult.length ? cptsResult : ['99214', '90833'];
                         const carrier = appt.insuranceCarrier;
                         const state = appt.patientState || '';
@@ -14431,32 +14490,47 @@
                             '&provider=' + encodeURIComponent(appt.provID || ''))
                             .then(r => r.json());
                     })
-                    .then(d => { if (!cancelled && d) setRateData(d); })
-                    .catch(() => { if (!cancelled) setRateData({ mapped: false, error: true }); });
-                return () => { cancelled = true; };
-            }, []);
+                    .then(d => { if (mountedRef.current && d) setRateData(d); })
+                    .catch(() => { if (mountedRef.current) setRateData({ mapped: false, error: true }); });
+            }
 
             // channel_totals — same field BestChannelHint and the Billing Day
             // View's TOTAL row already use; the total across every coded CPT
             // for that channel, not any single CPT's rate.
             const channelTotals = (rateData && rateData.channel_totals) || {};
             const bestChannel = rateData && rateData.mapped ? rateData.overall_best_channel : null;
+            const issues = apptIssues(appt);
+            const loading = revealed && rateData === null;
 
             return (
                 <tr className="af-rate-row">
                     <td>{fmtTime(appt.time)}</td>
-                    <td>
-                        <PatientName name={appt.patient} state={appt.patientState} />
-                        {rateData && rateData.mapped && rateData.canonical_payer && (
-                            <span className="af-attrib-line"> · {rateData.canonical_payer}</span>
-                        )}
+                    <td><PatientName name={appt.patient} state={appt.patientState} /></td>
+                    <td className="af-rate-cell">
+                        <button className="af-rate-btn" onClick={handleReveal} disabled={revealed}>
+                            {loading ? '…' : revealed ? '✓ Shown' : '💰 Best Rate'}
+                        </button>
                     </td>
                     {AF_RATE_CHANNELS.map(ch => {
                         const total = channelTotals[ch.api];
-                        const isBest = bestChannel === ch.api;
+                        const isBest = revealed && bestChannel === ch.api;
+                        const isApptChannel = appt.method === ch.methodId;
                         return (
                             <td key={ch.api} className={`af-rate-cell${isBest ? ' af-rate-best' : ''}`}>
-                                {rateData === null ? '…' : (total != null ? `$${total.toFixed(2)}` : '—')}
+                                {isApptChannel && <div>{appt.insuranceCarrier}</div>}
+                                {revealed && (
+                                    <div>{loading ? '…' : (total != null ? `$${total.toFixed(2)}` : '—')}</div>
+                                )}
+                                {isApptChannel && issues.length > 0 && (
+                                    <div className="af-rate-issues">
+                                        {issues.map((iss, i) => (
+                                            <div key={i} className="af-rate-issue">
+                                                ⚠️ {iss.label}{iss.text ? `: ${iss.text}` : ''}
+                                                {iss.by && <div className="af-attrib-line">{iss.by}{iss.at ? ' · ' + fmtAttribAt(iss.at) : ''}</div>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </td>
                         );
                     })}
@@ -16626,8 +16700,9 @@
             const voidAppts = allSorted.filter(a => isVoidAppt(a));   // void   → audit archive
 
             function save(updated) {
-                onUpdate(updated);
+                const p = onUpdate(updated);
                 setModal(null);
+                return p;
             }
             function cellCls(v) { return v === true ? 'cv' : v === false ? 'ce' : 'cp'; }
 
