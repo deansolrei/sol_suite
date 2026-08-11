@@ -8705,9 +8705,9 @@
         }
         .af-row {
             display: grid;
-            grid-template-columns: 18px 70px 1fr 90px 120px 110px 110px 90px auto 110px;
+            grid-template-columns: 18px 70px 1fr 2fr;
             gap: 12px;
-            align-items: center;
+            align-items: start;
             padding: 10px 18px;
             cursor: pointer;
             transition: background .1s;
@@ -8744,18 +8744,15 @@
             color: #2B2716;
             white-space: nowrap;
         }
-        .af-cell-ready,
-        .af-cell-provider,
-        .af-cell-biller {
+        .af-otherdate-row {
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 2px;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 6px;
         }
-        .af-cell-insurance,
-        .af-cell-method {
+        .af-otherdate-status {
             font-size: 11px;
-            color: #2B2716;
+            font-weight: 700;
         }
         .af-cell-cpt {
             display: flex;
@@ -8905,11 +8902,6 @@
         body.dark .af-rate-table tbody tr:nth-child(even) {
             background: #051F11;
         }
-        body.dark .af-cell-insurance,
-        body.dark .af-cell-method {
-            color: #F0FDF4;
-        }
-
         /* ══════════════════════════════════════════════════════════════
        CLAIMS LEDGER
     ══════════════════════════════════════════════════════════════ */
@@ -13199,6 +13191,16 @@
             'ready': { label: 'Ready', cls: 'ns-ready', icon: '✓' },
         };
         const NS_CYCLE = ['', 'in_progress', 'ready'];
+        // Same three statuses as NS_LABELS, as raw hex for inline text-color
+        // styling — pulled from .ns-badge.ns-none/.ns-prog/.ns-ready's own
+        // CSS (see those rules) so plain colored text stays visually matched
+        // to the pill/badge elsewhere without touching .ns-badge itself.
+        // Appointment Flow's List View uses this; nothing else should need to.
+        const NS_COLOR = {
+            '': '#777355',
+            'in_progress': '#BE992A',
+            'ready': '#16A34A',
+        };
 
         /* ── Claim-status badge labels — same visual language as NS_LABELS,
            shown in the Provider Day View post-visit badge slot once a note
@@ -14233,6 +14235,19 @@
             return issues;
         }
 
+        // Same score-presence check AppointmentFlowScreenerDetail uses
+        // internally to decide whether it has anything to show — exposed here
+        // so List View's collapsed row can skip rendering that component
+        // entirely (rather than always rendering it and letting its own
+        // "No screener data" fallback fire on every row with none).
+        function hasScrData(appt) {
+            const scrData = appt.scrData || {};
+            return ['PHQ-9', 'GAD-7', 'PCL-5'].some(name => {
+                const sd = scrData[name];
+                return sd && sd.score !== undefined && sd.score !== '' && sd.score !== null;
+            });
+        }
+
         // Groups appointments by date, preserving whatever sort order they
         // arrived in (both getLiveWindowAppointments and
         // getTableWindowAppointments already return ascending date/time
@@ -14399,30 +14414,70 @@
                         </div>
                         <div className="af-cell-otherdates">
                             {/* Already oldest-first — _liveWindowBounds sorts each
-                                patient's date list ascending before returning it. */}
-                            {otherDates.map((d, i) => <span key={i} className="af-other-unsigned">({fmtUnsignedDate(d)})</span>)}
-                        </div>
-                        <div className="af-cell-insurance">{appt.insuranceCarrier}</div>
-                        <div className="af-cell-ready">
-                            <span className={`ns-badge ${nsInfo.cls}`}>{nsInfo.label}</span>
-                            {noteAttribBy && (
-                                <span className="af-attrib-line">{noteAttribBy}{noteAttribAt ? ' · ' + fmtAttribAt(noteAttribAt) : ''}</span>
-                            )}
-                        </div>
-                        <div className="af-cell-provider">
-                            {appt.noteSignedBy && <span>{appt.noteSignedBy}</span>}
-                            {appt.noteSignedAt && <span className="af-attrib-line">{fmtAttribAt(appt.noteSignedAt)}</span>}
-                        </div>
-                        <div className="af-cell-method">{METHOD_LABEL[appt.method] || appt.method}</div>
-                        <div className="af-cell-cpt">
-                            {appt.cpt && appt.cpt.length > 0 && appt.cpt.map(c => <span key={c} className="cpt-chip">{c}</span>)}
-                        </div>
-                        <div className="af-cell-biller">
-                            {appt.claimSubmittedBy && <span>{appt.claimSubmittedBy}</span>}
-                            {appt.claimSubmittedAt && <span className="af-attrib-line">{fmtAttribAt(appt.claimSubmittedAt)}</span>}
+                                patient's date list ascending before returning it.
+                                Each entry now carries its OWN noteStatus/attribution
+                                (that date's note-prep progress), not this appointment's —
+                                a patient's other outstanding dates can each be at a
+                                different stage. */}
+                            {otherDates.map((d, i) => {
+                                const dInfo = NS_LABELS[d.noteStatus] || NS_LABELS[''];
+                                const dColor = NS_COLOR[d.noteStatus] || NS_COLOR[''];
+                                const dBy = d.noteStatus === 'ready' ? d.noteReadyBy
+                                    : d.noteStatus === 'in_progress' ? d.noteInProgressBy : '';
+                                const dAt = d.noteStatus === 'ready' ? d.noteReadyAt
+                                    : d.noteStatus === 'in_progress' ? d.noteInProgressAt : '';
+                                return (
+                                    <div key={i} className="af-otherdate-row">
+                                        <span className="af-other-unsigned">({fmtUnsignedDate(d.date)})</span>
+                                        <span className="af-otherdate-status" style={{ color: dColor }}>{dInfo.label}</span>
+                                        {dBy && <span className="af-attrib-line">{dBy}{dAt ? ' · ' + fmtAttribAt(dAt) : ''}</span>}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
-                    {expanded && <AppointmentFlowScreenerDetail appt={appt} />}
+                    {hasScrData(appt) && <AppointmentFlowScreenerDetail appt={appt} />}
+                    {expanded && (
+                        <div className="af-detail">
+                            <div className="af-detail-row">
+                                <span className="af-detail-label">Insurance Plan</span>
+                                <span>{appt.insuranceCarrier}</span>
+                            </div>
+                            <div className="af-detail-row">
+                                <span className="af-detail-label">Note Status</span>
+                                <span>
+                                    <span style={{ color: NS_COLOR[appt.noteStatus] || NS_COLOR[''] }}>{nsInfo.label}</span>
+                                    {noteAttribBy && (
+                                        <span className="af-attrib-line"> {noteAttribBy}{noteAttribAt ? ' · ' + fmtAttribAt(noteAttribAt) : ''}</span>
+                                    )}
+                                </span>
+                            </div>
+                            <div className="af-detail-row">
+                                <span className="af-detail-label">Provider</span>
+                                <span>
+                                    {appt.noteSignedBy && <span>{appt.noteSignedBy}</span>}
+                                    {appt.noteSignedAt && <span className="af-attrib-line"> {fmtAttribAt(appt.noteSignedAt)}</span>}
+                                </span>
+                            </div>
+                            <div className="af-detail-row">
+                                <span className="af-detail-label">Billing Channel</span>
+                                <span>{METHOD_LABEL[appt.method] || appt.method}</span>
+                            </div>
+                            <div className="af-detail-row">
+                                <span className="af-detail-label">CPT</span>
+                                <div className="af-cell-cpt">
+                                    {appt.cpt && appt.cpt.length > 0 && appt.cpt.map(c => <span key={c} className="cpt-chip">{c}</span>)}
+                                </div>
+                            </div>
+                            <div className="af-detail-row">
+                                <span className="af-detail-label">Biller</span>
+                                <span>
+                                    {appt.claimSubmittedBy && <span>{appt.claimSubmittedBy}</span>}
+                                    {appt.claimSubmittedAt && <span className="af-attrib-line"> {fmtAttribAt(appt.claimSubmittedAt)}</span>}
+                                </span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
