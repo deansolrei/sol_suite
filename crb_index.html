@@ -8803,22 +8803,17 @@
             font-weight: 800;
             color: #0C4A34;
         }
-        .af-rate-btn {
-            background: #09371F;
-            color: #F2EDDB;
+        .af-rate-reveal-btn {
+            background: none;
             border: none;
-            border-radius: 4px;
-            padding: 4px 10px;
-            font-size: 10px;
-            font-weight: 800;
+            padding: 2px;
+            font-size: 13px;
+            line-height: 1;
             cursor: pointer;
-            font-family: inherit;
-            white-space: nowrap;
+            opacity: .75;
         }
-        .af-rate-btn:disabled {
-            background: #F2EDDB;
-            color: #777355;
-            cursor: default;
+        .af-rate-reveal-btn:hover {
+            opacity: 1;
         }
         .af-rate-issues {
             text-align: left;
@@ -14499,18 +14494,19 @@
            <div>s instead.
 
            No standalone Insurance column — removed per Dean's explicit
-           "Insurance Column is No more." In its place: a Best Rate button.
-           Default state shows no dollar amounts anywhere; the appt.method
-           cell shows the plain insuranceCarrier text (plus any issue
-           overlay) regardless of reveal state. The rate fetch itself
+           "Insurance Column is No more." In its place: a Best Rate reveal
+           button. Default state shows no dollar amounts anywhere; the
+           appt.method cell shows the plain insuranceCarrier text (plus any
+           issue overlay) regardless of shown/hidden state — that part is
+           untouched by the toggle either way. The rate fetch itself
            (getLastCodedAppointment, then /api/best-channel) does NOT run on
-           mount at all — no useEffect here — it only fires the first time
-           the button is clicked, one fetch per row, ever. This is the actual
-           fix for the eager-fetch-on-every-row concern, not just a display
-           deferral: previously this ran in a useEffect(..., []) that fired
-           for every row in the table the instant it mounted. */
+           mount — no useEffect here — and fires AT MOST ONCE per row, ever:
+           the button is a real show/hide toggle (shown state), but rateData
+           is fetched only the first time it flips to shown (rateData still
+           null) and then just stays cached in state — toggling back off and
+           on again re-shows the cached numbers with no refetch. */
         function AppointmentFlowRateRow({ appt }) {
-            const [revealed, setRevealed] = useState(false);
+            const [shown, setShown] = useState(false);
             const [rateData, setRateData] = useState(null);   // null = not fetched yet
             const mountedRef = useRef(true);
 
@@ -14519,9 +14515,7 @@
                 return () => { mountedRef.current = false; };
             }, []);
 
-            function handleReveal() {
-                if (revealed) return; // one-way reveal, not a toggle
-                setRevealed(true);
+            function fetchRateData() {
                 gsr('getLastCodedAppointment', appt.patient, appt.provID)
                     .then(cptsResult => {
                         if (!mountedRef.current) return null;
@@ -14541,31 +14535,37 @@
                     .catch(() => { if (mountedRef.current) setRateData({ mapped: false, error: true }); });
             }
 
+            function handleToggle() {
+                const next = !shown;
+                setShown(next);
+                if (next && rateData === null) fetchRateData(); // fetch once, only on first reveal
+            }
+
             // channel_totals — same field BestChannelHint and the Billing Day
             // View's TOTAL row already use; the total across every coded CPT
             // for that channel, not any single CPT's rate.
             const channelTotals = (rateData && rateData.channel_totals) || {};
             const bestChannel = rateData && rateData.mapped ? rateData.overall_best_channel : null;
             const issues = apptIssues(appt);
-            const loading = revealed && rateData === null;
+            const loading = shown && rateData === null;
 
             return (
                 <tr className="af-rate-row">
                     <td>{fmtTime(appt.time)}</td>
                     <td><PatientName name={appt.patient} state={appt.patientState} /></td>
                     <td className="af-rate-cell">
-                        <button className="af-rate-btn" onClick={handleReveal} disabled={revealed}>
-                            {loading ? '…' : revealed ? '✓ Shown' : '💰 Best Rate'}
+                        <button className="af-rate-reveal-btn" onClick={handleToggle} title={shown ? 'Hide rates' : 'Show best rate'}>
+                            {shown ? '💲' : '💰'}
                         </button>
                     </td>
                     {AF_RATE_CHANNELS.map(ch => {
                         const total = channelTotals[ch.api];
-                        const isBest = revealed && bestChannel === ch.api;
+                        const isBest = shown && bestChannel === ch.api;
                         const isApptChannel = appt.method === ch.methodId;
                         return (
                             <td key={ch.api} className={`af-rate-cell${isBest ? ' af-rate-best' : ''}`}>
                                 {isApptChannel && <div>{appt.insuranceCarrier}</div>}
-                                {revealed && (
+                                {shown && (
                                     <div>{loading ? '…' : (total != null ? `$${total.toFixed(2)}` : '—')}</div>
                                 )}
                                 {isApptChannel && issues.length > 0 && (
