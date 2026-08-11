@@ -8857,14 +8857,15 @@
             font-size: 12px;
             color: #777355;
         }
-        .af-scr-chip {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 3px 9px;
-            border-radius: 20px;
-            background: #F2EDDB;
-            border: 1px solid #F2EDDB;
+        .af-scr-score {
+            font-size: 15px;
+            font-weight: 800;
             color: #2B2716;
+        }
+        .af-scr-max {
+            font-size: 10px;
+            font-weight: 600;
+            color: #777355;
         }
         body.dark .af-panel {
             background: #051F11;
@@ -8876,13 +8877,15 @@
             background: #051F11;
         }
         body.dark .af-cell-pat,
-        body.dark .af-day-hdr {
+        body.dark .af-day-hdr,
+        body.dark .af-scr-score {
             color: #F0FDF4;
         }
         body.dark .af-cell-time,
         body.dark .af-attrib-line,
         body.dark .af-detail-label,
-        body.dark .af-detail-empty {
+        body.dark .af-detail-empty,
+        body.dark .af-scr-max {
             color: #6B9E8A;
         }
         body.dark .af-detail {
@@ -13258,8 +13261,9 @@
             'PCL-5': {
                 max: 80,
                 ranges: [
-                    [0, 30, 'Below clinical threshold for PTSD', '#16A34A'],
-                    [31, 80, 'Probable PTSD diagnosis', '#DC2626'],
+                    [0, 30, 'Below clinical threshold', '#16A34A'],
+                    [31, 33, 'Diagnostic cutoff range (Probable PTSD)', '#BE992A'],
+                    [34, 80, 'High clinical severity', '#DC2626'],
                 ],
             },
         };
@@ -14440,16 +14444,22 @@
                 <div className="af-detail">
                     {scrEntries.map(({ name, score }) => {
                         const result = getScrResult(name, score);
+                        const max = SCR_CONFIG[name].max;
+                        // PHQ-9/GAD-7's stored text is a plain phrase ("Moderately
+                        // severe depression") with no connector word — prefix
+                        // "Indicates " here so it reads "16/27 Indicates moderately
+                        // severe depression". PCL-5's own phrasing ("Below clinical
+                        // threshold") already reads correctly on its own — leave it.
+                        const resultText = result && (name === 'PCL-5'
+                            ? result.text
+                            : `Indicates ${result.text.charAt(0).toLowerCase()}${result.text.slice(1)}`);
                         return (
                             <div key={name} className="af-detail-row">
                                 <span className="af-detail-label">{name}</span>
                                 <span>
-                                    Score: {score}
-                                    {result && (
-                                        <span className="af-scr-chip" style={{ background: result.color + '1A', color: result.color, border: `1px solid ${result.color}40`, marginLeft: 6 }}>
-                                            {result.text}
-                                        </span>
-                                    )}
+                                    <span className="af-scr-score">{score}</span>
+                                    <span className="af-scr-max">/{max}</span>
+                                    {resultText && <span className="af-attrib-line"> {resultText}</span>}
                                     {scrData.date && <span className="af-attrib-line"> — administered {fmtShort(scrData.date)}</span>}
                                 </span>
                             </div>
