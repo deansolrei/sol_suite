@@ -8676,6 +8676,59 @@
             opacity: .55;
             cursor: default;
         }
+        .af-toolbar {
+            background: #065F46;
+            padding: 10px 20px 12px;
+            display: flex;
+            align-items: flex-end;
+            gap: 24px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(242, 237, 219, .15);
+        }
+        .af-toolbar-zone {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .af-toolbar-zone-label {
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: rgba(242, 237, 219, .55);
+        }
+        .af-toolbar-fields {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .af-toolbar-field {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .af-toolbar-field-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            color: rgba(242, 237, 219, .55);
+        }
+        .af-toolbar-clear-wrap {
+            margin-left: auto;
+        }
+        .af-toolbar-clear-btn {
+            background: rgba(242, 237, 219, .18);
+            border: none;
+            border-radius: 7px;
+            padding: 6px 12px;
+            color: #FFFFFF;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
         .af-body {
             flex: 1;
             overflow-y: auto;
@@ -14222,6 +14275,30 @@
             { label: 'Clinic', api: 'Clinic Submit', methodId: 'direct' },
         ];
 
+        // Insurance Plan filter dropdown — hardcoded per Dean's manual review
+        // of the actual carrier data, NOT an algorithmic normalization. Three
+        // raw spelling variants of the same Regence WA plan collapse to one
+        // display label/filter value; two other raw values are excluded from
+        // the dropdown entirely (still display normally on their appointments
+        // whenever no Insurance filter is active — this only hides them as a
+        // SELECTABLE option, "Blue Cross Blue Shield" being too generic to
+        // safely equate with any one state-specific BCBS entry, and the
+        // PacificSource one being a session-exhausted note, not a plan name).
+        // Do not extend this with new normalization logic — add specific
+        // raw-value entries only, reviewed the same way these were.
+        const INSURANCE_PLAN_MERGE = {
+            'Regence Blue Shield Washington': 'Regence BlueShield Washington',
+            'Regence BlueShield Washington': 'Regence BlueShield Washington',
+            'Regence BlueShield of Washington': 'Regence BlueShield Washington',
+        };
+        const INSURANCE_PLAN_EXCLUDE = new Set([
+            'Blue Cross Blue Shield',
+            'PacificSource - No remaining insurance sessions',
+        ]);
+        function carrierDisplayLabel(raw) {
+            return INSURANCE_PLAN_MERGE[raw] || raw;
+        }
+
         // Pre-visit checklist issues for Table View's per-channel-cell
         // display — Intake/InsVerified/Autopay flagged false (an explicit
         // "issue" selection, not just unset/null), plus any Issue Note text,
@@ -14285,11 +14362,28 @@
             return Object.values(byDate).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
         }
 
+        // All nine filter values default to '' (inactive) uniformly, so
+        // hasActiveFilters/Clear-Filters can check "any value !== ''" without
+        // per-field special cases. The one field whose real data can BE ''
+        // (unsignedStatus — NS_LABELS' "Not Started" key is the empty string)
+        // uses a distinct internal value ('not_started') translated back to
+        // '' only at comparison time — see filteredListRows below — so that
+        // collision never reaches this shared "inactive" convention.
+        const AF_EMPTY_FILTERS = {
+            patientName: '', apptDate: '', patientState: '',
+            unsignedStatus: '', intakeStatus: '', insurancePlan: '',
+            billingChannel: '', noteStatus: '', billingSubmitStatus: '',
+        };
+
         function AppointmentFlowPanel({ onClose, prov }) {
             const [listRows, setListRows] = useState(null);   // null = loading
             const [tableRows, setTableRows] = useState(null); // null = loading
             const [loading, setLoading] = useState(true);
             const [refreshing, setRefreshing] = useState(false);
+            const [filters, setFilters] = useState(AF_EMPTY_FILTERS);
+            function setFilter(key, value) { setFilters(f => ({ ...f, [key]: value })); }
+            function clearFilters() { setFilters(AF_EMPTY_FILTERS); }
+            const hasActiveFilters = Object.values(filters).some(v => v !== '');
 
             // Shared by the mount effect and the manual Refresh button — same
             // Promise.all fetch either way, just a different flag around it
@@ -14330,8 +14424,57 @@
                 fetchWindows().then(() => setRefreshing(false));
             }
 
-            const listGroups = useMemo(() => groupAppointmentsByDate(listRows || []), [listRows]);
-            const tableGroups = useMemo(() => groupAppointmentsByDate(tableRows || []), [tableRows]);
+            // Distinct Insurance Plan options from whatever's currently loaded
+            // (not a separate fetch) — merged/excluded per INSURANCE_PLAN_MERGE/
+            // EXCLUDE above, everything else literal (e.g. "United Healthcare"
+            // and "United Healthcare - Medicaid" stay two separate options).
+            const insurancePlanOptions = useMemo(() => {
+                const labels = new Set();
+                (listRows || []).concat(tableRows || []).forEach(a => {
+                    const raw = String(a.insuranceCarrier || '').trim();
+                    if (!raw || INSURANCE_PLAN_EXCLUDE.has(raw)) return;
+                    labels.add(carrierDisplayLabel(raw));
+                });
+                return [...labels].sort();
+            }, [listRows, tableRows]);
+
+            // Patient Name / Appt Date / Patient State / Insurance Plan / Billing
+            // Channel apply to both datasets independently; the rest are scoped
+            // to whichever dataset actually carries that field.
+            function matchesSharedFilters(a) {
+                if (filters.patientName && !(a.patient || '').toLowerCase().includes(filters.patientName.toLowerCase())) return false;
+                if (filters.apptDate && a.date !== filters.apptDate) return false;
+                if (filters.patientState && a.patientState !== filters.patientState) return false;
+                if (filters.insurancePlan && carrierDisplayLabel(a.insuranceCarrier || '') !== filters.insurancePlan) return false;
+                if (filters.billingChannel && a.method !== filters.billingChannel) return false;
+                return true;
+            }
+
+            const filteredListRows = useMemo(() => (listRows || []).filter(a => {
+                if (!matchesSharedFilters(a)) return false;
+                if (filters.unsignedStatus) {
+                    const rawStatus = filters.unsignedStatus === 'not_started' ? '' : filters.unsignedStatus;
+                    if (!(a.otherUnsignedDates || []).some(d => (d.noteStatus || '') === rawStatus)) return false;
+                }
+                if (filters.noteStatus) {
+                    const wantSigned = filters.noteStatus === 'signed';
+                    if (Boolean(a.out) !== wantSigned) return false;
+                }
+                if (filters.billingSubmitStatus) {
+                    const wantSubmitted = filters.billingSubmitStatus === 'submitted';
+                    if ((a.billing === 'submitted') !== wantSubmitted) return false;
+                }
+                return true;
+            }), [listRows, filters]);
+
+            const filteredTableRows = useMemo(() => (tableRows || []).filter(a => {
+                if (!matchesSharedFilters(a)) return false;
+                if (filters.intakeStatus && a.status !== filters.intakeStatus) return false;
+                return true;
+            }), [tableRows, filters]);
+
+            const listGroups = useMemo(() => groupAppointmentsByDate(filteredListRows), [filteredListRows]);
+            const tableGroups = useMemo(() => groupAppointmentsByDate(filteredTableRows), [filteredTableRows]);
             const combinedDays = useMemo(() => mergeDayGroups(listGroups, tableGroups), [listGroups, tableGroups]);
 
             // ONE scroll, oldest at top, today+14 at bottom — List and Table are
@@ -14352,9 +14495,120 @@
                                 <button className="af-close-btn" onClick={onClose}>✕ Close</button>
                             </div>
                         </div>
+                        <div className="af-toolbar">
+                            <div className="af-toolbar-zone">
+                                <div className="af-toolbar-zone-label">Pre-Visit</div>
+                                <div className="af-toolbar-fields">
+                                    <div className="af-toolbar-field">
+                                        <label className="af-toolbar-field-label">Unsigned Notes</label>
+                                        <select className="cl-filter-select" value={filters.unsignedStatus}
+                                            onChange={e => setFilter('unsignedStatus', e.target.value)}>
+                                            <option value="">All</option>
+                                            {Object.entries(NS_LABELS).map(([key, info]) => (
+                                                <option key={key || 'not_started'} value={key || 'not_started'}>{info.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="af-toolbar-field">
+                                        <label className="af-toolbar-field-label">Intake Status</label>
+                                        <select className="cl-filter-select" value={filters.intakeStatus}
+                                            onChange={e => setFilter('intakeStatus', e.target.value)}>
+                                            <option value="">All</option>
+                                            <option value="valid">Valid</option>
+                                            <option value="issue">Issue</option>
+                                            <option value="pending">In Process</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="af-toolbar-zone">
+                                <div className="af-toolbar-fields">
+                                    <div className="af-toolbar-field">
+                                        <label className="af-toolbar-field-label">Patient Name</label>
+                                        <div className="cl-search-wrap">
+                                            <span className="cl-search-icon">🔍</span>
+                                            <input
+                                                type="text"
+                                                className="cl-search-input"
+                                                placeholder="Search patient…"
+                                                value={filters.patientName}
+                                                onChange={e => setFilter('patientName', e.target.value)}
+                                            />
+                                            {filters.patientName && (
+                                                <button className="cl-search-clear" onClick={() => setFilter('patientName', '')} title="Clear search">✕</button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="af-toolbar-field">
+                                        <label className="af-toolbar-field-label">Appt Date</label>
+                                        <input type="date" className="cl-filter-select" value={filters.apptDate}
+                                            onChange={e => setFilter('apptDate', e.target.value)} />
+                                    </div>
+                                    <div className="af-toolbar-field">
+                                        <label className="af-toolbar-field-label">Patient State</label>
+                                        <select className="cl-filter-select" value={filters.patientState}
+                                            onChange={e => setFilter('patientState', e.target.value)}>
+                                            <option value="">All</option>
+                                            {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="af-toolbar-zone">
+                                <div className="af-toolbar-zone-label">Post-Visit</div>
+                                <div className="af-toolbar-fields">
+                                    <div className="af-toolbar-field">
+                                        <label className="af-toolbar-field-label">Insurance Plan</label>
+                                        <select className="cl-filter-select" value={filters.insurancePlan}
+                                            onChange={e => setFilter('insurancePlan', e.target.value)}>
+                                            <option value="">All</option>
+                                            {insurancePlanOptions.map(label => <option key={label} value={label}>{label}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="af-toolbar-field">
+                                        <label className="af-toolbar-field-label">Billing Channel</label>
+                                        <select className="cl-filter-select" value={filters.billingChannel}
+                                            onChange={e => setFilter('billingChannel', e.target.value)}>
+                                            <option value="">All</option>
+                                            {Object.entries(METHOD_LABEL).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="af-toolbar-field">
+                                        <label className="af-toolbar-field-label">Clinical Note</label>
+                                        <select className="cl-filter-select" value={filters.noteStatus}
+                                            onChange={e => setFilter('noteStatus', e.target.value)}>
+                                            <option value="">All</option>
+                                            <option value="signed">Signed</option>
+                                            <option value="not_signed">Not Signed</option>
+                                        </select>
+                                    </div>
+                                    <div className="af-toolbar-field">
+                                        <label className="af-toolbar-field-label">Billing</label>
+                                        <select className="cl-filter-select" value={filters.billingSubmitStatus}
+                                            onChange={e => setFilter('billingSubmitStatus', e.target.value)}>
+                                            <option value="">All</option>
+                                            <option value="submitted">Claim Submitted</option>
+                                            <option value="not_submitted">Claim Not Submitted</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {hasActiveFilters && (
+                                <div className="af-toolbar-clear-wrap">
+                                    <button className="af-toolbar-clear-btn" onClick={clearFilters}>✕ Clear Filters</button>
+                                </div>
+                            )}
+                        </div>
                         <div className="af-body">
                             {loading && <div className="af-empty">Loading…</div>}
-                            {!loading && combinedDays.length === 0 && <div className="af-empty">No appointments in either window.</div>}
+                            {!loading && combinedDays.length === 0 && (
+                                <div className="af-empty">
+                                    {hasActiveFilters ? 'No appointments match the current filters.' : 'No appointments in either window.'}
+                                </div>
+                            )}
                             {!loading && combinedDays.map(d => (
                                 <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} />
                             ))}
