@@ -8656,6 +8656,26 @@
             cursor: pointer;
             letter-spacing: .2px;
         }
+        .af-hdr-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .af-refresh-btn {
+            background: rgba(242, 237, 219, .18);
+            border: none;
+            border-radius: 7px;
+            padding: 7px 14px;
+            color: #FFFFFF;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            letter-spacing: .2px;
+        }
+        .af-refresh-btn:disabled {
+            opacity: .55;
+            cursor: default;
+        }
         .af-body {
             flex: 1;
             overflow-y: auto;
@@ -14255,10 +14275,16 @@
             const [listRows, setListRows] = useState(null);   // null = loading
             const [tableRows, setTableRows] = useState(null); // null = loading
             const [loading, setLoading] = useState(true);
+            const [refreshing, setRefreshing] = useState(false);
 
-            useEffect(() => {
-                setLoading(true);
-                Promise.all([
+            // Shared by the mount effect and the manual Refresh button — same
+            // Promise.all fetch either way, just a different flag around it
+            // (loading vs refreshing) so a refresh doesn't blank the already-
+            // rendered rows behind the full-panel "Loading…" state. Never
+            // rejects itself (both branches are caught internally) so callers
+            // can always chain a plain .then() to clear their own flag.
+            function fetchWindows() {
+                return Promise.all([
                     gsr('getLiveWindowAppointments', prov || ''),
                     gsr('getTableWindowAppointments', prov || ''),
                 ]).then(([listJson, tableJson]) => {
@@ -14270,9 +14296,25 @@
                         const td = JSON.parse(tableJson);
                         setTableRows(Array.isArray(td.appointments) ? td.appointments : []);
                     } catch (e) { setTableRows([]); }
-                    setLoading(false);
-                }).catch(() => { setListRows([]); setTableRows([]); setLoading(false); });
+                }).catch(() => { setListRows([]); setTableRows([]); });
+            }
+
+            useEffect(() => {
+                setLoading(true);
+                fetchWindows().then(() => setLoading(false));
             }, [prov]);
+
+            // Manual refresh only (no polling/interval) — the panel otherwise
+            // fetches once on mount and never again, so an edit made elsewhere
+            // (e.g. PatientModal, a different tab) while this panel stays open
+            // leaves it showing stale data with no other way to know. Guarded
+            // by `refreshing` (state + disabled button) so a double-click can't
+            // fire two overlapping fetches.
+            function handleRefresh() {
+                if (refreshing || loading) return;
+                setRefreshing(true);
+                fetchWindows().then(() => setRefreshing(false));
+            }
 
             const listGroups = useMemo(() => groupAppointmentsByDate(listRows || []), [listRows]);
             const tableGroups = useMemo(() => groupAppointmentsByDate(tableRows || []), [tableRows]);
@@ -14289,7 +14331,12 @@
                                 <div className="af-hdr-title">🗓️ Appointment Flow</div>
                                 <div className="af-hdr-sub">Oldest unsigned note through 14 days out</div>
                             </div>
-                            <button className="af-close-btn" onClick={onClose}>✕ Close</button>
+                            <div className="af-hdr-actions">
+                                <button className="af-refresh-btn" onClick={handleRefresh} disabled={refreshing || loading}>
+                                    {refreshing ? '⏳ Refreshing…' : '⟳ Refresh'}
+                                </button>
+                                <button className="af-close-btn" onClick={onClose}>✕ Close</button>
+                            </div>
                         </div>
                         <div className="af-body">
                             {loading && <div className="af-empty">Loading…</div>}
