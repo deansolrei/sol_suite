@@ -2889,7 +2889,7 @@ function _stampAttribution(ss, sheet, rowNum, byCol, atCol) {
   var now = new Date().toISOString();
   sheet.getRange(rowNum, byCol).setValue(who);
   sheet.getRange(rowNum, atCol).setValue(now);
-  return now;
+  return { who: who, now: now };
 }
 
 /** 1-based sheet row for a given ApptID, or -1 if not found. */
@@ -2913,7 +2913,8 @@ function saveAppointmentStatus(apptId, status) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, APPT_COLS.indexOf('Status') + 1).setValue(status || '');
-    var now = _stampAttribution(ss, sheet, rowNum, STATUS_BY_COL, STATUS_AT_COL);
+    var attrib = _stampAttribution(ss, sheet, rowNum, STATUS_BY_COL, STATUS_AT_COL);
+    var now = attrib.now;
 
     _audit(ss, 'STATUS_UPDATED', 'Appt ' + apptId + ' → status=' + (status || '(cleared)'));
     return JSON.stringify({ ok: true, at: now });
@@ -2933,10 +2934,11 @@ function saveCCEHR(apptId, value) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, APPT_COLS.indexOf('CCEHR') + 1).setValue(value || '');
-    var now = _stampAttribution(ss, sheet, rowNum, CCEHR_BY_COL, CCEHR_AT_COL);
+    var attrib = _stampAttribution(ss, sheet, rowNum, CCEHR_BY_COL, CCEHR_AT_COL);
+    var now = attrib.now;
 
     _audit(ss, 'CCEHR_UPDATED', 'Appt ' + apptId + ' → ccEhr=' + (value || '(cleared)'));
-    return JSON.stringify({ ok: true, at: now });
+    return JSON.stringify({ ok: true, at: now, by: attrib.who });
   } catch (e) {
     Logger.log('saveCCEHR ERROR: ' + e.message);
     return JSON.stringify({ ok: false, err: e.message });
@@ -2953,7 +2955,8 @@ function saveClaimStatus(apptId, claimStatus) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, APPT_COLS.indexOf('ClaimStatus') + 1).setValue(claimStatus || '');
-    var now = _stampAttribution(ss, sheet, rowNum, CLAIM_STATUS_BY_COL, CLAIM_STATUS_AT_COL);
+    var attrib = _stampAttribution(ss, sheet, rowNum, CLAIM_STATUS_BY_COL, CLAIM_STATUS_AT_COL);
+    var now = attrib.now;
 
     _audit(ss, 'CLAIM_STATUS_UPDATED', 'Appt ' + apptId + ' → claimStatus=' + (claimStatus || '(cleared)'));
     return JSON.stringify({ ok: true, at: now });
@@ -2976,7 +2979,8 @@ function saveClaimSubmission(apptId, claimSubmittedDate) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, APPT_COLS.indexOf('ClaimSubmittedDate') + 1).setValue(claimSubmittedDate || '');
-    var now = _stampAttribution(ss, sheet, rowNum, CLAIM_SUBMITTED_BY_COL, CLAIM_SUBMITTED_AT_COL);
+    var attrib = _stampAttribution(ss, sheet, rowNum, CLAIM_SUBMITTED_BY_COL, CLAIM_SUBMITTED_AT_COL);
+    var now = attrib.now;
 
     _audit(ss, 'CLAIM_SUBMITTED', 'Appt ' + apptId + ' → claimSubmittedDate=' + (claimSubmittedDate || '(cleared)'));
     return JSON.stringify({ ok: true, at: now });
@@ -2997,7 +3001,8 @@ function saveScrData(apptId, scrDataJson) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, APPT_COLS.indexOf('ScrData') + 1).setValue(scrDataJson || '');
-    var now = _stampAttribution(ss, sheet, rowNum, SCR_DATA_BY_COL, SCR_DATA_AT_COL);
+    var attrib = _stampAttribution(ss, sheet, rowNum, SCR_DATA_BY_COL, SCR_DATA_AT_COL);
+    var now = attrib.now;
 
     _audit(ss, 'SCR_DATA_UPDATED', 'Appt ' + apptId);
     return JSON.stringify({ ok: true, at: now });
@@ -3019,10 +3024,11 @@ function saveBestRateConfirmed(apptId, confirmed) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, BEST_RATE_CONFIRMED_COL).setValue(!!confirmed);
-    var now = _stampAttribution(ss, sheet, rowNum, BEST_RATE_CONFIRMED_BY_COL, BEST_RATE_CONFIRMED_AT_COL);
+    var attrib = _stampAttribution(ss, sheet, rowNum, BEST_RATE_CONFIRMED_BY_COL, BEST_RATE_CONFIRMED_AT_COL);
+    var now = attrib.now;
 
     _audit(ss, 'BEST_RATE_CONFIRMED', 'Appt ' + apptId + ' → confirmed=' + !!confirmed);
-    return JSON.stringify({ ok: true, at: now });
+    return JSON.stringify({ ok: true, at: now, by: attrib.who });
   } catch (e) {
     Logger.log('saveBestRateConfirmed ERROR: ' + e.message);
     return JSON.stringify({ ok: false, err: e.message });
@@ -3042,7 +3048,8 @@ function saveUnsignedConfirmed(apptId, confirmed) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, UNSIGNED_CONFIRMED_COL).setValue(!!confirmed);
-    var now = _stampAttribution(ss, sheet, rowNum, UNSIGNED_CONFIRMED_BY_COL, UNSIGNED_CONFIRMED_AT_COL);
+    var attrib = _stampAttribution(ss, sheet, rowNum, UNSIGNED_CONFIRMED_BY_COL, UNSIGNED_CONFIRMED_AT_COL);
+    var now = attrib.now;
 
     _audit(ss, 'UNSIGNED_CONFIRMED', 'Appt ' + apptId + ' → confirmed=' + !!confirmed);
     return JSON.stringify({ ok: true, at: now });
@@ -3066,10 +3073,11 @@ function saveIntake(apptId, value) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, APPT_COLS.indexOf('Intake') + 1).setValue(value);
-    var now = _stampAttribution(ss, sheet, rowNum, INTAKE_BY_COL, INTAKE_AT_COL);
+    var attrib = _stampAttribution(ss, sheet, rowNum, INTAKE_BY_COL, INTAKE_AT_COL);
+    var now = attrib.now;
 
     _audit(ss, 'INTAKE_UPDATED', 'Appt ' + apptId + ' → intake=' + value);
-    return JSON.stringify({ ok: true, at: now });
+    return JSON.stringify({ ok: true, at: now, by: attrib.who });
   } catch (e) {
     Logger.log('saveIntake ERROR: ' + e.message);
     return JSON.stringify({ ok: false, err: e.message });
@@ -3085,10 +3093,11 @@ function saveInsVerified(apptId, value) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, APPT_COLS.indexOf('InsVerified') + 1).setValue(value);
-    var now = _stampAttribution(ss, sheet, rowNum, INS_VERIFIED_BY_COL, INS_VERIFIED_AT_COL);
+    var attrib = _stampAttribution(ss, sheet, rowNum, INS_VERIFIED_BY_COL, INS_VERIFIED_AT_COL);
+    var now = attrib.now;
 
     _audit(ss, 'INS_VERIFIED_UPDATED', 'Appt ' + apptId + ' → ins=' + value);
-    return JSON.stringify({ ok: true, at: now });
+    return JSON.stringify({ ok: true, at: now, by: attrib.who });
   } catch (e) {
     Logger.log('saveInsVerified ERROR: ' + e.message);
     return JSON.stringify({ ok: false, err: e.message });
@@ -3104,10 +3113,11 @@ function saveAutopay(apptId, value) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, APPT_COLS.indexOf('Autopay') + 1).setValue(value);
-    var now = _stampAttribution(ss, sheet, rowNum, AUTOPAY_BY_COL, AUTOPAY_AT_COL);
+    var attrib = _stampAttribution(ss, sheet, rowNum, AUTOPAY_BY_COL, AUTOPAY_AT_COL);
+    var now = attrib.now;
 
     _audit(ss, 'AUTOPAY_UPDATED', 'Appt ' + apptId + ' → autopay=' + value);
-    return JSON.stringify({ ok: true, at: now });
+    return JSON.stringify({ ok: true, at: now, by: attrib.who });
   } catch (e) {
     Logger.log('saveAutopay ERROR: ' + e.message);
     return JSON.stringify({ ok: false, err: e.message });
@@ -3123,7 +3133,8 @@ function saveChecklistNote(apptId, note) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, APPT_COLS.indexOf('ChecklistNote') + 1).setValue(note || '');
-    var now = _stampAttribution(ss, sheet, rowNum, CHECKLIST_NOTE_BY_COL, CHECKLIST_NOTE_AT_COL);
+    var attrib = _stampAttribution(ss, sheet, rowNum, CHECKLIST_NOTE_BY_COL, CHECKLIST_NOTE_AT_COL);
+    var now = attrib.now;
 
     _audit(ss, 'CHECKLIST_NOTE_UPDATED', 'Appt ' + apptId);
     return JSON.stringify({ ok: true, at: now });
