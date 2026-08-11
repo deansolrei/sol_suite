@@ -14275,6 +14275,29 @@
             { label: 'Clinic', api: 'Clinic Submit', methodId: 'direct' },
         ];
 
+        // Table View's rate/billing-column access — Provider window only,
+        // gated on WHO'S LOGGED IN (loggedInProv), never which provider's
+        // calendar happens to be selected via the switcher. Undefined/blank
+        // loggedInProv (AssistantView/BillingView never pass this prop at
+        // all) and 'jodene' both get the full, unrestricted table. Called
+        // ONCE by AppointmentFlowRateTable — the resulting .channels array
+        // is what builds the header <th> cells AND gets passed down as a
+        // prop to every AppointmentFlowRateRow, so header and body are
+        // guaranteed to iterate the exact same list; never two independent
+        // AF_RATE_CHANNELS.filter() calls that could drift apart.
+        function rateTableAccess(loggedInProv) {
+            if (!loggedInProv || loggedInProv === 'jodene') {
+                return { channels: AF_RATE_CHANNELS, showBestRate: true, showCcTebra: true };
+            }
+            if (loggedInProv === 'lori') {
+                return { channels: AF_RATE_CHANNELS.filter(ch => ch.methodId === 'alma'), showBestRate: false, showCcTebra: false };
+            }
+            // katie, or any other provider not explicitly listed (e.g. megan) —
+            // the default "no rate access" baseline: all 4 channels, no Best
+            // Rate, no CC Tebra.
+            return { channels: AF_RATE_CHANNELS, showBestRate: false, showCcTebra: false };
+        }
+
         // Insurance Plan filter dropdown — hardcoded per Dean's manual review
         // of the actual carrier data, NOT an algorithmic normalization. Three
         // raw spelling variants of the same Regence WA plan collapse to one
@@ -14380,7 +14403,7 @@
         // BillingView, which aren't tied to one provider's calendar). initialProv
         // seeds selectedProv once on mount — after that, selectedProv is this
         // panel's own state, independent of whatever prop it started from.
-        function AppointmentFlowPanel({ onClose, allowSwitch, initialProv }) {
+        function AppointmentFlowPanel({ onClose, allowSwitch, initialProv, loggedInProv }) {
             const [listRows, setListRows] = useState(null);   // null = loading
             const [tableRows, setTableRows] = useState(null); // null = loading
             const [loading, setLoading] = useState(true);
@@ -14622,7 +14645,7 @@
                                 </div>
                             )}
                             {!loading && combinedDays.map(d => (
-                                <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} />
+                                <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} loggedInProv={loggedInProv} />
                             ))}
                         </div>
                     </div>
@@ -14635,7 +14658,7 @@
         // Table's window) — a date can have either, neither is impossible
         // once it's reached this component (mergeDayGroups only creates an
         // entry when at least one is present), or both.
-        function AppointmentFlowDaySection({ date, listAppts, tableAppts }) {
+        function AppointmentFlowDaySection({ date, listAppts, tableAppts, loggedInProv }) {
             const [expandedId, setExpandedId] = useState(null);
             const onToggle = id => setExpandedId(p => p === id ? null : id);
 
@@ -14649,7 +14672,7 @@
                             ))}
                         </div>
                     )}
-                    {tableAppts && <AppointmentFlowRateTable appts={tableAppts} />}
+                    {tableAppts && <AppointmentFlowRateTable appts={tableAppts} loggedInProv={loggedInProv} />}
                 </div>
             );
         }
@@ -14794,20 +14817,24 @@
            header row + one AppointmentFlowRateRow per appt. Mounted by
            AppointmentFlowDaySection for whichever days fall in Table's
            window (tableAppts non-null). */
-        function AppointmentFlowRateTable({ appts }) {
+        function AppointmentFlowRateTable({ appts, loggedInProv }) {
+            const access = rateTableAccess(loggedInProv);
             return (
                 <table className="af-rate-table">
                     <thead>
                         <tr>
                             <th>Time</th>
                             <th>Name</th>
-                            <th>Best Rate</th>
-                            {AF_RATE_CHANNELS.map(ch => <th key={ch.api} className="af-rate-th">{ch.label}</th>)}
-                            <th className="af-rate-th">Credit Card Tebra</th>
+                            {access.showBestRate && <th>Best Rate</th>}
+                            {access.channels.map(ch => <th key={ch.api} className="af-rate-th">{ch.label}</th>)}
+                            {access.showCcTebra && <th className="af-rate-th">Credit Card Tebra</th>}
                         </tr>
                     </thead>
                     <tbody>
-                        {appts.map(appt => <AppointmentFlowRateRow key={appt.id} appt={appt} />)}
+                        {appts.map(appt => (
+                            <AppointmentFlowRateRow key={appt.id} appt={appt}
+                                channels={access.channels} showBestRate={access.showBestRate} showCcTebra={access.showCcTebra} />
+                        ))}
                     </tbody>
                 </table>
             );
@@ -14836,7 +14863,7 @@
            is fetched only the first time it flips to shown (rateData still
            null) and then just stays cached in state — toggling back off and
            on again re-shows the cached numbers with no refetch. */
-        function AppointmentFlowRateRow({ appt }) {
+        function AppointmentFlowRateRow({ appt, channels, showBestRate, showCcTebra }) {
             const [shown, setShown] = useState(false);
             const [rateData, setRateData] = useState(null);   // null = not fetched yet
             const mountedRef = useRef(true);
@@ -14884,12 +14911,14 @@
                 <tr className="af-rate-row">
                     <td>{fmtTime(appt.time)}</td>
                     <td><PatientName name={appt.patient} state={appt.patientState} /></td>
-                    <td className="af-rate-cell">
-                        <button className="af-rate-reveal-btn" onClick={handleToggle} title={shown ? 'Hide rates' : 'Show best rate'}>
-                            {shown ? '💲' : '💰'}
-                        </button>
-                    </td>
-                    {AF_RATE_CHANNELS.map(ch => {
+                    {showBestRate && (
+                        <td className="af-rate-cell">
+                            <button className="af-rate-reveal-btn" onClick={handleToggle} title={shown ? 'Hide rates' : 'Show best rate'}>
+                                {shown ? '💲' : '💰'}
+                            </button>
+                        </td>
+                    )}
+                    {channels.map(ch => {
                         const total = channelTotals[ch.api];
                         const isBest = shown && bestChannel === ch.api;
                         const isApptChannel = appt.method === ch.methodId;
@@ -14912,7 +14941,9 @@
                             </td>
                         );
                     })}
-                    <td className="af-rate-cell">{appt.ccEhr === 'Y' ? 'Yes' : appt.ccEhr === 'N' ? 'No' : ''}</td>
+                    {showCcTebra && (
+                        <td className="af-rate-cell">{appt.ccEhr === 'Y' ? 'Yes' : appt.ccEhr === 'N' ? 'No' : ''}</td>
+                    )}
                 </tr>
             );
         }
@@ -16291,7 +16322,7 @@
                     {userProvID === 'jodene' && showPaymentTracker && <PaymentTracker onClose={() => setShowPaymentTracker(false)} provFilter={prov} />}
 
                     {/* ── Appointment Flow panel (Stage 2, read-only) ── */}
-                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={userProvID === 'jodene'} initialProv={userProvID} />}
+                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={userProvID === 'jodene'} initialProv={userProvID} loggedInProv={userProvID} />}
 
                     {/* Claims Ledger — right:24; Note Board — right:158; Payment Tracker — right:300 (Jodene only);
                        Appointment Flow — right:442 (past the Jodene-only slot so it never collides) */}
