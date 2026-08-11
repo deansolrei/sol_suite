@@ -14375,11 +14375,17 @@
             billingChannel: '', noteStatus: '', billingSubmitStatus: '',
         };
 
-        function AppointmentFlowPanel({ onClose, prov }) {
+        // allowSwitch: whether this mount gets the provider <select> in the
+        // header at all (Jodene from ProviderView; always true from Assistant/
+        // BillingView, which aren't tied to one provider's calendar). initialProv
+        // seeds selectedProv once on mount — after that, selectedProv is this
+        // panel's own state, independent of whatever prop it started from.
+        function AppointmentFlowPanel({ onClose, allowSwitch, initialProv }) {
             const [listRows, setListRows] = useState(null);   // null = loading
             const [tableRows, setTableRows] = useState(null); // null = loading
             const [loading, setLoading] = useState(true);
             const [refreshing, setRefreshing] = useState(false);
+            const [selectedProv, setSelectedProv] = useState(initialProv || '');
             const [filters, setFilters] = useState(AF_EMPTY_FILTERS);
             function setFilter(key, value) { setFilters(f => ({ ...f, [key]: value })); }
             function clearFilters() { setFilters(AF_EMPTY_FILTERS); }
@@ -14393,8 +14399,8 @@
             // can always chain a plain .then() to clear their own flag.
             function fetchWindows() {
                 return Promise.all([
-                    gsr('getLiveWindowAppointments', prov || ''),
-                    gsr('getTableWindowAppointments', prov || ''),
+                    gsr('getLiveWindowAppointments', selectedProv || ''),
+                    gsr('getTableWindowAppointments', selectedProv || ''),
                 ]).then(([listJson, tableJson]) => {
                     try {
                         const ld = JSON.parse(listJson);
@@ -14410,7 +14416,7 @@
             useEffect(() => {
                 setLoading(true);
                 fetchWindows().then(() => setLoading(false));
-            }, [prov]);
+            }, [selectedProv]);
 
             // Manual refresh only (no polling/interval) — the panel otherwise
             // fetches once on mount and never again, so an edit made elsewhere
@@ -14489,6 +14495,12 @@
                                 <div className="af-hdr-sub">Oldest unsigned note through 14 days out</div>
                             </div>
                             <div className="af-hdr-actions">
+                                {allowSwitch && (
+                                    <select className="cl-filter-select" value={selectedProv}
+                                        onChange={e => setSelectedProv(e.target.value)} title="Switch provider">
+                                        {PROVIDERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                    </select>
+                                )}
                                 <button className="af-refresh-btn" onClick={handleRefresh} disabled={refreshing || loading}>
                                     {refreshing ? '⏳ Refreshing…' : '⟳ Refresh'}
                                 </button>
@@ -16279,7 +16291,7 @@
                     {userProvID === 'jodene' && showPaymentTracker && <PaymentTracker onClose={() => setShowPaymentTracker(false)} provFilter={prov} />}
 
                     {/* ── Appointment Flow panel (Stage 2, read-only) ── */}
-                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} prov={prov} />}
+                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={userProvID === 'jodene'} initialProv={userProvID} />}
 
                     {/* Claims Ledger — right:24; Note Board — right:158; Payment Tracker — right:300 (Jodene only);
                        Appointment Flow — right:442 (past the Jodene-only slot so it never collides) */}
@@ -16982,6 +16994,7 @@
             const [voidOpen, setVoidOpen] = useState(false);
             const [showNoteBoard, setShowNoteBoard] = useState(false);
             const [showPaymentTracker, setShowPaymentTracker] = useState(false);
+            const [showAppointmentFlow, setShowAppointmentFlow] = useState(false);
             const [localAttrib, setLocalAttrib] = useState({}); // optimistic note-status attribution overrides, keyed by appt id
             const [editingAttrib, setEditingAttrib] = useState(null); // { rowId, which } | null
             const [assistants, setAssistants] = useState([]); // for the attribution-correction dropdown
@@ -17362,7 +17375,12 @@
                     {/* ── Payment Tracker panel ── */}
                     {showPaymentTracker && <PaymentTracker onClose={() => setShowPaymentTracker(false)} provFilter="" />}
 
-                    {/* Note Board — right:24; Payment Tracker — right:158 */}
+                    {/* ── Appointment Flow panel — not tied to one provider's calendar
+                       here, unlike ProviderView; opens on Jodene by default with the
+                       switcher always available to pick any of the 4 providers. ── */}
+                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={true} initialProv="jodene" />}
+
+                    {/* Note Board — right:24; Payment Tracker — right:158; Appointment Flow — right:292 */}
                     <button
                         className={`nb-fab${showNoteBoard ? ' open' : ''}`}
                         style={{ right: 24 }}
@@ -17377,11 +17395,19 @@
                         title="Payment Tracker — Cost-Share Collections">
                         💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
                     </button>
+                    <button
+                        className={`af-fab${showAppointmentFlow ? ' open' : ''}`}
+                        style={{ right: 292 }}
+                        onClick={e => { e.stopPropagation(); setShowAppointmentFlow(o => !o); }}
+                        title="Appointment Flow — live window">
+                        🗓️ {showAppointmentFlow ? 'Close Flow' : 'Appointment Flow'}
+                    </button>
 
                     {/* Phone-only equivalent of the buttons above (see MobileToolsMenu) */}
                     <MobileToolsMenu items={[
                         { key: 'notes', label: 'Note Board', icon: '📝', active: showNoteBoard, onClick: () => setShowNoteBoard(o => !o) },
                         { key: 'payment', label: 'Payment Tracker', icon: '💳', active: showPaymentTracker, onClick: () => setShowPaymentTracker(o => !o) },
+                        { key: 'apptflow', label: 'Appointment Flow', icon: '🗓️', active: showAppointmentFlow, onClick: () => setShowAppointmentFlow(o => !o) },
                     ]} />
                 </div>
             );
@@ -19126,6 +19152,7 @@
             const [showImportPanel, setShowImportPanel] = useState(false);
             const [showBillingChannels, setShowBillingChannels] = useState(false);
             const [showPaymentTracker, setShowPaymentTracker] = useState(false);
+            const [showAppointmentFlow, setShowAppointmentFlow] = useState(false);
             // ── Claims banner filter — clicking a stat in ClaimDayBanner narrows
             // the row sections below to that status. null = no filter (default).
             // Resets whenever the viewed date changes, same as everything else in
@@ -19750,6 +19777,11 @@
                     {/* ── Payment Tracker panel ── */}
                     {showPaymentTracker && <PaymentTracker onClose={() => setShowPaymentTracker(false)} provFilter="" />}
 
+                    {/* ── Appointment Flow panel — not tied to one provider's calendar
+                       here, unlike ProviderView; opens on Jodene by default with the
+                       switcher always available to pick any of the 4 providers. ── */}
+                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={true} initialProv="jodene" />}
+
                     <div className="billing-fab-bar">
                         <button
                             className={`bfab-btn${showBillingChannels ? ' open' : ''}`}
@@ -19785,15 +19817,23 @@
                             title="Payment Tracker — Cost-Share Collections">
                             💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
                         </button>
+
+                        <button
+                            className={`bfab-btn${showAppointmentFlow ? ' open' : ''}`}
+                            onClick={e => { e.stopPropagation(); setShowAppointmentFlow(o => !o); }}
+                            title="Appointment Flow — live window">
+                            🗓️ {showAppointmentFlow ? 'Close Flow' : 'Appointment Flow'}
+                        </button>
                     </div>
 
-                    {/* Phone-only equivalent of the 5 buttons above (see MobileToolsMenu) */}
+                    {/* Phone-only equivalent of the 6 buttons above (see MobileToolsMenu) */}
                     <MobileToolsMenu items={[
                         { key: 'channel', label: 'Assign Channel', icon: '🔀', active: showBillingChannels, onClick: () => setShowBillingChannels(o => !o) },
                         { key: 'ledger', label: 'Claims Ledger', icon: '📋', active: showLedger, onClick: () => setShowLedger(o => !o) },
                         { key: 'notes', label: 'Note Board', icon: '📝', active: showNoteBoard, onClick: () => setShowNoteBoard(o => !o) },
                         { key: 'import', label: 'Import Payments', icon: '📥', active: showImportPanel, onClick: () => setShowImportPanel(o => !o) },
                         { key: 'payment', label: 'Payment Tracker', icon: '💳', active: showPaymentTracker, onClick: () => setShowPaymentTracker(o => !o) },
+                        { key: 'apptflow', label: 'Appointment Flow', icon: '🗓️', active: showAppointmentFlow, onClick: () => setShowAppointmentFlow(o => !o) },
                     ]} />
                 </div>
             );
