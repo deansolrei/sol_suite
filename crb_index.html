@@ -8670,6 +8670,24 @@
         .af-row-wrap {
             border-bottom: 1px solid #F2EDDB;
         }
+        .af-section-hdr {
+            padding: 14px 18px;
+            background: #F2EDDB;
+            border-top: 8px solid #F2EDDB;
+            border-bottom: 2px solid #09371F;
+            font-size: 13px;
+            font-weight: 900;
+            color: #09371F;
+            letter-spacing: .3px;
+            text-transform: uppercase;
+        }
+        .af-section-hdr-sub {
+            font-weight: 600;
+            text-transform: none;
+            color: #777355;
+            letter-spacing: 0;
+            margin-left: 6px;
+        }
         .af-day-section {
             border-bottom: 8px solid #F2EDDB;
         }
@@ -8833,6 +8851,14 @@
         body.dark .af-cell-pat,
         body.dark .af-day-hdr {
             color: #F0FDF4;
+        }
+        body.dark .af-section-hdr {
+            background: #09371F;
+            border-bottom-color: #6FBFA6;
+            color: #F0FDF4;
+        }
+        body.dark .af-section-hdr-sub {
+            color: #6B9E8A;
         }
         body.dark .af-cell-time,
         body.dark .af-attrib-line,
@@ -14136,9 +14162,28 @@
             { label: 'Direct', api: 'Clinic Submit' },
         ];
 
+        // Groups appointments by date, preserving whatever sort order they
+        // arrived in (both getLiveWindowAppointments and
+        // getTableWindowAppointments already return ascending date/time
+        // order server-side) — a single pass that pushes each new date's
+        // group in first-seen order, no re-sort. Shared by List's and
+        // Table's own independent grouping (Stage C1) so the logic isn't
+        // duplicated between the two.
+        function groupAppointmentsByDate(list) {
+            const groups = [];
+            const byDate = {};
+            list.forEach(appt => {
+                if (!byDate[appt.date]) {
+                    byDate[appt.date] = { date: appt.date, appts: [] };
+                    groups.push(byDate[appt.date]);
+                }
+                byDate[appt.date].appts.push(appt);
+            });
+            return groups;
+        }
+
         function AppointmentFlowPanel({ onClose, prov }) {
             const [rows, setRows] = useState(null);   // null = loading
-            const [today, setToday] = useState('');   // server's own "today" (America/New_York) — see getLiveWindowAppointments
             const [loading, setLoading] = useState(true);
 
             useEffect(() => {
@@ -14148,7 +14193,6 @@
                         try {
                             const d = JSON.parse(json);
                             setRows(Array.isArray(d.appointments) ? d.appointments : []);
-                            setToday(d.today || '');
                         } catch (e) { setRows([]); }
                         setLoading(false);
                     })
@@ -14156,57 +14200,50 @@
             }, [prov]);
 
             const list = rows || [];
+            const dayGroups = useMemo(() => groupAppointmentsByDate(list), [list]);
 
-            // Groups appointments by date, preserving the already-ascending
-            // server-side sort — no re-sort here, just a single pass that
-            // pushes each new date's group in first-seen order.
-            const dayGroups = useMemo(() => {
-                const groups = [];
-                const byDate = {};
-                list.forEach(appt => {
-                    if (!byDate[appt.date]) {
-                        byDate[appt.date] = { date: appt.date, appts: [] };
-                        groups.push(byDate[appt.date]);
-                    }
-                    byDate[appt.date].appts.push(appt);
-                });
-                return groups;
-            }, [list]);
-
+            // List View and Table View are now two independent, only
+            // partially-overlapping windows (List: oldest unsigned note
+            // through +14 days; Table: fixed -7..+14 days) — stacked as their
+            // own clearly labeled sections in the same scrollable body rather
+            // than interleaved into one timeline, since a single day can
+            // belong to one, both, or neither window.
             return (
                 <div className="af-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
                     <div className="af-panel">
                         <div className="af-hdr">
                             <div>
                                 <div className="af-hdr-title">🗓️ Appointment Flow</div>
-                                <div className="af-hdr-sub">Live window — oldest unsigned note through 14 days out</div>
+                                <div className="af-hdr-sub">Provider workflow — List and Table are independent windows, see each section below</div>
                             </div>
                             <button className="af-close-btn" onClick={onClose}>✕ Close</button>
                         </div>
                         <div className="af-body">
+                            <div className="af-section-hdr">
+                                List View
+                                <span className="af-section-hdr-sub">— oldest unsigned note through 14 days out</span>
+                            </div>
                             {loading && <div className="af-empty">Loading…</div>}
                             {!loading && dayGroups.length === 0 && <div className="af-empty">No appointments in the live window.</div>}
                             {!loading && dayGroups.map(g => (
-                                <AppointmentFlowDaySection key={g.date} date={g.date} appts={g.appts} today={today} />
+                                <AppointmentFlowDaySection key={g.date} date={g.date} appts={g.appts} />
                             ))}
+                            <AppointmentFlowTableSection prov={prov} />
                         </div>
                     </div>
                 </div>
             );
         }
 
-        function AppointmentFlowDaySection({ date, appts, today }) {
+        // List View's own per-day block — one appointment row per appt, same
+        // columns for every day now (pre- or post-visit alike). Table View no
+        // longer renders here at all (Stage C1): it's a fully independent,
+        // separately-fetched section mounted once in AppointmentFlowPanel,
+        // not per List day.
+        function AppointmentFlowDaySection({ date, appts }) {
             const [expandedId, setExpandedId] = useState(null);
-            // Same string-compare mechanism as before — date and today are
-            // both server-supplied 'YYYY-MM-DD' strings, never new Date().
-            const isPreVisit = date >= today;
             const onToggle = id => setExpandedId(p => p === id ? null : id);
 
-            // List View's row now renders identically for every day, pre- or
-            // post-visit — the same columns, just blank until each stage of
-            // the lifecycle has actually happened. Table View (Table's own
-            // rate table) is untouched: still Table View-only, still mounted
-            // only for pre-visit days, in the same place beneath the list.
             return (
                 <div className="af-day-section">
                     <div className="af-day-hdr">{fmtDate(date)}</div>
@@ -14215,7 +14252,6 @@
                             <AppointmentFlowRow key={appt.id} appt={appt} expanded={expandedId === appt.id} onToggle={() => onToggle(appt.id)} />
                         ))}
                     </div>
-                    {isPreVisit && <AppointmentFlowPreVisitTable appts={appts} />}
                 </div>
             );
         }
@@ -14310,27 +14346,68 @@
             );
         }
 
-        /* Pre-visit rate table — Alma/HW/Grow/Direct columns + CC on Tebra.
-           Not expandable; every row's rates fetch on mount (same
-           getLastCodedAppointment → BestChannelHint's own /api/best-channel
-           call pattern PatientModal already uses), since the mockup shows a
-           populated table for the whole day at once rather than one row
-           revealed at a time. */
-        function AppointmentFlowPreVisitTable({ appts }) {
+        /* Table View — fully independent of List View (Stage C1): its own
+           fetch (getTableWindowAppointments), its own day-grouping (the
+           shared groupAppointmentsByDate helper List also uses), its own
+           section header stating its own fixed -7..+14 day window. No appts
+           prop from AppointmentFlowDaySection anymore — List's fetch/window
+           has nothing to do with what Table shows.
+           Table row content (columns/cells/styling — AppointmentFlowRateRow,
+           AF_RATE_CHANNELS, the table shell below) is UNCHANGED from before;
+           only the data source and grouping are new. That's deliberate —
+           this stage is structural only, per Dean's Stage C1 scope; changing
+           what a row displays is Stage C2. */
+        function AppointmentFlowTableSection({ prov }) {
+            const [rows, setRows] = useState(null);   // null = loading
+            const [tableBounds, setTableBounds] = useState({ backwardBound: '', forwardBound: '' });
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                setLoading(true);
+                gsr('getTableWindowAppointments', prov || '')
+                    .then(json => {
+                        try {
+                            const d = JSON.parse(json);
+                            setRows(Array.isArray(d.appointments) ? d.appointments : []);
+                            setTableBounds({ backwardBound: d.backwardBound || '', forwardBound: d.forwardBound || '' });
+                        } catch (e) { setRows([]); }
+                        setLoading(false);
+                    })
+                    .catch(() => { setRows([]); setLoading(false); });
+            }, [prov]);
+
+            const list = rows || [];
+            const dayGroups = useMemo(() => groupAppointmentsByDate(list), [list]);
+
             return (
-                <table className="af-rate-table">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Name</th>
-                            {AF_RATE_CHANNELS.map(ch => <th key={ch.api} className="af-rate-th">{ch.label}</th>)}
-                            <th className="af-rate-th">CC on Tebra</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {appts.map(appt => <AppointmentFlowRateRow key={appt.id} appt={appt} />)}
-                    </tbody>
-                </table>
+                <div className="af-table-section">
+                    <div className="af-section-hdr">
+                        Table View
+                        {tableBounds.backwardBound && tableBounds.forwardBound && (
+                            <span className="af-section-hdr-sub">— {fmtDate(tableBounds.backwardBound)} through {fmtDate(tableBounds.forwardBound)}</span>
+                        )}
+                    </div>
+                    {loading && <div className="af-empty">Loading…</div>}
+                    {!loading && dayGroups.length === 0 && <div className="af-empty">No appointments in Table's window.</div>}
+                    {!loading && dayGroups.map(g => (
+                        <div key={g.date} className="af-day-section">
+                            <div className="af-day-hdr">{fmtDate(g.date)}</div>
+                            <table className="af-rate-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Name</th>
+                                        {AF_RATE_CHANNELS.map(ch => <th key={ch.api} className="af-rate-th">{ch.label}</th>)}
+                                        <th className="af-rate-th">CC on Tebra</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {g.appts.map(appt => <AppointmentFlowRateRow key={appt.id} appt={appt} />)}
+                                </tbody>
+                            </table>
+                        </div>
+                    ))}
+                </div>
             );
         }
 
