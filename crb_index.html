@@ -14290,7 +14290,7 @@
                 return { channels: AF_RATE_CHANNELS, showBestRate: true, showCcTebra: true };
             }
             if (loggedInProv === 'lori') {
-                return { channels: AF_RATE_CHANNELS.filter(ch => ch.methodId === 'alma'), showBestRate: false, showCcTebra: false };
+                return { channels: AF_RATE_CHANNELS.filter(ch => ch.methodId === 'alma' || ch.methodId === 'direct'), showBestRate: false, showCcTebra: false };
             }
             // katie, or any other provider not explicitly listed (e.g. megan) —
             // the default "no rate access" baseline: all 4 channels, no Best
