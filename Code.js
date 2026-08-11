@@ -3164,6 +3164,7 @@ function _liveWindowBounds(data, provFilter) {
   var SIGNED_IDX = APPT_COLS.indexOf('Signed');
   var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
   var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+  var NS_IDX = APPT_COLS.indexOf('NoteStatus');
 
   var todayStr = _fmtDate(new Date());
   var horizon = new Date();
@@ -3175,7 +3176,10 @@ function _liveWindowBounds(data, provFilter) {
   // can have more than one), keyed exactly like _reconcilePatientUnsignedDates
   // does: provID + '||' + _normName(patient). Built in this same pass — same
   // eligibility check already being run per row for oldestUnsignedByProv — so
-  // this costs zero additional full-sheet scans.
+  // this costs zero additional full-sheet scans. Each entry carries that
+  // date's own noteStatus + attribution (same field names _rowToApptWith
+  // Attribution already uses) so a caller can show what stage each other
+  // outstanding date is actually at, not just the bare date.
   var unsignedDatesByPatientProv = {};
   for (var i = 1; i < data.length; i++) {
     var r = data[i];
@@ -3199,11 +3203,20 @@ function _liveWindowBounds(data, provFilter) {
 
     var patientKey = prov + '||' + _normName(String(r[PATIENT_IDX] || ''));
     if (!unsignedDatesByPatientProv[patientKey]) unsignedDatesByPatientProv[patientKey] = [];
-    unsignedDatesByPatientProv[patientKey].push(dateStr);
+    unsignedDatesByPatientProv[patientKey].push({
+      date: dateStr,
+      noteStatus: String(r[NS_IDX] || ''),
+      noteInProgressBy: String(r[NOTE_PROGRESS_BY_COL - 1] || ''),
+      noteInProgressAt: String(r[NOTE_PROGRESS_AT_COL - 1] || ''),
+      noteReadyBy: String(r[NOTE_READY_BY_COL - 1] || ''),
+      noteReadyAt: String(r[NOTE_READY_AT_COL - 1] || ''),
+    });
   }
 
   Object.keys(unsignedDatesByPatientProv).forEach(function (k) {
-    unsignedDatesByPatientProv[k].sort(); // 'YYYY-MM-DD' strings — lexicographic sort is chronological
+    unsignedDatesByPatientProv[k].sort(function (a, b) {
+      return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; // oldest first
+    });
   });
 
   return {
@@ -3365,7 +3378,7 @@ function getLiveWindowAppointments(provFilter) {
       if (!_isInLiveWindow(r, bounds)) continue;
       var appt = _rowToApptWithAttribution(r, bounds, tableBounds);
       appt.otherUnsignedDates = (bounds.unsignedDatesByPatientProv[prov + '||' + _normName(appt.patient)] || [])
-        .filter(function (d) { return d !== appt.date; });
+        .filter(function (d) { return d.date !== appt.date; });
       out.push(appt);
     }
 
@@ -3404,9 +3417,18 @@ function runGetLiveWindowAppointments() {
     (appts ? appts.length + ' appointments (today=' + result.today + ')' : JSON.stringify(result)));
 
   if (appts) {
-    var withOther = appts.find(function (a) { return Array.isArray(a.otherUnsignedDates) && a.otherUnsignedDates.length > 0; });
-    Logger.log('First result with otherUnsignedDates: ' +
-      (withOther ? withOther.patient + ' (ApptID=' + withOther.id + ') → ' + JSON.stringify(withOther.otherUnsignedDates) : '(none found)'));
+    // Looking for 2+ other-unsigned dates in genuinely DIFFERENT statuses —
+    // a single status repeated twice doesn't exercise the per-date
+    // noteStatus/attribution enrichment, so it's not a useful test case.
+    var withVaried = appts.find(function (a) {
+      if (!Array.isArray(a.otherUnsignedDates) || a.otherUnsignedDates.length < 2) return false;
+      var statuses = {};
+      a.otherUnsignedDates.forEach(function (d) { statuses[d.noteStatus] = true; });
+      return Object.keys(statuses).length > 1;
+    });
+    Logger.log('First result with 2+ otherUnsignedDates in different statuses: ' +
+      (withVaried ? withVaried.patient + ' (ApptID=' + withVaried.id + ') → ' + JSON.stringify(withVaried.otherUnsignedDates)
+        : '(none found for provider "' + provFilter + '" — every multi-date patient here has all dates in the same status, or no patient has 2+ other unsigned dates at all)'));
   }
 
   Logger.log(JSON.stringify(result, null, 2));
@@ -3446,7 +3468,7 @@ function searchArchiveAppointments(patientName, dateStr, provFilter) {
 
       var appt = _rowToApptWithAttribution(r, bounds, tableBounds);
       appt.otherUnsignedDates = (bounds.unsignedDatesByPatientProv[prov + '||' + _normName(appt.patient)] || [])
-        .filter(function (d) { return d !== appt.date; });
+        .filter(function (d) { return d.date !== appt.date; });
       out.push(appt);
     }
 
@@ -3510,7 +3532,7 @@ function getTableWindowAppointments(provFilter) {
       if (!_isInTableWindow(r, tableBounds)) continue;
       var appt = _rowToApptWithAttribution(r, bounds, tableBounds);
       appt.otherUnsignedDates = (bounds.unsignedDatesByPatientProv[prov + '||' + _normName(appt.patient)] || [])
-        .filter(function (d) { return d !== appt.date; });
+        .filter(function (d) { return d.date !== appt.date; });
       out.push(appt);
     }
 
