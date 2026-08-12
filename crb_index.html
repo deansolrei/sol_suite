@@ -9044,6 +9044,27 @@
             flex-direction: column;
             gap: 3px;
         }
+        /* A5 — Provider/CPT/Biller rows navigate away to open a modal in
+           another view; whole row is the click target (the label alone is
+           small/uppercase, a poor hit target). NOT matching .af-row:hover's
+           background verbatim — that color (#FBFBF3) is identical to
+           .af-panel's own background, so it's already an invisible no-op
+           there; .af-detail's background is also #FBFBF3, so copying it
+           here would be the same non-effect. Using #F2EDDB instead — this
+           feature's own established secondary/alternating-row background
+           (af-list-block's divider, Table View's even-row shade) — so the
+           hover is actually visible. The trailing ↗ on the label (added in
+           JSX, not here) signals "this leaves Appointment Flow," distinct
+           from this feature's other ↻-cycle-in-place controls. */
+        .af-detail-row-nav {
+            cursor: pointer;
+            margin: -4px -8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .af-detail-row-nav:hover {
+            background: #F2EDDB;
+        }
         .af-detail-label {
             font-size: 10px;
             font-weight: 800;
@@ -14628,7 +14649,7 @@
         // BillingView, which aren't tied to one provider's calendar). initialProv
         // seeds selectedProv once on mount — after that, selectedProv is this
         // panel's own state, independent of whatever prop it started from.
-        function AppointmentFlowPanel({ onClose, allowSwitch, initialProv, loggedInProv }) {
+        function AppointmentFlowPanel({ onClose, allowSwitch, initialProv, loggedInProv, navigateAndOpenModal }) {
             const [listRows, setListRows] = useState(null);   // null = loading
             const [tableRows, setTableRows] = useState(null); // null = loading
             const [loading, setLoading] = useState(true);
@@ -14933,7 +14954,7 @@
                                 </div>
                             )}
                             {!loading && combinedDays.map(d => (
-                                <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} loggedInProv={loggedInProv} onApptUpdate={patchTableRow} onApptsUpdate={patchTableRows} onUnsignedDateUpdate={patchUnsignedNoteStatus} onScrDataUpdate={patchListRow} />
+                                <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} loggedInProv={loggedInProv} onApptUpdate={patchTableRow} onApptsUpdate={patchTableRows} onUnsignedDateUpdate={patchUnsignedNoteStatus} onScrDataUpdate={patchListRow} navigateAndOpenModal={navigateAndOpenModal} onCloseAppointmentFlow={onClose} />
                             ))}
                         </div>
                     </div>
@@ -14946,7 +14967,7 @@
         // Table's window) — a date can have either, neither is impossible
         // once it's reached this component (mergeDayGroups only creates an
         // entry when at least one is present), or both.
-        function AppointmentFlowDaySection({ date, listAppts, tableAppts, loggedInProv, onApptUpdate, onApptsUpdate, onUnsignedDateUpdate, onScrDataUpdate }) {
+        function AppointmentFlowDaySection({ date, listAppts, tableAppts, loggedInProv, onApptUpdate, onApptsUpdate, onUnsignedDateUpdate, onScrDataUpdate, navigateAndOpenModal, onCloseAppointmentFlow }) {
             const [expandedId, setExpandedId] = useState(null);
             const onToggle = id => setExpandedId(p => p === id ? null : id);
 
@@ -14957,7 +14978,8 @@
                         <div className="af-list-block">
                             {listAppts.map(appt => (
                                 <AppointmentFlowRow key={appt.id} appt={appt} expanded={expandedId === appt.id} onToggle={() => onToggle(appt.id)}
-                                    onUnsignedDateUpdate={onUnsignedDateUpdate} onScrDataUpdate={onScrDataUpdate} />
+                                    onUnsignedDateUpdate={onUnsignedDateUpdate} onScrDataUpdate={onScrDataUpdate}
+                                    navigateAndOpenModal={navigateAndOpenModal} onCloseAppointmentFlow={onCloseAppointmentFlow} />
                             ))}
                         </div>
                     )}
@@ -14996,7 +15018,7 @@
            initials at the source (Code.js's _stampAttribution/saveNoteStatus/
            signNoteAndClearUnsigned all prefer staff.initials) — displayed
            directly, no client-side derivation. */
-        function AppointmentFlowRow({ appt, expanded, onToggle, onUnsignedDateUpdate, onScrDataUpdate }) {
+        function AppointmentFlowRow({ appt, expanded, onToggle, onUnsignedDateUpdate, onScrDataUpdate, navigateAndOpenModal, onCloseAppointmentFlow }) {
             const noteAttribBy = appt.noteStatus === 'ready' ? appt.noteReadyBy
                 : appt.noteStatus === 'in_progress' ? appt.noteInProgressBy : '';
             const noteAttribAt = appt.noteStatus === 'ready' ? appt.noteReadyAt
@@ -15046,6 +15068,20 @@
                         setTimeout(() => setErrorDates(e => ({ ...e, [entryApptId]: false })), 2500);
                     })
                     .finally(() => setSavingDates(s => ({ ...s, [entryApptId]: false })));
+            }
+
+            // A5 — first real use of navigateAndOpenModal anywhere. Navigates
+            // to this specific appointment's own date/provider (never
+            // Appointment Flow's currently-selected provider, which can
+            // differ) and opens the matching modal there, then closes
+            // Appointment Flow's own panel so the user isn't left looking at
+            // it stacked on top of / underneath the target view. Explicitly
+            // does NOT return here afterward — closing the target modal
+            // just leaves the user on the main calendar, same as navigating
+            // there manually. That return-trip behavior is a later stage.
+            function handleNavigateClick(modalType) {
+                if (navigateAndOpenModal) navigateAndOpenModal(appt.date, appt.provID, appt.id, modalType);
+                if (onCloseAppointmentFlow) onCloseAppointmentFlow();
             }
 
             return (
@@ -15109,15 +15145,17 @@
                                     saving={!!savingDates[appt.id]} error={!!errorDates[appt.id]}
                                     onClick={() => handleUnsignedDateClick(appt.id, appt.noteStatus)} />
                             </div>
-                            <div className="af-detail-row">
-                                <span className="af-detail-label">Provider</span>
+                            <div className="af-detail-row af-detail-row-nav" onClick={() => handleNavigateClick('noteSigned')}
+                                title="Open this appointment in Provider View to sign the note">
+                                <span className="af-detail-label">Provider ↗</span>
                                 <span>
                                     {appt.noteSignedBy && <span>{appt.noteSignedBy}</span>}
                                     {appt.noteSignedAt && <span className="af-attrib-line"> {fmtAttribAt(appt.noteSignedAt)}</span>}
                                 </span>
                             </div>
-                            <div className="af-detail-row">
-                                <span className="af-detail-label">CPT</span>
+                            <div className="af-detail-row af-detail-row-nav" onClick={() => handleNavigateClick('cpt')}
+                                title="Open this appointment's CPT codes">
+                                <span className="af-detail-label">CPT ↗</span>
                                 <div className="af-cell-cpt">
                                     {appt.cpt && appt.cpt.length > 0 && appt.cpt.map(c => <span key={c} className="cpt-chip">{c}</span>)}
                                 </div>
@@ -15126,8 +15164,9 @@
                                 <span className="af-detail-label">Billing Channel</span>
                                 <span>{METHOD_LABEL[appt.method] || appt.method}</span>
                             </div>
-                            <div className="af-detail-row">
-                                <span className="af-detail-label">Biller</span>
+                            <div className="af-detail-row af-detail-row-nav" onClick={() => handleNavigateClick('claimSubmit')}
+                                title="Open this appointment in Billing View to submit the claim">
+                                <span className="af-detail-label">Biller ↗</span>
                                 <span>
                                     {appt.claimSubmittedBy && <span>{appt.claimSubmittedBy}</span>}
                                     {appt.claimSubmittedAt && <span className="af-attrib-line"> {fmtAttribAt(appt.claimSubmittedAt)}</span>}
@@ -16360,7 +16399,7 @@
             );
         }
 
-        function ProviderView({ appts, date, prov, onUpdate, onSignNote, totalUnsigned, onClearPhantom, userRole, userProvID, onForceRefresh, patientDb, dayMode, setDayMode }) {
+        function ProviderView({ appts, date, prov, onUpdate, onSignNote, totalUnsigned, onClearPhantom, userRole, userProvID, onForceRefresh, patientDb, dayMode, setDayMode, pendingModalRequest, onConsumePendingModalRequest, navigateAndOpenModal }) {
             const [cptModal, setCptModal] = useState(null);
             const [rxModal, setRxModal] = useState(null);
             const [notesDraft, setNotesDraft] = useState({});
@@ -16370,6 +16409,26 @@
             const [showAppointmentFlow, setShowAppointmentFlow] = useState(false);
             const [pamModal, setPamModal] = useState(null); // ProviderApptModal from day view 💬 button
             const [infoModalId, setInfoModalId] = useState(null); // PatientInfoModal — store ID for live lookup
+
+            // A5 (proof stage) — consumes navigateAndOpenModal's pending
+            // request once this view has actually rendered with the target
+            // appointment loaded in `appts`. Only acts on the two modal
+            // types this view owns (cpt → CPTModal, noteSigned →
+            // ProviderApptModal); BillingView has its own matching effect
+            // for claimSubmit. If the matching appointment isn't in `appts`
+            // yet (still loading, or the request was for the wrong
+            // provider/date), this simply no-ops and re-checks whenever
+            // `appts` changes next, rather than consuming/clearing a
+            // request it couldn't actually fulfill.
+            useEffect(() => {
+                if (!pendingModalRequest) return;
+                if (pendingModalRequest.modalType !== 'cpt' && pendingModalRequest.modalType !== 'noteSigned') return;
+                const match = (appts || []).find(a => a.id === pendingModalRequest.apptId);
+                if (!match) return;
+                if (pendingModalRequest.modalType === 'cpt') setCptModal(match);
+                else setPamModal(match);
+                if (onConsumePendingModalRequest) onConsumePendingModalRequest();
+            }, [pendingModalRequest, appts]);
 
             // Billing Channel (assigned via the biller's "Assign Channel" tool) + Insurance
             // Carrier lookup, keyed by patient name — same pattern as BillingView's
@@ -16921,7 +16980,7 @@
                     {userProvID === 'jodene' && showPaymentTracker && <PaymentTracker onClose={() => setShowPaymentTracker(false)} provFilter={prov} />}
 
                     {/* ── Appointment Flow panel (Stage 2, read-only) ── */}
-                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={userProvID === 'jodene'} initialProv={userProvID} loggedInProv={userProvID} />}
+                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={userProvID === 'jodene'} initialProv={userProvID} loggedInProv={userProvID} navigateAndOpenModal={navigateAndOpenModal} />}
 
                     {/* Claims Ledger — right:24; Note Board — right:158; Payment Tracker — right:300 (Jodene only);
                        Appointment Flow — right:442 (past the Jodene-only slot so it never collides) */}
@@ -17617,7 +17676,7 @@
             );
         }
 
-        function AssistantView({ appts, date, onUpdate, onAdd, onDelete, patientDb, onForceRefresh }) {
+        function AssistantView({ appts, date, onUpdate, onAdd, onDelete, patientDb, onForceRefresh, navigateAndOpenModal }) {
             const [modal, setModal] = useState(null);
             const [selectedIds, setSelectedIds] = useState(new Set());
             const [bulkAction, setBulkAction] = useState('valid');
@@ -18008,7 +18067,7 @@
                     {/* ── Appointment Flow panel — not tied to one provider's calendar
                        here, unlike ProviderView; opens on Jodene by default with the
                        switcher always available to pick any of the 4 providers. ── */}
-                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={true} initialProv="jodene" />}
+                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={true} initialProv="jodene" navigateAndOpenModal={navigateAndOpenModal} />}
 
                     {/* Note Board — right:24; Payment Tracker — right:158; Appointment Flow — right:292 */}
                     <button
@@ -19772,7 +19831,7 @@
             );
         }
 
-        function BillingView({ appts, date, onUpdate, patientDb, onRefreshPatients }) {
+        function BillingView({ appts, date, onUpdate, patientDb, onRefreshPatients, pendingModalRequest, onConsumePendingModalRequest, navigateAndOpenModal }) {
             const [cptModal, setCptModal] = useState(null);
             const [rxModal, setRxModal] = useState(null);
             const [claimModal, setClaimModal] = useState(null);
@@ -19783,6 +19842,20 @@
             const [showBillingChannels, setShowBillingChannels] = useState(false);
             const [showPaymentTracker, setShowPaymentTracker] = useState(false);
             const [showAppointmentFlow, setShowAppointmentFlow] = useState(false);
+
+            // A5 (proof stage) — consumes navigateAndOpenModal's pending
+            // request once this view has rendered with the target
+            // appointment loaded, same pattern as ProviderView's own
+            // matching effect. Only acts on claimSubmit — cpt/noteSigned
+            // belong to ProviderView.
+            useEffect(() => {
+                if (!pendingModalRequest) return;
+                if (pendingModalRequest.modalType !== 'claimSubmit') return;
+                const match = (appts || []).find(a => a.id === pendingModalRequest.apptId);
+                if (!match) return;
+                setClaimModal(match);
+                if (onConsumePendingModalRequest) onConsumePendingModalRequest();
+            }, [pendingModalRequest, appts]);
             // ── Claims banner filter — clicking a stat in ClaimDayBanner narrows
             // the row sections below to that status. null = no filter (default).
             // Resets whenever the viewed date changes, same as everything else in
@@ -20410,7 +20483,7 @@
                     {/* ── Appointment Flow panel — not tied to one provider's calendar
                        here, unlike ProviderView; opens on Jodene by default with the
                        switcher always available to pick any of the 4 providers. ── */}
-                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={true} initialProv="jodene" />}
+                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={true} initialProv="jodene" navigateAndOpenModal={navigateAndOpenModal} />}
 
                     <div className="billing-fab-bar">
                         <button
@@ -20634,6 +20707,13 @@
             const [date, setDate] = useState(TODAY);
             const [view, setView] = useState('provider');
             const [period, setPeriod] = useState('day');
+            // A5 — set by navigateAndOpenModal, consumed by whichever view
+            // (ProviderView for 'cpt'/'noteSigned', BillingView for
+            // 'claimSubmit') owns that modal's local visibility state, once
+            // that view has actually rendered with the target appointment
+            // loaded. { apptId, modalType } | null.
+            const [pendingModalRequest, setPendingModalRequest] = useState(null);
+            function clearPendingModalRequest() { setPendingModalRequest(null); }
             // Lifted out of ProviderView (2026-08-03): the {apptLoading ? spinner :
             // <ProviderView/>} swap below unmounts/remounts ProviderView on every
             // date navigation that needs a fetch, which was silently resetting
@@ -21446,6 +21526,26 @@
             function switchToDay(ds) { setDate(ds); setPeriod('day'); }
             function onCalSelect(ds) { setDate(ds); setCalOpen(false); }
 
+            // A5 (proof stage) — navigates to a specific appointment's date/
+            // provider/view using the exact same setProv/switchToDay
+            // mechanics GlobalSearch's own onNavigate implementations
+            // already use (not a new navigation mechanism — this doesn't
+            // touch GlobalSearch/onNavigate/pick at all, just reuses the
+            // same underlying pieces independently of that UI), then sets a
+            // pending request for whichever view owns the target modal's
+            // local visibility state to pick up once it renders with that
+            // appointment loaded — see ProviderView's and BillingView's own
+            // consuming useEffect. modalType: 'cpt' | 'noteSigned' (both
+            // ProviderView) | 'claimSubmit' (BillingView). Not wired to any
+            // click target yet — this stage only proves the mechanism
+            // itself is callable and works.
+            function navigateAndOpenModal(dateStr, provID, apptId, modalType) {
+                if (provID) setProv(provID);
+                switchToDay(dateStr);
+                setView(modalType === 'claimSubmit' ? 'billing' : 'provider');
+                setPendingModalRequest({ apptId, modalType });
+            }
+
             // Page-reactive calendar icon values — show WHERE you are, not what day it is today.
             // Day view: abbreviated DOW + date number (e.g. "WED" / "18")
             // Week view: abbreviated month of week-start + day range (e.g. "JUN" / "9–15")
@@ -21863,11 +21963,11 @@
                             <div className="page-loading"><div className="spinner" /><span>Loading appointments…</span></div>
                         ) : (
                             <>
-                                {view === 'provider' && period === 'day' && <ProviderView appts={appts} date={date} prov={prov} onUpdate={updateAppt} onSignNote={signNote} totalUnsigned={totalUnsigned} onClearPhantom={clearPhantom} userRole={userRole} userProvID={userProvID} onForceRefresh={forceRefreshDay} patientDb={patientDb} dayMode={providerDayMode} setDayMode={setProviderDayMode} />}
+                                {view === 'provider' && period === 'day' && <ProviderView appts={appts} date={date} prov={prov} onUpdate={updateAppt} onSignNote={signNote} totalUnsigned={totalUnsigned} onClearPhantom={clearPhantom} userRole={userRole} userProvID={userProvID} onForceRefresh={forceRefreshDay} patientDb={patientDb} dayMode={providerDayMode} setDayMode={setProviderDayMode} pendingModalRequest={pendingModalRequest} onConsumePendingModalRequest={clearPendingModalRequest} navigateAndOpenModal={navigateAndOpenModal} />}
                                 {view === 'provider' && period === 'week' && <WeekView prov={prov} date={date} data={data} onUpdateForDate={updateApptForDate} onSwitchToDay={switchToDay} onDeleteForDate={deleteApptForDate} totalUnsigned={totalUnsigned} />}
-                                {view === 'assistant' && period === 'day' && <AssistantView appts={appts} date={date} onUpdate={updateAppt} onAdd={addAppt} onDelete={deleteAppt} patientDb={patientDb} onForceRefresh={forceRefreshDay} />}
+                                {view === 'assistant' && period === 'day' && <AssistantView appts={appts} date={date} onUpdate={updateAppt} onAdd={addAppt} onDelete={deleteAppt} patientDb={patientDb} onForceRefresh={forceRefreshDay} navigateAndOpenModal={navigateAndOpenModal} />}
                                 {view === 'assistant' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} onUpdateForDate={updateApptForDate} />}
-                                {view === 'billing' && period === 'day' && <BillingView appts={appts} date={date} onUpdate={updateAppt} patientDb={patientDb} onRefreshPatients={refreshPatientDb} />}
+                                {view === 'billing' && period === 'day' && <BillingView appts={appts} date={date} onUpdate={updateAppt} patientDb={patientDb} onRefreshPatients={refreshPatientDb} pendingModalRequest={pendingModalRequest} onConsumePendingModalRequest={clearPendingModalRequest} navigateAndOpenModal={navigateAndOpenModal} />}
                                 {view === 'billing' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} view="billing" onUpdateForDate={updateApptForDate} />}
                             </>
                         )}
