@@ -8748,7 +8748,11 @@
         }
         .af-day-hdr {
             padding: 14px 18px 8px;
-            font-size: 14px;
+            /* Sizing pass — actual prior value was 14px (not the 10.5
+               estimate this ratio is based on); ratio 16/10.5 applied to
+               that real value: 14 × 1.52381 = 21.3px. Not used anywhere
+               outside Appointment Flow, so no need for a separate wrapper. */
+            font-size: 21.3px;
             font-weight: 900;
             color: #09371F;
             letter-spacing: .2px;
@@ -8777,7 +8781,10 @@
             transform: rotate(90deg);
         }
         .af-cell-time {
-            font-size: 11px;
+            /* Actual prior value was 11px (not the 8.5 estimate); ratio
+               11/8.5 applied: 11 × 1.29412 = 14.2px. Not used outside this
+               row. */
+            font-size: 14.2px;
             color: #777355;
         }
         .af-cell-pat {
@@ -8792,7 +8799,10 @@
             gap: 2px;
         }
         .af-other-unsigned {
-            font-size: 11px;
+            /* Actual prior value was 11px (not the 8.5 estimate); ratio
+               14/8.5 applied: 11 × 1.64706 = 18.1px. Not used outside this
+               row. */
+            font-size: 18.1px;
             font-weight: 800;
             color: #2B2716;
             white-space: nowrap;
@@ -9031,18 +9041,40 @@
         }
         /* A3b follow-up — compact sizing for List View's always-visible
            screener block, with an actual typographic hierarchy rather than
-           one blanket size: the score itself is the primary content (11px),
-           /max is visibly secondary (9px), labels are already uppercase so
-           they read fine a step down (9px), and interpretation/attribution
-           text is real content someone needs to read, not decoration
-           (10px). Scoped under .af-scr-compact (applied alongside .af-detail
-           on AppointmentFlowScreenerDetail's own wrapper only) so
+           one blanket size. Scoped under .af-scr-compact (applied alongside
+           .af-detail on AppointmentFlowScreenerDetail's own wrapper only) so
            .scr-score-input/.fi/.af-scr-max/.af-detail-label/.af-attrib-line/
            .af-flag-error themselves stay untouched for every other place
            that uses them — purely a visual override layer, same
-           validation/save-on-blur behavior underneath. */
+           validation/save-on-blur behavior underneath.
+
+           Follow-up sizing pass — Dean's old→new pairs were estimates, not
+           confirmed values; each ratio below is applied to the ACTUAL prior
+           size found in this file, not his stated number:
+           - Date Administered label: actual 9px, ratio 9/8.5 → 9.5px.
+           - Screener name labels (PHQ-9/GAD-7/PCL-5) needed splitting from
+             the rule above — they shared .af-detail-label with the Date
+             Administered label before this pass, but need a different
+             ratio (11.5/8.5) applied to the SAME actual 9px starting point,
+             so they get their own .af-scr-name-label class layered on top
+             (kept alongside .af-detail-label for its weight/color/
+             uppercase/letter-spacing, which stay untouched) → 12.2px.
+           - .scr-score-input: untouched, exactly as before — not part of
+             this pass.
+           - /max (.af-scr-max) and the interpretation phrase were two
+             DIFFERENT actual sizes already (9px and 10px respectively,
+             .af-attrib-line's generic rule below) even though Dean's
+             framing treats "/27 Indicates mild depression" as one visual
+             unit — averaged (9.5px) as the basis, ratio 9.5/7.5, both now
+             12px. The interpretation phrase gets its own .af-scr-interp
+             class layered on .af-attrib-line so this doesn't also resize
+             the "— administered ..." line right below it (unmentioned,
+             left at its own actual 10px) or any other .af-attrib-line use. */
         .af-scr-compact .af-detail-label {
-            font-size: 9px;
+            font-size: 9.5px;
+        }
+        .af-scr-compact .af-detail-label.af-scr-name-label {
+            font-size: 12.2px;
         }
         .af-scr-compact .scr-score-input {
             font-size: 11px;
@@ -9050,20 +9082,32 @@
             padding: 4px 6px;
         }
         .af-scr-compact .af-scr-max {
-            font-size: 9px;
+            font-size: 12px;
         }
         .af-scr-compact .af-attrib-line {
             font-size: 10px;
         }
+        .af-scr-compact .af-attrib-line.af-scr-interp {
+            font-size: 12px;
+        }
         .af-scr-compact .af-flag-error {
             font-size: 10px;
         }
-        /* Proportional to the score inputs above, not drastically smaller —
-           this is still a primary data-entry field, not a caption. */
+        /* Date input — actual prior font-size was 10px (not the 8.5
+           estimate item 5's ratio was stated against); same ratio as the
+           Date Administered label (9/8.5) applied to that real 10px:
+           10.6px. max-width/padding scaled by the same ratio so the field
+           grows proportionately rather than just the glyphs inside it.
+           Investigated the native calendar-picker icon directly (a live
+           browser test, not assumed) — in this browser it already scales
+           its own height substantially off the input's font-size alone
+           (14px → 25px measured for a 10px → 20px change) with zero
+           ::-webkit-calendar-picker-indicator rule; no explicit icon
+           sizing needed for this much smaller 10 → 10.6px change. */
         .af-scr-compact .af-scr-date-input {
-            max-width: 110px;
-            font-size: 10px;
-            padding: 5px 6px;
+            max-width: 116px;
+            font-size: 10.6px;
+            padding: 5.3px 6.4px;
         }
         /* Compact sizing for UnsignedDateStatusControl (icon + label +
            attribution) — genuinely smaller than the row's own Time/Name
@@ -9072,7 +9116,12 @@
            .ns-badge itself stays untouched for NoteBoardPanel's own
            (unscaled) usage. */
         .af-uds-status .ns-badge {
-            font-size: 9px;
+            /* Actual prior value was 9px (not the 8.5 estimate); ratio
+               11/8.5 applied: 9 × 1.29412 = 11.6px. The trailing ↻ is
+               plain text inside this same button, no separate markup/
+               font-size of its own, so it scales with this value
+               automatically. */
+            font-size: 11.6px;
             padding: 2px 6px;
             gap: 3px;
         }
@@ -15146,7 +15195,7 @@
                             : `Indicates ${result.text.charAt(0).toLowerCase()}${result.text.slice(1)}`);
                         return (
                             <div key={name} className="af-detail-row">
-                                <span className="af-detail-label">{name}</span>
+                                <span className="af-detail-label af-scr-name-label">{name}</span>
                                 <span>
                                     <input type="number" className="scr-score-input" min={0} max={cfg.max} placeholder="—"
                                         value={sd.score === undefined || sd.score === null ? '' : sd.score}
@@ -15154,7 +15203,7 @@
                                         onBlur={() => handleScoreBlur(name)}
                                         disabled={!!savingFields[name]} />
                                     <span className="af-scr-max">/{cfg.max}</span>
-                                    {resultText && <span className="af-attrib-line"> {resultText}</span>}
+                                    {resultText && <span className="af-attrib-line af-scr-interp"> {resultText}</span>}
                                     {localScrData.date && <span className="af-attrib-line"> — administered {fmtShort(localScrData.date)}</span>}
                                     {errorFields[name] && <span className="af-flag-error"> Save failed</span>}
                                 </span>
