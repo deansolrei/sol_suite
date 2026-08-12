@@ -559,6 +559,7 @@ function searchPatient(query) {
     var today = _fmtDate(new Date());
     var values = sheet.getDataRange().getValues().slice(1);
     var matches = [];
+    var ID_IDX = APPT_COLS.indexOf('ApptID');
 
     values.forEach(function (r) {
       var patient = String(r[4] || '').trim();
@@ -566,6 +567,7 @@ function searchPatient(query) {
       var date = _fmtDate(r[1]);
       if (!date) return;
       matches.push({
+        apptId: String(r[ID_IDX] || ''),
         provID: String(r[0] || ''),
         date: date,
         time: _fmtTime(r[3]),
