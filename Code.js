@@ -2924,23 +2924,80 @@ function saveAppointmentStatus(apptId, status) {
   }
 }
 
-/* ── CCEHR (Credit Card on File in Tebra) attribution ─────────────────── */
-function saveCCEHR(apptId, value) {
+/* ── CCEHR (Credit Card on File in Tebra) — carry-forward (A2) ─────────
+   One edit event writes CCEHR to the triggering appointment AND every
+   other CURRENT/FUTURE appointment for that same patient, across ALL
+   providers (no ProvID filter) — a patient's CC-on-file status doesn't
+   vary by provider or visit. The triggering row always gets written
+   regardless of its own date (Table View's window reaches 7 days into
+   the past, so the row someone actually clicked must always save, same
+   as the old single-row saveCCEHR did); the carry-forward scan to every
+   OTHER matching row is gated on date >= today — past appointments are
+   never touched by the scan. who/now are computed ONCE (via
+   _stampAttribution on the triggering row) and reused verbatim for
+   every other row this touches, since this is conceptually one action,
+   not many separate edits with their own timestamps.
+   This replaces saveCCEHR entirely — that function's only caller
+   (Appointment Flow's Table View CC toggle) now calls this instead, and
+   the old single-row function added nothing this one doesn't already
+   do for the single-appointment case (a patient with no other
+   qualifying appointments just writes the one triggering row). ────── */
+function saveCCEHRCarryForward(apptId, value) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
     if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
-    var rowNum = _findApptRow(sheet, apptId);
-    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
-    sheet.getRange(rowNum, APPT_COLS.indexOf('CCEHR') + 1).setValue(value || '');
-    var attrib = _stampAttribution(ss, sheet, rowNum, CCEHR_BY_COL, CCEHR_AT_COL);
-    var now = attrib.now;
+    var data = sheet.getDataRange().getValues();
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');
+    var DATE_IDX = APPT_COLS.indexOf('Date');
+    var ID_IDX = APPT_COLS.indexOf('ApptID');
+    var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+    var CCEHR_COL = APPT_COLS.indexOf('CCEHR') + 1;
 
-    _audit(ss, 'CCEHR_UPDATED', 'Appt ' + apptId + ' → ccEhr=' + (value || '(cleared)'));
-    return JSON.stringify({ ok: true, at: now, by: attrib.who });
+    var triggerRowIdx = -1;
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][ID_IDX] || '').trim() === String(apptId).trim()) { triggerRowIdx = i; break; }
+    }
+    if (triggerRowIdx < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
+
+    var patientNorm = _normName(String(data[triggerRowIdx][PATIENT_IDX] || ''));
+    var todayStr = _fmtDate(new Date());
+
+    // Triggering row — always written, reuses _stampAttribution's existing
+    // who-derivation rather than duplicating it; its {who, now} is then
+    // reused as-is for every other row below.
+    sheet.getRange(triggerRowIdx + 1, CCEHR_COL).setValue(value || '');
+    var attrib = _stampAttribution(ss, sheet, triggerRowIdx + 1, CCEHR_BY_COL, CCEHR_AT_COL);
+
+    var updated = [{
+      id: String(data[triggerRowIdx][ID_IDX] || ''),
+      date: _fmtDate(data[triggerRowIdx][DATE_IDX]),
+      provID: String(data[triggerRowIdx][PROV_IDX] || ''),
+    }];
+
+    for (var r = 1; r < data.length; r++) {
+      if (r === triggerRowIdx) continue; // already written above
+      if (_normName(String(data[r][PATIENT_IDX] || '')) !== patientNorm) continue;
+      var dateStr = _fmtDate(data[r][DATE_IDX]);
+      if (!dateStr || dateStr < todayStr) continue; // past — never touched
+
+      var rowNum = r + 1;
+      sheet.getRange(rowNum, CCEHR_COL).setValue(value || '');
+      sheet.getRange(rowNum, CCEHR_BY_COL).setValue(attrib.who);
+      sheet.getRange(rowNum, CCEHR_AT_COL).setValue(attrib.now);
+      updated.push({
+        id: String(data[r][ID_IDX] || ''),
+        date: dateStr,
+        provID: String(data[r][PROV_IDX] || ''),
+      });
+    }
+
+    _audit(ss, 'CCEHR_CARRY_FORWARD', 'Patient "' + data[triggerRowIdx][PATIENT_IDX] + '" → ccEhr=' +
+      (value || '(cleared)') + ' across ' + updated.length + ' appointment(s)');
+    return JSON.stringify({ ok: true, at: attrib.now, by: attrib.who, updated: updated });
   } catch (e) {
-    Logger.log('saveCCEHR ERROR: ' + e.message);
+    Logger.log('saveCCEHRCarryForward ERROR: ' + e.message);
     return JSON.stringify({ ok: false, err: e.message });
   }
 }

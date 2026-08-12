@@ -14557,6 +14557,25 @@
                 setTableRows(rows => (rows || []).map(a => a.id === apptId ? { ...a, ...patch } : a));
             }
 
+            // Plural counterpart for A2's CC-on-Tebra carry-forward — one save
+            // can touch several appointments (same patient, current/future,
+            // any provider) in one edit event. `updates` is an array of
+            // {id, ...fields} objects (the caller builds each one from the
+            // backend's `updated` list plus the shared value/by/at, since a
+            // single carry-forward event writes the exact same value to every
+            // row it touches); each gets shallow-merged into tableRows by id.
+            // Rows for a provider that isn't currently loaded simply have no
+            // match here and are silently skipped — expected, not a bug (see
+            // AppointmentFlowRateRow's carry-forward comment).
+            function patchTableRows(updates) {
+                setTableRows(rows => {
+                    if (!rows || !updates || !updates.length) return rows;
+                    const byId = {};
+                    updates.forEach(u => { byId[u.id] = u; });
+                    return rows.map(a => byId[a.id] ? { ...a, ...byId[a.id] } : a);
+                });
+            }
+
             // Manual refresh only (no polling/interval) — the panel otherwise
             // fetches once on mount and never again, so an edit made elsewhere
             // (e.g. PatientModal, a different tab) while this panel stays open
@@ -14761,7 +14780,7 @@
                                 </div>
                             )}
                             {!loading && combinedDays.map(d => (
-                                <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} loggedInProv={loggedInProv} onApptUpdate={patchTableRow} />
+                                <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} loggedInProv={loggedInProv} onApptUpdate={patchTableRow} onApptsUpdate={patchTableRows} />
                             ))}
                         </div>
                     </div>
@@ -14774,7 +14793,7 @@
         // Table's window) — a date can have either, neither is impossible
         // once it's reached this component (mergeDayGroups only creates an
         // entry when at least one is present), or both.
-        function AppointmentFlowDaySection({ date, listAppts, tableAppts, loggedInProv, onApptUpdate }) {
+        function AppointmentFlowDaySection({ date, listAppts, tableAppts, loggedInProv, onApptUpdate, onApptsUpdate }) {
             const [expandedId, setExpandedId] = useState(null);
             const onToggle = id => setExpandedId(p => p === id ? null : id);
 
@@ -14788,7 +14807,7 @@
                             ))}
                         </div>
                     )}
-                    {tableAppts && <AppointmentFlowRateTable appts={tableAppts} loggedInProv={loggedInProv} onApptUpdate={onApptUpdate} />}
+                    {tableAppts && <AppointmentFlowRateTable appts={tableAppts} loggedInProv={loggedInProv} onApptUpdate={onApptUpdate} onApptsUpdate={onApptsUpdate} />}
                 </div>
             );
         }
@@ -14966,7 +14985,7 @@
            header row + one AppointmentFlowRateRow per appt. Mounted by
            AppointmentFlowDaySection for whichever days fall in Table's
            window (tableAppts non-null). */
-        function AppointmentFlowRateTable({ appts, loggedInProv, onApptUpdate }) {
+        function AppointmentFlowRateTable({ appts, loggedInProv, onApptUpdate, onApptsUpdate }) {
             const access = rateTableAccess(loggedInProv);
             return (
                 <table className="af-rate-table">
@@ -14983,7 +15002,7 @@
                         {appts.map(appt => (
                             <AppointmentFlowRateRow key={appt.id} appt={appt}
                                 channels={access.channels} showBestRate={access.showBestRate} showCcTebra={access.showCcTebra}
-                                onApptUpdate={onApptUpdate} />
+                                onApptUpdate={onApptUpdate} onApptsUpdate={onApptsUpdate} />
                         ))}
                     </tbody>
                 </table>
@@ -15013,7 +15032,7 @@
            is fetched only the first time it flips to shown (rateData still
            null) and then just stays cached in state — toggling back off and
            on again re-shows the cached numbers with no refetch. */
-        function AppointmentFlowRateRow({ appt, channels, showBestRate, showCcTebra, onApptUpdate }) {
+        function AppointmentFlowRateRow({ appt, channels, showBestRate, showCcTebra, onApptUpdate, onApptsUpdate }) {
             const [shown, setShown] = useState(false);
             const [rateData, setRateData] = useState(null);   // null = not fetched yet
             const mountedRef = useRef(true);
@@ -15096,9 +15115,43 @@
                 handleFieldSave('bestRateConfirmed', 'saveBestRateConfirmed', true);
             }
 
+            // CC on Tebra carry-forward (A2) — a genuinely different save path
+            // from handleFieldSave: one save can touch several appointments
+            // (same patient, current/future, any provider), so the response
+            // carries an `updated` array rather than a single by/at pair.
+            // Every touched row gets the exact same value/by/at in this one
+            // edit event, so the plural patch is built once from the shared
+            // response fields, not per-row. Only appointments for whichever
+            // provider is currently selected in the switcher will visibly
+            // update here — others were still written on the backend, they
+            // just aren't part of this panel's currently-loaded tableRows.
             function handleCcCycle() {
+                if (savingFields.ccEhr) return;
                 const next = appt.ccEhr === 'Y' ? 'N' : appt.ccEhr === 'N' ? '' : 'Y';
-                handleFieldSave('ccEhr', 'saveCCEHR', next);
+                setSavingFields(s => ({ ...s, ccEhr: true }));
+                setErrorFields(e => ({ ...e, ccEhr: false }));
+                gsr('saveCCEHRCarryForward', appt.id, next)
+                    .then(raw => {
+                        let result = null;
+                        try { result = JSON.parse(raw); } catch (e) { /* leave null */ }
+                        if (!mountedRef.current) return;
+                        if (result && result.ok) {
+                            if (onApptsUpdate) {
+                                const patch = { ccEhr: next, ccEhrBy: result.by || '', ccEhrAt: result.at || '' };
+                                const updates = (result.updated || []).map(u => ({ id: u.id, ...patch }));
+                                onApptsUpdate(updates);
+                            }
+                        } else {
+                            setErrorFields(e => ({ ...e, ccEhr: true }));
+                            setTimeout(() => { if (mountedRef.current) setErrorFields(e => ({ ...e, ccEhr: false })); }, 2500);
+                        }
+                    })
+                    .catch(() => {
+                        if (!mountedRef.current) return;
+                        setErrorFields(e => ({ ...e, ccEhr: true }));
+                        setTimeout(() => { if (mountedRef.current) setErrorFields(e => ({ ...e, ccEhr: false })); }, 2500);
+                    })
+                    .finally(() => { if (mountedRef.current) setSavingFields(s => ({ ...s, ccEhr: false })); });
             }
 
             // channel_totals — same field BestChannelHint and the Billing Day
