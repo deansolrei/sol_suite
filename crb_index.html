@@ -9030,49 +9030,57 @@
             max-width: 160px;
         }
         /* A3b follow-up — compact sizing for List View's always-visible
-           screener block, roughly 50% of the shared classes' normal size.
-           Scoped under .af-scr-compact (applied alongside .af-detail on
-           AppointmentFlowScreenerDetail's own wrapper only) so .scr-score-
-           input/.fi/.af-scr-max/.af-detail-label/.af-attrib-line/.af-flag-
-           error themselves stay untouched for every other place that uses
-           them — purely a visual override layer, same validation/save-on-
-           blur behavior underneath. */
+           screener block, with an actual typographic hierarchy rather than
+           one blanket size: the score itself is the primary content (11px),
+           /max is visibly secondary (9px), labels are already uppercase so
+           they read fine a step down (9px), and interpretation/attribution
+           text is real content someone needs to read, not decoration
+           (10px). Scoped under .af-scr-compact (applied alongside .af-detail
+           on AppointmentFlowScreenerDetail's own wrapper only) so
+           .scr-score-input/.fi/.af-scr-max/.af-detail-label/.af-attrib-line/
+           .af-flag-error themselves stay untouched for every other place
+           that uses them — purely a visual override layer, same
+           validation/save-on-blur behavior underneath. */
         .af-scr-compact .af-detail-label {
-            font-size: 5px;
+            font-size: 9px;
         }
         .af-scr-compact .scr-score-input {
-            font-size: 8px;
-            width: 28px;
-            padding: 3px 4px;
+            font-size: 11px;
+            width: 40px;
+            padding: 4px 6px;
         }
         .af-scr-compact .af-scr-max {
-            font-size: 5px;
+            font-size: 9px;
         }
         .af-scr-compact .af-attrib-line {
-            font-size: 5px;
+            font-size: 10px;
         }
         .af-scr-compact .af-flag-error {
-            font-size: 5px;
+            font-size: 10px;
         }
+        /* Proportional to the score inputs above, not drastically smaller —
+           this is still a primary data-entry field, not a caption. */
         .af-scr-compact .af-scr-date-input {
-            max-width: 80px;
-            font-size: 7px;
-            padding: 4px 5px;
+            max-width: 110px;
+            font-size: 10px;
+            padding: 5px 6px;
         }
-        /* Compact sizing for UnsignedDateStatusControl's badge — roughly 50%
-           of .ns-badge's normal size. Scoped under .af-uds-status (the
-           control's own wrapper span) so .ns-badge itself stays untouched
-           for NoteBoardPanel's own (unscaled) usage. */
+        /* Compact sizing for UnsignedDateStatusControl (icon + label +
+           attribution) — genuinely smaller than the row's own Time/Name
+           text (11-13px) but not so small it reads as an afterthought.
+           Scoped under .af-uds-status (the control's own wrapper span) so
+           .ns-badge itself stays untouched for NoteBoardPanel's own
+           (unscaled) usage. */
         .af-uds-status .ns-badge {
-            font-size: 5px;
-            padding: 1.5px 4px;
-            gap: 2px;
+            font-size: 9px;
+            padding: 2px 6px;
+            gap: 3px;
         }
         .af-uds-status .af-attrib-line {
-            font-size: 5px;
+            font-size: 9px;
         }
         .af-uds-status .af-flag-error {
-            font-size: 5px;
+            font-size: 9px;
         }
         body.dark .af-panel {
             background: #051F11;
@@ -13406,16 +13414,6 @@
             'ready': { label: 'Ready', cls: 'ns-ready', icon: '✓' },
         };
         const NS_CYCLE = ['', 'in_progress', 'ready'];
-        // Same three statuses as NS_LABELS, as raw hex for inline text-color
-        // styling — pulled from .ns-badge.ns-none/.ns-prog/.ns-ready's own
-        // CSS (see those rules) so plain colored text stays visually matched
-        // to the pill/badge elsewhere without touching .ns-badge itself.
-        // Appointment Flow's List View uses this; nothing else should need to.
-        const NS_COLOR = {
-            '': '#777355',
-            'in_progress': '#BE992A',
-            'ready': '#16A34A',
-        };
 
         /* ── Claim-status badge labels — same visual language as NS_LABELS,
            shown in the Provider Day View post-visit badge slot once a note
@@ -14902,7 +14900,7 @@
             return (
                 <span className="af-uds-status">
                     <button className={`ns-badge ${info.cls}`} onClick={onClick} disabled={saving}
-                        style={saving ? { opacity: .55, cursor: 'default' } : { cursor: 'pointer', border: 'none', font: 'inherit' }}
+                        style={saving ? { opacity: .55, cursor: 'default' } : { cursor: 'pointer', border: 'none' }}
                         title={`${info.label}${by ? ` — ${by}${at ? ' · ' + fmtAttribAt(at) : ''}` : ''} — click to advance`}>
                         {saving ? '…' : info.icon} {info.label} ↻
                     </button>
@@ -14921,7 +14919,6 @@
            signNoteAndClearUnsigned all prefer staff.initials) — displayed
            directly, no client-side derivation. */
         function AppointmentFlowRow({ appt, expanded, onToggle, onUnsignedDateUpdate, onScrDataUpdate }) {
-            const nsInfo = NS_LABELS[appt.noteStatus] || NS_LABELS[''];
             const noteAttribBy = appt.noteStatus === 'ready' ? appt.noteReadyBy
                 : appt.noteStatus === 'in_progress' ? appt.noteInProgressBy : '';
             const noteAttribAt = appt.noteStatus === 'ready' ? appt.noteReadyAt
@@ -14933,12 +14930,18 @@
             const [savingDates, setSavingDates] = useState({});
             const [errorDates, setErrorDates] = useState({});
 
-            // Cycles ONE stacked entry's status, saving against THAT entry's
-            // own apptId — never appt.id, the current row's own id. Builds
-            // the patch to match exactly what saveNoteStatus itself writes
-            // per target status (only the relevant attribution pair; clears
-            // both when cycling back to Not Started) so the optimistic
-            // patch can never disagree with what's actually on the sheet.
+            // Cycles ONE entry's status, saving against THAT entry's own
+            // apptId — a stacked otherUnsignedDates entry (A3a), or this
+            // row's own appt.id (A4, its own Note Status). Generic either
+            // way: savingDates/errorDates are keyed by whatever apptId is
+            // passed, and this row's own id can never also appear as a
+            // stacked entry's apptId (the backend's date-based self-
+            // exclusion already guarantees that), so there's no key
+            // collision between the two uses. Builds the patch to match
+            // exactly what saveNoteStatus itself writes per target status
+            // (only the relevant attribution pair; clears both when cycling
+            // back to Not Started) so the optimistic patch can never
+            // disagree with what's actually on the sheet.
             function handleUnsignedDateClick(entryApptId, currentStatus) {
                 if (savingDates[entryApptId]) return;
                 const next = NS_CYCLE[(NS_CYCLE.indexOf(currentStatus || '') + 1) % NS_CYCLE.length];
@@ -15009,12 +15012,13 @@
                             </div>
                             <div className="af-detail-row">
                                 <span className="af-detail-label">Note Status</span>
-                                <span>
-                                    <span style={{ color: NS_COLOR[appt.noteStatus] || NS_COLOR[''] }}>{nsInfo.label}</span>
-                                    {noteAttribBy && (
-                                        <span className="af-attrib-line"> {noteAttribBy}{noteAttribAt ? ' · ' + fmtAttribAt(noteAttribAt) : ''}</span>
-                                    )}
-                                </span>
+                                {/* A4 — natural .ns-badge size, deliberately NOT wrapped in
+                                    .af-uds-status (that's the stacked-otherUnsignedDates
+                                    compact sizing; this is the row's own primary status). */}
+                                <UnsignedDateStatusControl
+                                    noteStatus={appt.noteStatus} by={noteAttribBy} at={noteAttribAt}
+                                    saving={!!savingDates[appt.id]} error={!!errorDates[appt.id]}
+                                    onClick={() => handleUnsignedDateClick(appt.id, appt.noteStatus)} />
                             </div>
                             <div className="af-detail-row">
                                 <span className="af-detail-label">Provider</span>
