@@ -8815,13 +8815,26 @@
            these rules are Table View-only now, not shared with List. ── */
         .af-rate-table {
             width: 100%;
-            border-collapse: collapse;
+            /* separate + border-spacing:0 (not collapse) — same requirement
+               Claims Ledger's .cl-table already documents: border-collapse:
+               collapse breaks position:sticky on <th> reliably across
+               browsers; separate + 0 spacing keeps the look identical. */
+            border-collapse: separate;
+            border-spacing: 0;
             font-size: 12px;
         }
-        .af-rate-table thead tr {
-            background: #09371F;
-        }
         .af-rate-table th {
+            /* Background lives on <th> itself, not the <tr> — a sticky th
+               with an unpositioned parent <tr> wouldn't carry the <tr>'s
+               background along while stuck, letting rows scroll underneath
+               show through. Sticky per-table (not per-panel): each day's own
+               af-rate-table has its own <thead>, so it naturally yields to
+               the next day's header once its own rows scroll past — no JS
+               needed, unlike AssistantView's single continuous table (see
+               the FIX (2026-07-26) comment on .asst-hd-sticky), which is why
+               plain position:sticky works here without that same escape
+               hatch. */
+            background: #09371F;
             padding: 6px 12px;
             text-align: left;
             color: rgba(242, 237, 219, .85);
@@ -8829,6 +8842,9 @@
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: .3px;
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
         .af-rate-th {
             text-align: right !important;
@@ -9012,6 +9028,51 @@
         }
         .af-scr-date-input {
             max-width: 160px;
+        }
+        /* A3b follow-up — compact sizing for List View's always-visible
+           screener block, roughly 50% of the shared classes' normal size.
+           Scoped under .af-scr-compact (applied alongside .af-detail on
+           AppointmentFlowScreenerDetail's own wrapper only) so .scr-score-
+           input/.fi/.af-scr-max/.af-detail-label/.af-attrib-line/.af-flag-
+           error themselves stay untouched for every other place that uses
+           them — purely a visual override layer, same validation/save-on-
+           blur behavior underneath. */
+        .af-scr-compact .af-detail-label {
+            font-size: 5px;
+        }
+        .af-scr-compact .scr-score-input {
+            font-size: 8px;
+            width: 28px;
+            padding: 3px 4px;
+        }
+        .af-scr-compact .af-scr-max {
+            font-size: 5px;
+        }
+        .af-scr-compact .af-attrib-line {
+            font-size: 5px;
+        }
+        .af-scr-compact .af-flag-error {
+            font-size: 5px;
+        }
+        .af-scr-compact .af-scr-date-input {
+            max-width: 80px;
+            font-size: 7px;
+            padding: 4px 5px;
+        }
+        /* Compact sizing for UnsignedDateStatusControl's badge — roughly 50%
+           of .ns-badge's normal size. Scoped under .af-uds-status (the
+           control's own wrapper span) so .ns-badge itself stays untouched
+           for NoteBoardPanel's own (unscaled) usage. */
+        .af-uds-status .ns-badge {
+            font-size: 5px;
+            padding: 1.5px 4px;
+            gap: 2px;
+        }
+        .af-uds-status .af-attrib-line {
+            font-size: 5px;
+        }
+        .af-uds-status .af-flag-error {
+            font-size: 5px;
         }
         body.dark .af-panel {
             background: #051F11;
@@ -15055,7 +15116,7 @@
             }
 
             return (
-                <div className="af-detail">
+                <div className="af-detail af-scr-compact">
                     <div className="af-detail-row">
                         <span className="af-detail-label">Date Administered</span>
                         <span>
