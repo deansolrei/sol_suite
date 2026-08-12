@@ -3050,9 +3050,19 @@ function saveClaimSubmission(apptId, claimSubmittedDate) {
   }
 }
 
-/* ── Screener data (ScrData) attribution — last-edited by/at for the
-   whole JSON blob, not per individual score. ──────────────────────── */
-function saveScrData(apptId, scrDataJson) {
+/* ── Coordinated screener-score save (A3b) — writes the whole ScrData
+   JSON blob AND, for any screener the caller says needs its tri-state
+   flag flipped to true, the matching PHQ9/GAD7/PCL5 column too — one
+   _stampAttribution call covers both, onto scrDataBy/At. scrFlagNames
+   is caller-computed (mirrors PatientModal's updScrScore exactly: skip
+   a screener if its flag already reads true — never touches an
+   explicit false/null on its own). This replaces saveScrData, which
+   had zero real callers (only ever reachable through the full-row save
+   path PatientModal's updScrData/updScrScore actually use) and whose
+   entire behavior — write ScrData, stamp scrDataBy/At — is now a
+   strict subset of this one (an empty scrFlagNames array reduces to
+   exactly what saveScrData did). ──────────────────────────────────── */
+function saveScrEntry(apptId, scrDataJson, scrFlagNames) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TAB_APPT);
@@ -3061,13 +3071,30 @@ function saveScrData(apptId, scrDataJson) {
     if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
 
     sheet.getRange(rowNum, APPT_COLS.indexOf('ScrData') + 1).setValue(scrDataJson || '');
-    var attrib = _stampAttribution(ss, sheet, rowNum, SCR_DATA_BY_COL, SCR_DATA_AT_COL);
-    var now = attrib.now;
 
-    _audit(ss, 'SCR_DATA_UPDATED', 'Appt ' + apptId);
-    return JSON.stringify({ ok: true, at: now });
+    // Screener display name (as used in scrData/appt.scr) → its own
+    // tri-state flag column — the same column rowToAppt() already reads
+    // for appt.scr['PHQ-9']/['GAD-7']/['PCL-5'].
+    var SCR_FLAG_COL = {
+      'PHQ-9': APPT_COLS.indexOf('PHQ9') + 1,
+      'GAD-7': APPT_COLS.indexOf('GAD7') + 1,
+      'PCL-5': APPT_COLS.indexOf('PCL5') + 1,
+    };
+    (scrFlagNames || []).forEach(function (name) {
+      var col = SCR_FLAG_COL[name];
+      if (!col) return;
+      var current = sheet.getRange(rowNum, col).getValue();
+      if (current === true || current === 'TRUE') return; // already Done — no-op
+      sheet.getRange(rowNum, col).setValue(true);
+    });
+
+    var attrib = _stampAttribution(ss, sheet, rowNum, SCR_DATA_BY_COL, SCR_DATA_AT_COL);
+
+    _audit(ss, 'SCR_DATA_UPDATED', 'Appt ' + apptId +
+      (scrFlagNames && scrFlagNames.length ? ' → flagged Done: ' + scrFlagNames.join(', ') : ''));
+    return JSON.stringify({ ok: true, at: attrib.now, by: attrib.who });
   } catch (e) {
-    Logger.log('saveScrData ERROR: ' + e.message);
+    Logger.log('saveScrEntry ERROR: ' + e.message);
     return JSON.stringify({ ok: false, err: e.message });
   }
 }

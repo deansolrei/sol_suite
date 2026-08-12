@@ -9005,19 +9005,13 @@
             text-transform: uppercase;
             letter-spacing: .4px;
         }
-        .af-detail-empty {
-            font-size: 12px;
-            color: #777355;
-        }
-        .af-scr-score {
-            font-size: 15px;
-            font-weight: 800;
-            color: #2B2716;
-        }
         .af-scr-max {
             font-size: 10px;
             font-weight: 600;
             color: #777355;
+        }
+        .af-scr-date-input {
+            max-width: 160px;
         }
         body.dark .af-panel {
             background: #051F11;
@@ -9029,14 +9023,12 @@
             background: #051F11;
         }
         body.dark .af-cell-pat,
-        body.dark .af-day-hdr,
-        body.dark .af-scr-score {
+        body.dark .af-day-hdr {
             color: #F0FDF4;
         }
         body.dark .af-cell-time,
         body.dark .af-attrib-line,
         body.dark .af-detail-label,
-        body.dark .af-detail-empty,
         body.dark .af-scr-max {
             color: #6B9E8A;
         }
@@ -14444,19 +14436,6 @@
             return issues;
         }
 
-        // Same score-presence check AppointmentFlowScreenerDetail uses
-        // internally to decide whether it has anything to show — exposed here
-        // so List View's collapsed row can skip rendering that component
-        // entirely (rather than always rendering it and letting its own
-        // "No screener data" fallback fire on every row with none).
-        function hasScrData(appt) {
-            const scrData = appt.scrData || {};
-            return ['PHQ-9', 'GAD-7', 'PCL-5'].some(name => {
-                const sd = scrData[name];
-                return sd && sd.score !== undefined && sd.score !== '' && sd.score !== null;
-            });
-        }
-
         // Groups appointments by date, preserving whatever sort order they
         // arrived in (both getLiveWindowAppointments and
         // getTableWindowAppointments already return ascending date/time
@@ -14558,6 +14537,14 @@
             // immediately without needing the manual Refresh button.
             function patchTableRow(apptId, patch) {
                 setTableRows(rows => (rows || []).map(a => a.id === apptId ? { ...a, ...patch } : a));
+            }
+
+            // Same shape as patchTableRow, targeting listRows instead — used by
+            // A3b's screener-score editing (AppointmentFlowScreenerDetail),
+            // which lives in List View and always edits the row it's already
+            // rendered on, never another row's own fields.
+            function patchListRow(apptId, patch) {
+                setListRows(rows => (rows || []).map(a => a.id === apptId ? { ...a, ...patch } : a));
             }
 
             // Plural counterpart for A2's CC-on-Tebra carry-forward — one save
@@ -14809,7 +14796,7 @@
                                 </div>
                             )}
                             {!loading && combinedDays.map(d => (
-                                <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} loggedInProv={loggedInProv} onApptUpdate={patchTableRow} onApptsUpdate={patchTableRows} onUnsignedDateUpdate={patchUnsignedNoteStatus} />
+                                <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} loggedInProv={loggedInProv} onApptUpdate={patchTableRow} onApptsUpdate={patchTableRows} onUnsignedDateUpdate={patchUnsignedNoteStatus} onScrDataUpdate={patchListRow} />
                             ))}
                         </div>
                     </div>
@@ -14822,7 +14809,7 @@
         // Table's window) — a date can have either, neither is impossible
         // once it's reached this component (mergeDayGroups only creates an
         // entry when at least one is present), or both.
-        function AppointmentFlowDaySection({ date, listAppts, tableAppts, loggedInProv, onApptUpdate, onApptsUpdate, onUnsignedDateUpdate }) {
+        function AppointmentFlowDaySection({ date, listAppts, tableAppts, loggedInProv, onApptUpdate, onApptsUpdate, onUnsignedDateUpdate, onScrDataUpdate }) {
             const [expandedId, setExpandedId] = useState(null);
             const onToggle = id => setExpandedId(p => p === id ? null : id);
 
@@ -14833,7 +14820,7 @@
                         <div className="af-list-block">
                             {listAppts.map(appt => (
                                 <AppointmentFlowRow key={appt.id} appt={appt} expanded={expandedId === appt.id} onToggle={() => onToggle(appt.id)}
-                                    onUnsignedDateUpdate={onUnsignedDateUpdate} />
+                                    onUnsignedDateUpdate={onUnsignedDateUpdate} onScrDataUpdate={onScrDataUpdate} />
                             ))}
                         </div>
                     )}
@@ -14872,7 +14859,7 @@
            initials at the source (Code.js's _stampAttribution/saveNoteStatus/
            signNoteAndClearUnsigned all prefer staff.initials) — displayed
            directly, no client-side derivation. */
-        function AppointmentFlowRow({ appt, expanded, onToggle, onUnsignedDateUpdate }) {
+        function AppointmentFlowRow({ appt, expanded, onToggle, onUnsignedDateUpdate, onScrDataUpdate }) {
             const nsInfo = NS_LABELS[appt.noteStatus] || NS_LABELS[''];
             const noteAttribBy = appt.noteStatus === 'ready' ? appt.noteReadyBy
                 : appt.noteStatus === 'in_progress' ? appt.noteInProgressBy : '';
@@ -14952,7 +14939,7 @@
                             })}
                         </div>
                     </div>
-                    {hasScrData(appt) && <AppointmentFlowScreenerDetail appt={appt} />}
+                    <AppointmentFlowScreenerDetail appt={appt} onScrDataUpdate={onScrDataUpdate} />
                     {expanded && (
                         <div className="af-detail">
                             <div className="af-detail-row">
@@ -14998,24 +14985,92 @@
             );
         }
 
-        /* List View's expand content — every row, pre- or post-visit alike,
-           reveals only this. Interpretation text/color comes directly from
-           getScrResult, never reimplemented. */
-        function AppointmentFlowScreenerDetail({ appt }) {
-            const scrData = appt.scrData || {};
-            const scrEntries = ['PHQ-9', 'GAD-7', 'PCL-5']
-                .map(name => ({ name, score: scrData[name] && scrData[name].score }))
-                .filter(e => e.score !== undefined && e.score !== '' && e.score !== null);
+        /* A3b — List View's screener block, always visible on every row (no
+           longer gated on having data). Existing scores display exactly as
+           before (score/max/interpretation via getScrResult, unchanged) but
+           are now editable: Date Administered above the three screener rows
+           (same placement PatientModal uses), each score saving
+           independently on blur, same read-modify-write-against-appt.scrData
+           + local-state-plus-prop-sync pattern ChecklistNote's syncField
+           already uses (typing updates local state immediately; the actual
+           save — and the attribution stamp — only fires on blur). Given
+           35/35 real records currently have no date at all, that's the
+           expected common case, not an edge case: the "— administered ..."
+           text simply doesn't render when scrData.date is blank, same as
+           it always has. */
+        function AppointmentFlowScreenerDetail({ appt, onScrDataUpdate }) {
+            const [localScrData, setLocalScrData] = useState(appt.scrData || {});
+            const [savingFields, setSavingFields] = useState({});
+            const [errorFields, setErrorFields] = useState({});
 
-            if (scrEntries.length === 0) {
-                return <div className="af-detail"><span className="af-detail-empty">No screener data for this appointment.</span></div>;
+            useEffect(() => { setLocalScrData(appt.scrData || {}); }, [appt.scrData]);
+
+            // Always reads from appt.scrData (last CONFIRMED server state),
+            // never localScrData — so blurring one field can't accidentally
+            // persist an uncommitted, still-being-typed edit in a sibling
+            // field. flagName set only for a score field, matching
+            // saveScrEntry's "skip if this screener's flag is already true"
+            // rule (never touches an explicit false/null on its own).
+            function saveScr(nextScrData, flagName) {
+                const key = flagName || 'date';
+                if (savingFields[key]) return;
+                setSavingFields(s => ({ ...s, [key]: true }));
+                setErrorFields(e => ({ ...e, [key]: false }));
+                const scrFlagNames = [];
+                if (flagName && (appt.scr || {})[flagName] !== true) scrFlagNames.push(flagName);
+                gsr('saveScrEntry', appt.id, JSON.stringify(nextScrData), scrFlagNames)
+                    .then(raw => {
+                        let result = null;
+                        try { result = JSON.parse(raw); } catch (e) { /* leave null */ }
+                        if (result && result.ok) {
+                            const patch = { scrData: nextScrData, scrDataBy: result.by || '', scrDataAt: result.at || '' };
+                            if (scrFlagNames.length) {
+                                const newScr = { ...(appt.scr || {}) };
+                                scrFlagNames.forEach(n => { newScr[n] = true; });
+                                patch.scr = newScr;
+                            }
+                            if (onScrDataUpdate) onScrDataUpdate(appt.id, patch);
+                        } else {
+                            setErrorFields(e => ({ ...e, [key]: true }));
+                            setTimeout(() => setErrorFields(e => ({ ...e, [key]: false })), 2500);
+                        }
+                    })
+                    .catch(() => {
+                        setErrorFields(e => ({ ...e, [key]: true }));
+                        setTimeout(() => setErrorFields(e => ({ ...e, [key]: false })), 2500);
+                    })
+                    .finally(() => setSavingFields(s => ({ ...s, [key]: false })));
+            }
+
+            function handleDateBlur() {
+                const val = localScrData.date || '';
+                if (val === (appt.scrData?.date || '')) return; // unchanged — skip a no-op save
+                saveScr({ ...(appt.scrData || {}), date: val });
+            }
+            function handleScoreBlur(name) {
+                const val = (localScrData[name] && localScrData[name].score) || '';
+                const current = (appt.scrData && appt.scrData[name] && appt.scrData[name].score) || '';
+                if (String(val) === String(current)) return; // unchanged — skip a no-op save
+                saveScr({ ...(appt.scrData || {}), [name]: { score: val } }, name);
             }
 
             return (
                 <div className="af-detail">
-                    {scrEntries.map(({ name, score }) => {
-                        const result = getScrResult(name, score);
-                        const max = SCR_CONFIG[name].max;
+                    <div className="af-detail-row">
+                        <span className="af-detail-label">Date Administered</span>
+                        <span>
+                            <input type="date" className="fi af-scr-date-input"
+                                value={localScrData.date || ''}
+                                onChange={e => setLocalScrData(p => ({ ...p, date: e.target.value }))}
+                                onBlur={handleDateBlur}
+                                disabled={!!savingFields.date} />
+                            {errorFields.date && <span className="af-flag-error"> Save failed</span>}
+                        </span>
+                    </div>
+                    {['PHQ-9', 'GAD-7', 'PCL-5'].map(name => {
+                        const cfg = SCR_CONFIG[name];
+                        const sd = localScrData[name] || { score: '' };
+                        const result = getScrResult(name, sd.score);
                         // PHQ-9/GAD-7's stored text is a plain phrase ("Moderately
                         // severe depression") with no connector word — prefix
                         // "Indicates " here so it reads "16/27 Indicates moderately
@@ -15028,10 +15083,15 @@
                             <div key={name} className="af-detail-row">
                                 <span className="af-detail-label">{name}</span>
                                 <span>
-                                    <span className="af-scr-score">{score}</span>
-                                    <span className="af-scr-max">/{max}</span>
+                                    <input type="number" className="scr-score-input" min={0} max={cfg.max} placeholder="—"
+                                        value={sd.score === undefined || sd.score === null ? '' : sd.score}
+                                        onChange={e => setLocalScrData(p => ({ ...p, [name]: { score: e.target.value } }))}
+                                        onBlur={() => handleScoreBlur(name)}
+                                        disabled={!!savingFields[name]} />
+                                    <span className="af-scr-max">/{cfg.max}</span>
                                     {resultText && <span className="af-attrib-line"> {resultText}</span>}
-                                    {scrData.date && <span className="af-attrib-line"> — administered {fmtShort(scrData.date)}</span>}
+                                    {localScrData.date && <span className="af-attrib-line"> — administered {fmtShort(localScrData.date)}</span>}
+                                    {errorFields[name] && <span className="af-flag-error"> Save failed</span>}
                                 </span>
                             </div>
                         );
