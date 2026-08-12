@@ -3327,7 +3327,17 @@ function _isInLiveWindow(r, bounds) {
   // either. ClaimSubmittedDate is the one field guaranteed to be populated
   // wherever a claim was actually submitted, going back before this stage
   // existed.
-  var refDate = r[CLAIM_SUBMITTED_DATE_IDX] ? new Date(_fmtDate(r[CLAIM_SUBMITTED_DATE_IDX])) : null;
+  // Built directly from _fmtDate()'s own 'YYYY-MM-DD' output via manual split
+  // + the multi-arg Date constructor — never re-parsed through new Date() on
+  // the formatted string itself, which would hit the same UTC-midnight trap
+  // fmtUnsignedDate had (date-only strings parse as UTC, then read back
+  // shifted a day for any timezone behind UTC).
+  var claimSubmittedStr = r[CLAIM_SUBMITTED_DATE_IDX] ? _fmtDate(r[CLAIM_SUBMITTED_DATE_IDX]) : '';
+  var refDate = null;
+  if (claimSubmittedStr) {
+    var csParts = claimSubmittedStr.split('-').map(Number);
+    refDate = new Date(csParts[0], csParts[1] - 1, csParts[2]);
+  }
   if (refDate && !isNaN(refDate.getTime())) {
     var ageMs = new Date().getTime() - refDate.getTime();
     if (ageMs > 24 * 60 * 60 * 1000) return false; // submitted >1 day ago — settled, belongs in Archive

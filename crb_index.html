@@ -11914,12 +11914,19 @@
                 const yr = p[2].trim().length === 4 ? p[2].trim().slice(2) : p[2].trim();
                 return `${p[0].trim().padStart(2, '0')}/${p[1].trim().padStart(2, '0')}/${yr}`;
             }
-            try {
-                const dt = new Date(s);
+            // ISO YYYY-MM-DD — same manual split + multi-arg Date constructor
+            // fmtDate already uses. Never hand a bare date-only string to
+            // new Date(): it parses as UTC midnight, and reading the month/
+            // day/year back in local time shifts the display back one day
+            // for any timezone behind UTC.
+            const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (iso) {
+                const y = Number(iso[1]), m = Number(iso[2]), dNum = Number(iso[3]);
+                const dt = new Date(y, m - 1, dNum);
                 if (!isNaN(dt.getTime())) {
                     return `${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}/${String(dt.getFullYear()).slice(2)}`;
                 }
-            } catch (e) { }
+            }
             return s;
         }
 
