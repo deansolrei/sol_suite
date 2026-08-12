@@ -8803,10 +8803,6 @@
             flex-wrap: wrap;
             gap: 6px;
         }
-        .af-otherdate-status {
-            font-size: 11px;
-            font-weight: 700;
-        }
         .af-cell-cpt {
             display: flex;
             flex-wrap: wrap;
@@ -14576,6 +14572,32 @@
                 });
             }
 
+            // List View's A3a unsigned-date status editing — a saveNoteStatus
+            // call against apptId can be relevant to listRows in TWO distinct
+            // ways at once: (1) apptId IS some row's own id (that appointment
+            // is separately loaded), and (2) apptId appears inside some OTHER
+            // row's otherUnsignedDates array (a patient can have several
+            // upcoming appointments all referencing the same outstanding
+            // unsigned date). A single pass over listRows checks both for
+            // every row and patches whichever applies — never two separate
+            // update operations that could leave the "own row" copy and the
+            // "referenced from elsewhere" copies disagreeing with each other.
+            function patchUnsignedNoteStatus(apptId, patch) {
+                setListRows(rows => (rows || []).map(a => {
+                    const isOwnRow = a.id === apptId;
+                    const otherDates = a.otherUnsignedDates;
+                    const hasMatchingOther = Array.isArray(otherDates) && otherDates.some(d => d.apptId === apptId);
+                    if (!isOwnRow && !hasMatchingOther) return a;
+                    return {
+                        ...a,
+                        ...(isOwnRow ? patch : {}),
+                        ...(hasMatchingOther
+                            ? { otherUnsignedDates: otherDates.map(d => d.apptId === apptId ? { ...d, ...patch } : d) }
+                            : {}),
+                    };
+                }));
+            }
+
             // Manual refresh only (no polling/interval) — the panel otherwise
             // fetches once on mount and never again, so an edit made elsewhere
             // (e.g. PatientModal, a different tab) while this panel stays open
@@ -14780,7 +14802,7 @@
                                 </div>
                             )}
                             {!loading && combinedDays.map(d => (
-                                <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} loggedInProv={loggedInProv} onApptUpdate={patchTableRow} onApptsUpdate={patchTableRows} />
+                                <AppointmentFlowDaySection key={d.date} date={d.date} listAppts={d.listAppts} tableAppts={d.tableAppts} loggedInProv={loggedInProv} onApptUpdate={patchTableRow} onApptsUpdate={patchTableRows} onUnsignedDateUpdate={patchUnsignedNoteStatus} />
                             ))}
                         </div>
                     </div>
@@ -14793,7 +14815,7 @@
         // Table's window) — a date can have either, neither is impossible
         // once it's reached this component (mergeDayGroups only creates an
         // entry when at least one is present), or both.
-        function AppointmentFlowDaySection({ date, listAppts, tableAppts, loggedInProv, onApptUpdate, onApptsUpdate }) {
+        function AppointmentFlowDaySection({ date, listAppts, tableAppts, loggedInProv, onApptUpdate, onApptsUpdate, onUnsignedDateUpdate }) {
             const [expandedId, setExpandedId] = useState(null);
             const onToggle = id => setExpandedId(p => p === id ? null : id);
 
@@ -14803,12 +14825,35 @@
                     {listAppts && (
                         <div className="af-list-block">
                             {listAppts.map(appt => (
-                                <AppointmentFlowRow key={appt.id} appt={appt} expanded={expandedId === appt.id} onToggle={() => onToggle(appt.id)} />
+                                <AppointmentFlowRow key={appt.id} appt={appt} expanded={expandedId === appt.id} onToggle={() => onToggle(appt.id)}
+                                    onUnsignedDateUpdate={onUnsignedDateUpdate} />
                             ))}
                         </div>
                     )}
                     {tableAppts && <AppointmentFlowRateTable appts={tableAppts} loggedInProv={loggedInProv} onApptUpdate={onApptUpdate} onApptsUpdate={onApptsUpdate} />}
                 </div>
+            );
+        }
+
+        /* A3a — click-to-cycle note-status control for one otherUnsignedDates
+           entry. Matches NoteBoardPanel's existing cycleStatus precedent
+           visually (.ns-badge pill + icon/label/↻, same NS_LABELS), but NOT
+           behaviorally — that precedent updates optimistically before the
+           save confirms; this one (like every other A1/A2 field) waits for
+           confirmation before showing the new value, so a failure has
+           nothing to roll back, just an inline error flash. */
+        function UnsignedDateStatusControl({ noteStatus, by, at, saving, error, onClick }) {
+            const info = NS_LABELS[noteStatus || ''] || NS_LABELS[''];
+            return (
+                <span className="af-uds-status">
+                    <button className={`ns-badge ${info.cls}`} onClick={onClick} disabled={saving}
+                        style={saving ? { opacity: .55, cursor: 'default' } : { cursor: 'pointer', border: 'none', font: 'inherit' }}
+                        title={`${info.label}${by ? ` — ${by}${at ? ' · ' + fmtAttribAt(at) : ''}` : ''} — click to advance`}>
+                        {saving ? '…' : info.icon} {info.label} ↻
+                    </button>
+                    {error && <span className="af-flag-error"> Save failed</span>}
+                    {!error && by && <span className="af-attrib-line"> {by}{at ? ' · ' + fmtAttribAt(at) : ''}</span>}
+                </span>
             );
         }
 
@@ -14820,13 +14865,52 @@
            initials at the source (Code.js's _stampAttribution/saveNoteStatus/
            signNoteAndClearUnsigned all prefer staff.initials) — displayed
            directly, no client-side derivation. */
-        function AppointmentFlowRow({ appt, expanded, onToggle }) {
+        function AppointmentFlowRow({ appt, expanded, onToggle, onUnsignedDateUpdate }) {
             const nsInfo = NS_LABELS[appt.noteStatus] || NS_LABELS[''];
             const noteAttribBy = appt.noteStatus === 'ready' ? appt.noteReadyBy
                 : appt.noteStatus === 'in_progress' ? appt.noteInProgressBy : '';
             const noteAttribAt = appt.noteStatus === 'ready' ? appt.noteReadyAt
                 : appt.noteStatus === 'in_progress' ? appt.noteInProgressAt : '';
             const otherDates = appt.otherUnsignedDates || [];
+            // Per-date-entry save-in-flight / error state, keyed by that
+            // entry's OWN apptId (not this row's id) — several stacked
+            // entries can be mid-edit independently of each other.
+            const [savingDates, setSavingDates] = useState({});
+            const [errorDates, setErrorDates] = useState({});
+
+            // Cycles ONE stacked entry's status, saving against THAT entry's
+            // own apptId — never appt.id, the current row's own id. Builds
+            // the patch to match exactly what saveNoteStatus itself writes
+            // per target status (only the relevant attribution pair; clears
+            // both when cycling back to Not Started) so the optimistic
+            // patch can never disagree with what's actually on the sheet.
+            function handleUnsignedDateClick(entryApptId, currentStatus) {
+                if (savingDates[entryApptId]) return;
+                const next = NS_CYCLE[(NS_CYCLE.indexOf(currentStatus || '') + 1) % NS_CYCLE.length];
+                setSavingDates(s => ({ ...s, [entryApptId]: true }));
+                setErrorDates(e => ({ ...e, [entryApptId]: false }));
+                gsr('saveNoteStatus', entryApptId, next)
+                    .then(raw => {
+                        let result = null;
+                        try { result = JSON.parse(raw); } catch (e) { /* leave null */ }
+                        if (result && result.ok) {
+                            const patch = next === 'in_progress'
+                                ? { noteStatus: next, noteInProgressBy: result.by || '', noteInProgressAt: result.at || '' }
+                                : next === 'ready'
+                                    ? { noteStatus: next, noteReadyBy: result.by || '', noteReadyAt: result.at || '' }
+                                    : { noteStatus: '', noteInProgressBy: '', noteInProgressAt: '', noteReadyBy: '', noteReadyAt: '' };
+                            if (onUnsignedDateUpdate) onUnsignedDateUpdate(entryApptId, patch);
+                        } else {
+                            setErrorDates(e => ({ ...e, [entryApptId]: true }));
+                            setTimeout(() => setErrorDates(e => ({ ...e, [entryApptId]: false })), 2500);
+                        }
+                    })
+                    .catch(() => {
+                        setErrorDates(e => ({ ...e, [entryApptId]: true }));
+                        setTimeout(() => setErrorDates(e => ({ ...e, [entryApptId]: false })), 2500);
+                    })
+                    .finally(() => setSavingDates(s => ({ ...s, [entryApptId]: false })));
+            }
 
             return (
                 <div className="af-row-wrap">
@@ -14842,10 +14926,9 @@
                                 Each entry now carries its OWN noteStatus/attribution
                                 (that date's note-prep progress), not this appointment's —
                                 a patient's other outstanding dates can each be at a
-                                different stage. */}
+                                different stage — and its own apptId (A3a), so clicking
+                                its status control saves against THAT appointment. */}
                             {otherDates.map((d, i) => {
-                                const dInfo = NS_LABELS[d.noteStatus] || NS_LABELS[''];
-                                const dColor = NS_COLOR[d.noteStatus] || NS_COLOR[''];
                                 const dBy = d.noteStatus === 'ready' ? d.noteReadyBy
                                     : d.noteStatus === 'in_progress' ? d.noteInProgressBy : '';
                                 const dAt = d.noteStatus === 'ready' ? d.noteReadyAt
@@ -14853,8 +14936,10 @@
                                 return (
                                     <div key={i} className="af-otherdate-row">
                                         <span className="af-other-unsigned">({fmtUnsignedDate(d.date)})</span>
-                                        <span className="af-otherdate-status" style={{ color: dColor }}>{dInfo.label}</span>
-                                        {dBy && <span className="af-attrib-line">{dBy}{dAt ? ' · ' + fmtAttribAt(dAt) : ''}</span>}
+                                        <UnsignedDateStatusControl
+                                            noteStatus={d.noteStatus} by={dBy} at={dAt}
+                                            saving={!!savingDates[d.apptId]} error={!!errorDates[d.apptId]}
+                                            onClick={e => { e.stopPropagation(); handleUnsignedDateClick(d.apptId, d.noteStatus); }} />
                                     </div>
                                 );
                             })}

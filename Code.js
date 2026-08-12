@@ -2576,7 +2576,10 @@ function saveNoteStatus(apptId, noteStatus) {
 
         _audit(ss, 'NOTE_STATUS_UPDATED',
           'Appt ' + apptId + ' → noteStatus=' + (noteStatus || '(cleared)') + ' by ' + email);
-        return JSON.stringify({ ok: true });
+        // {ok, at, by} — same shape as every other A1/A2 save function, so
+        // callers don't need a special case for this one. "by" is who made
+        // the change either way, even when clearing back to Not Started.
+        return JSON.stringify({ ok: true, at: now, by: who });
       }
     }
     return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
@@ -3233,6 +3236,7 @@ function _liveWindowBounds(data, provFilter) {
   var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
   var PATIENT_IDX = APPT_COLS.indexOf('Patient');
   var NS_IDX = APPT_COLS.indexOf('NoteStatus');
+  var ID_IDX = APPT_COLS.indexOf('ApptID');
 
   var todayStr = _fmtDate(new Date());
   var horizon = new Date();
@@ -3247,7 +3251,9 @@ function _liveWindowBounds(data, provFilter) {
   // this costs zero additional full-sheet scans. Each entry carries that
   // date's own noteStatus + attribution (same field names _rowToApptWith
   // Attribution already uses) so a caller can show what stage each other
-  // outstanding date is actually at, not just the bare date.
+  // outstanding date is actually at, not just the bare date — plus its own
+  // ApptID (A3a) so an edit made against ONE entry can be saved against
+  // that specific appointment, not the row that happens to be displaying it.
   var unsignedDatesByPatientProv = {};
   for (var i = 1; i < data.length; i++) {
     var r = data[i];
@@ -3272,6 +3278,7 @@ function _liveWindowBounds(data, provFilter) {
     var patientKey = prov + '||' + _normName(String(r[PATIENT_IDX] || ''));
     if (!unsignedDatesByPatientProv[patientKey]) unsignedDatesByPatientProv[patientKey] = [];
     unsignedDatesByPatientProv[patientKey].push({
+      apptId: String(r[ID_IDX] || ''),
       date: dateStr,
       noteStatus: String(r[NS_IDX] || ''),
       noteInProgressBy: String(r[NOTE_PROGRESS_BY_COL - 1] || ''),
