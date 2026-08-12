@@ -8783,12 +8783,15 @@
         .af-cell-time {
             /* Actual prior value was 11px (not the 8.5 estimate); ratio
                11/8.5 applied: 11 × 1.29412 = 14.2px. Not used outside this
-               row. */
-            font-size: 14.2px;
+               row. Follow-up pass: real current value was 14.2px (this
+               same rule, from the prior pass) × 1.5 = 21.3px. */
+            font-size: 21.3px;
             color: #777355;
         }
         .af-cell-pat {
-            font-size: 13px;
+            /* Real current value was 13px × 2.0 = 26px. Not used outside
+               this row (grep-confirmed). */
+            font-size: 26px;
             font-weight: 700;
             color: #2B2716;
         }
@@ -9082,6 +9085,10 @@
             padding: 4px 6px;
         }
         .af-scr-compact .af-scr-max {
+            /* Small gap from the score input box before it — scoped here,
+               not on .scr-score-input itself (PatientModal's own screener
+               inputs reuse that class and shouldn't get this spacing). */
+            margin-left: 5px;
             font-size: 12px;
         }
         .af-scr-compact .af-attrib-line {
@@ -12175,12 +12182,17 @@
            this renders inside struck-through (void/cancelled) text so the
            state abbreviation gets its own line-through instead of looking
            like an un-struck addition. ── */
-        function PatientName({ name, state, strikethrough }) {
+        // stateFontSize — optional, defaults to '0.8em' (unchanged behavior
+        // for every existing caller). Appointment Flow's List View row is
+        // the only caller that passes an absolute px override, so its state
+        // abbreviation can scale independently of this component's ~30
+        // other call sites across the app without touching any of them.
+        function PatientName({ name, state, strikethrough, stateFontSize }) {
             return (
                 <>
                     {name}
                     {state && (
-                        <span style={{ fontSize: '0.8em', fontWeight: 400, color: '#777355', textDecoration: strikethrough ? 'line-through' : 'none' }}>
+                        <span style={{ fontSize: stateFontSize || '0.8em', fontWeight: 400, color: '#777355', textDecoration: strikethrough ? 'line-through' : 'none' }}>
                             {' · '}{state}
                         </span>
                     )}
@@ -15025,7 +15037,12 @@
                         <span className={`af-chevron${expanded ? ' open' : ''}`}>▶</span>
                         <div className="af-cell-time">{fmtTime(appt.time)}</div>
                         <div className="af-cell-pat">
-                            <PatientName name={appt.patient} state={appt.patientState} />
+                            {/* stateFontSize is an absolute px value, not a new em
+                                multiplier — the state's real current size (0.8em of
+                                .af-cell-pat's PRE-this-round 13px = 10.4px) × 1.5 =
+                                15.6px, computed independently of this same row's
+                                Patient Name size change so the two don't compound. */}
+                            <PatientName name={appt.patient} state={appt.patientState} stateFontSize="15.6px" />
                         </div>
                         <div className="af-cell-otherdates">
                             {/* Already oldest-first — _liveWindowBounds sorts each
