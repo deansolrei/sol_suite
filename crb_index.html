@@ -8795,6 +8795,23 @@
             font-weight: 700;
             color: #2B2716;
         }
+        /* Collapsed-row completion indicators (Clinical Note Signed / Claim
+           Submitted) — stacked under the patient name, not the otherdates
+           column (that column is specifically about OTHER appointments'
+           outstanding notes; these are facts about THIS appointment, so
+           they read as a continuation of "who/what this row is," not
+           another entry in an already-busy list). */
+        .af-cell-signals {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            margin-top: 2px;
+        }
+        .af-cell-signal {
+            font-size: 11px;
+            font-weight: 800;
+            color: #16A34A;
+        }
         .af-cell-otherdates {
             display: flex;
             flex-direction: column;
@@ -15043,6 +15060,12 @@
                                 15.6px, computed independently of this same row's
                                 Patient Name size change so the two don't compound. */}
                             <PatientName name={appt.patient} state={appt.patientState} stateFontSize="15.6px" />
+                            {(appt.out || appt.billing === 'submitted') && (
+                                <div className="af-cell-signals">
+                                    {appt.out && <span className="af-cell-signal">Clinical Note Signed</span>}
+                                    {appt.billing === 'submitted' && <span className="af-cell-signal">Claim Submitted</span>}
+                                </div>
+                            )}
                         </div>
                         <div className="af-cell-otherdates">
                             {/* Already oldest-first — _liveWindowBounds sorts each
@@ -15094,14 +15117,14 @@
                                 </span>
                             </div>
                             <div className="af-detail-row">
-                                <span className="af-detail-label">Billing Channel</span>
-                                <span>{METHOD_LABEL[appt.method] || appt.method}</span>
-                            </div>
-                            <div className="af-detail-row">
                                 <span className="af-detail-label">CPT</span>
                                 <div className="af-cell-cpt">
                                     {appt.cpt && appt.cpt.length > 0 && appt.cpt.map(c => <span key={c} className="cpt-chip">{c}</span>)}
                                 </div>
+                            </div>
+                            <div className="af-detail-row">
+                                <span className="af-detail-label">Billing Channel</span>
+                                <span>{METHOD_LABEL[appt.method] || appt.method}</span>
                             </div>
                             <div className="af-detail-row">
                                 <span className="af-detail-label">Biller</span>
