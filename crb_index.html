@@ -16,6 +16,105 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 
     <style>
+        /* ── Design tokens (Phase 1 of the rebrand) ──────────────────────────
+           Source: SolSuite Brand Guide, Version 1.0 ("Clinic Administrative
+           Tools" identity system), Core CSS tokens section.
+           Purely additive: nothing in this file references these yet. */
+        :root {
+            --brand-primary: #377BAD;
+            --primary-ui: #527AAE;
+            --primary-strong: #315F88;
+            --app-background: #F0F0F0;
+            --surface: #E1E1E1;
+            --border: #BFCFD5;
+            --border-strong: #8EA5AE;
+
+            --text-primary: #202A33;
+            --text-secondary: #677681;
+
+            --success: #85A679;
+            --warning: #D9A866;
+            --error: #B66969;
+            --info: #779FCB;
+
+            /* Tint/dark companion pairs (Phase 2, Part 1) — the base semantic
+               colors above don't clear 4.5:1 as small text on their own tint
+               (verified: 1.95–3.59:1), so each gets a darker text-safe
+               variant, same role the old system's success-dark/error-dark/
+               gold-deep tokens served. All pairings WCAG-verified. */
+            --success-tint: #F1F5F0;
+            --success-dark: #4E6C43;
+            --warning-tint: #FAF3EB;
+            --warning-dark: #8A5A19;
+            --error-tint: #F7EEEE;
+            --error-dark: #A34646;
+            --info-tint: #EDF2F8;
+            --info-dark: #33669F;
+
+            /* Label color for text sitting on a solid --brand-primary fill
+               (e.g. primary button labels). Verified 4.57:1. */
+            --text-on-brand: #FFFFFF;
+
+            /* Ledger-paper layer — named in the guide's prose (not its own
+               CSS block) as a real, distinct layer of the system. */
+            --paper: #F5F2EA;
+            --paper-deep: #ECE8DE;
+            --ledger-line: #D8D2C5;
+
+            --font-display: "Wix Madefor Display";
+            /* Placeholder — TBD pending confirmation on IBM Plex Mono vs.
+               an alternative. Not yet loaded via <link>; Phase 3 concern. */
+            --font-figures: 'IBM Plex Mono', monospace;
+        }
+
+        /* ── Dark-mode token overrides (Phase 2, Part 1) ─────────────────────
+           Scoped under body.dark to match the selector convention every one
+           of the existing ~340 body.dark rules already uses — these are the
+           custom-property equivalent of that same pattern, not a new
+           mechanism. All values WCAG-verified (4.5:1 text / 3:1 non-text
+           per WCAG 1.4.11) against both --app-background and --surface.
+           Purely additive: nothing in this file references any of these
+           tokens yet, dark or light. */
+        body.dark {
+            --app-background: #0E1B24;
+            --surface: #16242F;
+            --border: #54707D;
+            --border-strong: #6A6C81;
+
+            --text-primary: #E7ECEF;
+            --text-secondary: #93A4AD;
+
+            /* brand-primary stays the light-mode value — verified for large
+               text/icons/borders (3:1) but not small text (4.5:1) against
+               the new dark neutrals. brand-primary-bright covers small
+               text/links instead. */
+            --brand-primary: #377BAD;
+            --brand-primary-bright: #4890C5;
+            --primary-ui: #6B93BE;
+            --primary-strong: #4A78A3;
+
+            /* Text-safe values — for solid fills, use the *-fill variants
+               below with --text-primary on top, not these directly (verified
+               1.56–2.63:1 as fills, well under threshold). */
+            --success: #9DBB8F;
+            --warning: #E0B87D;
+            --error: #C77E7E;
+            --info: #8FB2D6;
+
+            --success-fill: #56724C;
+            --warning-fill: #8D6023;
+            --error-fill: #A65151;
+            --info-fill: #3D6C9F;
+
+            /* Shadow tint base — dark-mode shadows in this file consistently
+               use rgba(9,55,31,X), the RGB of the OLD brand-primary
+               (#09371F). Retinted to the new brand-primary (#377BAD =
+               rgb(55,123,173)) as an RGB triplet so callers can compose an
+               rgba() using this custom property plus whatever alpha the
+               existing rule already used. */
+            --shadow-tint-rgb: 55, 123, 173;
+        }
+
         *,
         *::before,
         *::after {
