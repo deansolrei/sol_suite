@@ -125,7 +125,7 @@
 
         body {
             font-family: 'Wix Madefor Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #777355;
+            background: var(--app-background);
             color: #2B2716;
             min-height: 100vh;
             min-height: 100dvh;
@@ -232,7 +232,7 @@
         .psearch-group-name {
             font-size: 12px;
             font-weight: 900;
-            color: #09371F;
+            color: var(--brand-primary);
             text-transform: uppercase;
             letter-spacing: .6px
         }
@@ -288,7 +288,7 @@
 
         .psearch-today-tag {
             display: inline-block;
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             border-radius: 4px;
             padding: 1px 5px;
@@ -331,7 +331,7 @@
         .psearch-signed {
             font-size: 10px;
             font-weight: 800;
-            color: #16A34A
+            color: var(--success)
         }
 
         .psearch-empty {
@@ -383,7 +383,7 @@
 
         .splash-err {
             font-size: 13px;
-            color: #DC2626;
+            color: var(--error);
             background: #FEF2F2;
             padding: 12px 20px;
             border-radius: 8px;
@@ -410,7 +410,7 @@
 
         /* ── Header ─────────────────────────────────────────────── */
         .hdr {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             padding: 8px 24px;
             display: flex;
@@ -677,7 +677,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             font-size: 8px;
             font-weight: 700;
@@ -695,7 +695,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #09371F;
+            color: var(--brand-primary);
             font-size: 16px;
             font-weight: 700;
             line-height: 1;
@@ -712,7 +712,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             font-size: 7px;
             font-weight: 700;
@@ -743,7 +743,7 @@
 
         .period-btn.on {
             background: #F2EDDB;
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .period-btn:hover:not(.on) {
@@ -773,7 +773,7 @@
 
         .vtab.on {
             background: #F2EDDB;
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .vtab:hover:not(.on) {
@@ -873,7 +873,7 @@
         }
 
         .admin-action-danger {
-            color: #DC2626;
+            color: var(--error);
             border-color: #FEF2F2;
         }
 
@@ -900,7 +900,7 @@
         .admin-msg {
             font-size: 11px;
             font-weight: 600;
-            color: #09371F;
+            color: var(--brand-primary);
             padding: 0 2px;
             line-height: 1.3;
         }
@@ -947,7 +947,7 @@
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: .4px;
-            color: #DC2626;
+            color: var(--error);
             padding: 2px 4px 6px;
         }
 
@@ -970,7 +970,7 @@
 
         .overdue-row:hover {
             background: #FEF2F2;
-            border-color: #DC2626;
+            border-color: var(--error);
         }
 
         .overdue-row-name {
@@ -979,7 +979,7 @@
 
         .overdue-row-amt {
             font-weight: 800;
-            color: #DC2626;
+            color: var(--error);
         }
 
         .overdue-row-type {
@@ -1028,12 +1028,12 @@
             gap: 5px;
             padding: 3px 10px 3px 7px;
             border-radius: 0;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             font-size: 11px;
             font-weight: 700;
             white-space: nowrap;
             background: #FBFBF3;
-            color: #09371F;
+            color: var(--brand-primary);
         }
 
         .utb-pill-num {
@@ -1045,20 +1045,20 @@
 
         .utb-pill.utb-high {
             background: #FBFBF3;
-            border-color: #DC2626;
+            border-color: var(--error);
             color: #791F1F
         }
 
         .utb-pill.utb-med {
             background: #FBFBF3;
-            border-color: #09371F;
-            color: #09371F
+            border-color: var(--brand-primary);
+            color: var(--brand-primary)
         }
 
         .utb-pill.utb-low {
             background: #FBFBF3;
-            border-color: #09371F;
-            color: #09371F
+            border-color: var(--brand-primary);
+            color: var(--brand-primary)
         }
 
         /* Header-mounted variant — sits on dark header background */
@@ -1077,20 +1077,20 @@
         }
 
         .utb-hdr-pill.utb-high {
-            background: #DC2626;
-            border-color: #DC2626;
+            background: var(--error);
+            border-color: var(--error);
             color: #FEF2F2
         }
 
         .utb-hdr-pill.utb-med {
-            background: #BE992A;
-            border-color: #BE992A;
-            color: #BE992A
+            background: var(--warning);
+            border-color: var(--warning);
+            color: var(--warning)
         }
 
         .utb-hdr-pill.utb-low {
             background: #791F1F;
-            border-color: #BE992A;
+            border-color: var(--warning);
             color: #F8EFD8
         }
 
@@ -1111,8 +1111,8 @@
             background: #FBFBF3;
             border-radius: 0;
             margin-bottom: 14px;
-            border: 1px solid #09371F;
-            border-left: 6px solid #DC2626;
+            border: 1px solid var(--brand-primary);
+            border-left: 6px solid var(--error);
         }
 
         .una-head {
@@ -1120,13 +1120,13 @@
             align-items: center;
             gap: 10px;
             padding: 8px 14px 7px;
-            border-bottom: 1px solid #09371F
+            border-bottom: 1px solid var(--brand-primary)
         }
 
         .una-head-label {
             font-size: 11px;
             font-weight: 700;
-            color: #09371F;
+            color: var(--brand-primary);
             text-transform: uppercase;
             letter-spacing: .7px;
             flex: 1
@@ -1135,7 +1135,7 @@
         .una-head-count {
             background: #FBFBF3;
             color: #791F1F;
-            border: 1px solid #DC2626;
+            border: 1px solid var(--error);
             border-radius: 0;
             font-size: 11px;
             font-weight: 700;
@@ -1156,7 +1156,7 @@
             gap: 8px;
             background: #FBFBF3;
             border: none;
-            border-bottom: 1px solid #09371F;
+            border-bottom: 1px solid var(--brand-primary);
             border-radius: 0;
             padding: 7px 14px
         }
@@ -1164,7 +1164,7 @@
         .una-pill-time {
             font-size: 12px;
             font-weight: 700;
-            color: #09371F;
+            color: var(--brand-primary);
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
             min-width: 58px
@@ -1173,12 +1173,12 @@
         .una-pill-name {
             font-size: 13px;
             font-weight: 500;
-            color: #09371F;
+            color: var(--brand-primary);
             white-space: nowrap
         }
 
         .una-pill-badge {
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             border-radius: 0;
             font-size: 10px;
             font-weight: 700;
@@ -1186,7 +1186,7 @@
             white-space: nowrap;
             flex-shrink: 0;
             background: #FBFBF3;
-            color: #09371F;
+            color: var(--brand-primary);
         }
 
         .una-pill-badge.u1,
@@ -1194,13 +1194,13 @@
         .una-pill-badge.u3p {
             background: #FBFBF3;
             color: #791F1F;
-            border-color: #DC2626;
+            border-color: var(--error);
         }
 
         .una-pill-date {
             font-size: 11px;
             font-weight: 500;
-            color: #09371F;
+            color: var(--brand-primary);
             white-space: nowrap;
             display: inline-flex;
             align-items: center;
@@ -1232,7 +1232,7 @@
         }
 
         .una-date-dismiss:hover {
-            color: #DC2626;
+            color: var(--error);
             background: #FEF2F2;
         }
 
@@ -1262,7 +1262,7 @@
         }
 
         .pv-unote-dismiss:hover {
-            color: #DC2626;
+            color: var(--error);
         }
 
         .una-day-hdr {
@@ -1303,7 +1303,7 @@
         .scard .num {
             font-size: 12px;
             font-weight: 700;
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .scard.s-all .num,
@@ -1311,7 +1311,7 @@
         .scard.s-err .num,
         .scard.s-pend .num,
         .scard.s-out .num {
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .scard.s-err {
@@ -1350,7 +1350,7 @@
         .pv-card {
             background: #FBFBF3;
             border-radius: 0;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             overflow: visible
         }
 
@@ -1401,14 +1401,14 @@
             border: 3px solid #1C6FA3;
             border-radius: 0;
             background: #F2EDDB;
-            color: #09371F;
+            color: var(--brand-primary);
             cursor: pointer;
             transition: none;
             box-shadow: 0 3px 6px rgba(28, 111, 163, .35);
         }
 
         .pv-tab.on {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             border-color: #1C6FA3;
         }
@@ -1417,7 +1417,7 @@
             display: flex;
             flex-direction: column;
             padding: 10px 18px;
-            border-bottom: 1px solid #09371F;
+            border-bottom: 1px solid var(--brand-primary);
             transition: background .12s
         }
 
@@ -1439,22 +1439,22 @@
             padding-top: 13px;
             padding-bottom: 13px;
             padding-left: 22px;
-            border-bottom: 2px solid #09371F;
+            border-bottom: 2px solid var(--brand-primary);
         }
 
         /* Status "stile" accent — subtle left border, colored to match the
        row's Valid/Issue/In Process state. Uses status colors (not brand
        green) per the rule: never mix brand green with status-green meaning. */
         .pv-stile-ok {
-            border-left: 7px solid #16A34A;
+            border-left: 7px solid var(--success);
         }
 
         .pv-stile-err {
-            border-left: 7px solid #DC2626;
+            border-left: 7px solid var(--error);
         }
 
         .pv-stile-pend {
-            border-left: 7px solid #BE992A;
+            border-left: 7px solid var(--warning);
         }
 
         /* ── Post-visit card color system ──────────────────────────────────
@@ -1466,18 +1466,18 @@
            marks the claim submitted, then pending vs paid.
        Clinic Submit rows also get a constant rollover (not state-based). */
         .pv-post-not-started {
-            border-left: 6px solid #DC2626;
-            box-shadow: inset 0 0 0 1px #DC2626;
+            border-left: 6px solid var(--error);
+            box-shadow: inset 0 0 0 1px var(--error);
         }
 
         .pv-post-in-progress {
-            border-left: 6px solid #BE992A;
-            box-shadow: inset 0 0 0 1px #BE992A;
+            border-left: 6px solid var(--warning);
+            box-shadow: inset 0 0 0 1px var(--warning);
         }
 
         .pv-post-ready {
-            border-left: 6px solid #16A34A;
-            box-shadow: inset 0 0 0 1px #16A34A;
+            border-left: 6px solid var(--success);
+            box-shadow: inset 0 0 0 1px var(--success);
         }
 
         .pv-post-signed {
@@ -1490,7 +1490,7 @@
         }
 
         .pv-post-bg-pending {
-            background: #BE992A;
+            background: var(--warning);
         }
 
         .pv-post-bg-paid {
@@ -1505,7 +1505,7 @@
        every matching row so the count is traceable back to real rows. */
         .pv-row-highlight {
             background: #F8EFD8;
-            box-shadow: inset 4px 0 0 #BE992A;
+            box-shadow: inset 4px 0 0 var(--warning);
         }
 
         .pv-row-main {
@@ -1524,7 +1524,7 @@
         .pv-unsigned-badge {
             flex: 0 0 auto;
             background: #FBFBF3;
-            border: 1px solid #DC2626;
+            border: 1px solid var(--error);
             border-radius: 0;
             color: #791F1F;
             font-size: 11px;
@@ -1538,7 +1538,7 @@
             flex: 0 0 auto;
             font-size: 11px;
             font-weight: 500;
-            color: #09371F;
+            color: var(--brand-primary);
             opacity: .55;
         }
 
@@ -1546,7 +1546,7 @@
             flex: 0 0 auto;
             background: none;
             border: none;
-            color: #09371F;
+            color: var(--brand-primary);
             opacity: .6;
             font-size: 11px;
             cursor: pointer;
@@ -1562,7 +1562,7 @@
             margin-top: 8px;
             padding: 10px 12px;
             background: #FBFBF3;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             border-radius: 0;
         }
 
@@ -1592,7 +1592,7 @@
 
         .pv-reason-err {
             background: #FEF2F2;
-            border: 1px solid #DC2626;
+            border: 1px solid var(--error);
         }
 
         .pv-reason-err .pv-reason-label {
@@ -1601,20 +1601,20 @@
 
         .pv-reason-pend {
             background: #F8EFD8;
-            border: 1px solid #BE992A;
+            border: 1px solid var(--warning);
         }
 
         .pv-reason-pend .pv-reason-label {
-            color: #BE992A;
+            color: var(--warning);
         }
 
         .pv-notes-box {
             background: #F2EDDB;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
         }
 
         .pv-notes-box .pv-reason-label {
-            color: #09371F;
+            color: var(--brand-primary);
         }
 
         .pv-checklist-row {
@@ -1631,7 +1631,7 @@
         /* The item(s) actually holding this appointment back — a solid filled
        bar (not just colored text) so it can't be scanned past. */
         .pv-checklist-incomplete {
-            background: #DC2626;
+            background: var(--error);
             color: #FFFFFF;
             font-weight: 900;
         }
@@ -1706,7 +1706,7 @@
         }
 
         .pv-notes-ta:focus {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             box-shadow: 0 0 0 2px rgba(9, 55, 31, .08)
         }
 
@@ -1717,7 +1717,7 @@
         .pv-sign-btn {
             padding: 6px 12px;
             border-radius: 0;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             font-size: 11px;
             font-weight: 700;
             cursor: pointer;
@@ -1729,16 +1729,16 @@
 
         .pv-sign-btn.unsigned {
             background: #F2EDDB;
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .pv-sign-btn.unsigned:hover {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB
         }
 
         .pv-sign-btn.signed {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             cursor: default;
         }
@@ -1759,8 +1759,8 @@
 
         .pv-sign-undo:hover {
             background: #F8EFD8;
-            color: #BE992A;
-            border-color: #BE992A
+            color: var(--warning);
+            border-color: var(--warning)
         }
 
         /* ── Save-failure banner — CPT Codes / Mark Note Signed background
@@ -1781,8 +1781,8 @@
 
         .pv-fail-card {
             background: #FBFBF3;
-            border: 1px solid #DC2626;
-            border-left: 6px solid #DC2626;
+            border: 1px solid var(--error);
+            border-left: 6px solid var(--error);
             border-radius: 0;
             padding: 12px 14px;
             box-shadow: 0 8px 28px rgba(43, 39, 22, .25);
@@ -1834,7 +1834,7 @@
         .day-date-banner {
             display: inline-flex;
             align-items: center;
-            background: linear-gradient(135deg, #09371F 0%, #09371F 100%);
+            background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary) 100%);
             color: #F2EDDB;
             border-radius: 10px;
             padding: 8px 22px;
@@ -1893,7 +1893,7 @@
             top: 88px;
             z-index: 15;
             background: #F2EDDB;
-            border-bottom: 1px solid #09371F;
+            border-bottom: 1px solid var(--brand-primary);
             padding: 8px 14px;
             margin-bottom: 10px
         }
@@ -1904,7 +1904,7 @@
        position (redundant, since its parent row is already sticky). ── */
         .summary-date-pill {
             margin-left: auto;
-            background: linear-gradient(135deg, #09371F 0%, #09371F 100%);
+            background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary) 100%);
             color: #F2EDDB;
             border-radius: 10px;
             padding: 8px 22px;
@@ -1928,7 +1928,7 @@
         .pv-name {
             font-size: 14px;
             font-weight: 800;
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .pv-ins {
@@ -1945,8 +1945,8 @@
         .pv-channel {
             display: inline-block;
             background: #FBFBF3;
-            border: 1px solid #09371F;
-            color: #09371F;
+            border: 1px solid var(--brand-primary);
+            color: var(--brand-primary);
             font-size: 10px;
             font-weight: 800;
             padding: 2px 7px;
@@ -1964,15 +1964,15 @@
         }
 
         .pv-copay.pay-coll {
-            color: #16A34A
+            color: var(--success)
         }
 
         .pv-copay.pay-fail {
-            color: #DC2626
+            color: var(--error)
         }
 
         .pv-copay.pay-pend {
-            color: #BE992A
+            color: var(--warning)
         }
 
         .pv-stat-val {
@@ -1981,11 +1981,11 @@
         }
 
         .pv-stat-val.ok {
-            color: #16A34A
+            color: var(--success)
         }
 
         .pv-stat-val.err {
-            color: #DC2626
+            color: var(--error)
         }
 
         .pv-stat-val-link {
@@ -1995,7 +1995,7 @@
         }
 
         .pv-stat-val.pend {
-            color: #BE992A
+            color: var(--warning)
         }
 
         .pv-unote {
@@ -2005,7 +2005,7 @@
             margin-top: 6px;
             padding: 3px 8px;
             border-radius: 0;
-            background: #09371F;
+            background: var(--brand-primary);
             font-size: 10px;
             font-weight: 800;
             color: #F2EDDB;
@@ -2045,15 +2045,15 @@
         }
 
         .pv-stxt.ok {
-            color: #16A34A
+            color: var(--success)
         }
 
         .pv-stxt.err {
-            color: #DC2626
+            color: var(--error)
         }
 
         .pv-stxt.pend {
-            color: #BE992A
+            color: var(--warning)
         }
 
         .pay-badge {
@@ -2069,17 +2069,17 @@
 
         .pay-badge.pend {
             background: #FBFBF3;
-            color: #BE992A
+            color: var(--warning)
         }
 
         .pay-badge.coll {
             background: #FBFBF3;
-            color: #16A34A
+            color: var(--success)
         }
 
         .pay-badge.fail {
             background: #FBFBF3;
-            color: #DC2626
+            color: var(--error)
         }
 
         .dot {
@@ -2092,15 +2092,15 @@
         }
 
         .dot.ok {
-            background: #16A34A
+            background: var(--success)
         }
 
         .dot.err {
-            background: #DC2626
+            background: var(--error)
         }
 
         .dot.pend {
-            background: #BE992A
+            background: var(--warning)
         }
 
         .dot-hg {
@@ -2145,8 +2145,8 @@
         }
 
         .cpt-edit-btn:hover {
-            border-color: #09371F;
-            color: #09371F
+            border-color: var(--brand-primary);
+            color: var(--brand-primary)
         }
 
         /* Scoped to just the CPT column's label (not the shared .pv-strip-label
@@ -2195,7 +2195,7 @@
         }
 
         .rx-select:focus {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             box-shadow: 0 0 0 2px rgba(9, 55, 31, .08)
         }
 
@@ -2211,12 +2211,12 @@
         }
 
         .rx-dosage-input:focus {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             box-shadow: 0 0 0 2px rgba(9, 55, 31, .08)
         }
 
         .rx-add-btn {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             border: none;
             padding: 7px 14px;
@@ -2230,7 +2230,7 @@
         }
 
         .rx-add-btn:hover {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         .rx-divider {
@@ -2257,7 +2257,7 @@
         }
 
         .rx-manual-input:focus {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             box-shadow: 0 0 0 2px rgba(9, 55, 31, .08)
         }
 
@@ -2380,7 +2380,7 @@
             right: -5px;
             width: 12px;
             height: 12px;
-            background: #DC2626;
+            background: var(--error);
             border-radius: 50%;
             border: 2px solid #FFFFFF;
             animation: rx-pulse 1.5s ease-in-out infinite
@@ -2492,7 +2492,7 @@
         }
 
         .co-btn.done {
-            background: linear-gradient(135deg, #16A34A, #16A34A);
+            background: linear-gradient(135deg, var(--success), var(--success));
             color: #FFFFFF;
             cursor: default;
             box-shadow: 0 1px 4px rgba(22, 163, 74, .35)
@@ -2512,7 +2512,7 @@
             overflow: clip;
             min-height: 200px;
             transition: none;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             border-top: none
         }
 
@@ -2526,7 +2526,7 @@
         }
 
         .wk-col.wk-sel {
-            border: 2px solid #09371F;
+            border: 2px solid var(--brand-primary);
             border-top: none
         }
 
@@ -2570,8 +2570,8 @@
         .wk-dp-banner {
             border-radius: 0;
             background: #FBFBF3;
-            border: 1px solid #09371F;
-            color: #09371F;
+            border: 1px solid var(--brand-primary);
+            color: var(--brand-primary);
             padding: 5px 6px 5px;
             cursor: pointer;
             transition: none;
@@ -2583,15 +2583,15 @@
         }
 
         .wk-dp-banner.dp-all-done {
-            border-left: 3px solid #16A34A;
+            border-left: 3px solid var(--success);
         }
 
         .wk-dp-banner.dp-has-pending {
-            border-left: 3px solid #BE992A;
+            border-left: 3px solid var(--warning);
         }
 
         .wk-dp-banner.dp-has-failed {
-            border-left: 3px solid #DC2626;
+            border-left: 3px solid var(--error);
         }
 
         /* Two-column inner layout */
@@ -2649,8 +2649,8 @@
         /* Right "collected" column — always green when banner is red/amber */
         .wk-dp-banner.dp-has-pending .wk-dp-banner-col-done,
         .wk-dp-banner.dp-has-failed .wk-dp-banner-col-done {
-            border-left: 1px solid #16A34A;
-            color: #09371F;
+            border-left: 1px solid var(--success);
+            color: var(--brand-primary);
             border-radius: 0;
             margin: -5px -6px -5px 0;
             padding: 5px 6px 5px 5px;
@@ -2665,30 +2665,30 @@
         /* ── Provider Day View — Direct Pay Summary Card ─────────── */
         .pvdp-wrap {
             border-radius: 0;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             background: #FBFBF3;
-            color: #09371F;
+            color: var(--brand-primary);
             padding: 11px 15px 10px;
             margin-bottom: 10px;
         }
 
         .pvdp-wrap.dp-all-done {
-            border-left: 4px solid #16A34A;
+            border-left: 4px solid var(--success);
         }
 
         .pvdp-wrap.dp-has-pending {
-            border-left: 4px solid #BE992A;
+            border-left: 4px solid var(--warning);
         }
 
         .pvdp-wrap.dp-has-failed {
-            border-left: 4px solid #DC2626;
+            border-left: 4px solid var(--error);
         }
 
         /* Right "collected" column — subtle green accent when banner is not all-done */
         .pvdp-wrap.dp-has-pending .pvdp-col-done,
         .pvdp-wrap.dp-has-failed .pvdp-col-done {
-            border-left: 1px solid #16A34A !important;
-            color: #09371F;
+            border-left: 1px solid var(--success) !important;
+            color: var(--brand-primary);
             margin: 0 -15px -10px 0;
             padding: 0 15px 10px 14px;
         }
@@ -2702,9 +2702,9 @@
             align-items: center;
             gap: 6px;
             background: #F2EDDB;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             border-radius: 0;
-            color: #09371F;
+            color: var(--brand-primary);
             font-size: 12px;
             font-weight: 500;
             padding: 7px 14px;
@@ -2812,7 +2812,7 @@
         }
 
         .wk-hdr-row .wk-sel {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         .wk-hdr-row .wk-today .wk-daynum {
@@ -2826,7 +2826,7 @@
         .wk-col-hd {
             padding: 9px 10px 8px;
             cursor: pointer;
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             user-select: none;
             display: flex;
@@ -2926,17 +2926,17 @@
         }
 
         .wk-ss-ok {
-            border-color: #16A34A;
-            color: #16A34A
+            border-color: var(--success);
+            color: var(--success)
         }
 
         .wk-ss-pend {
-            border-color: #BE992A;
-            color: #BE992A
+            border-color: var(--warning);
+            color: var(--warning)
         }
 
         .wk-ss-err {
-            border-color: #DC2626;
+            border-color: var(--error);
             color: #791F1F
         }
 
@@ -2971,7 +2971,7 @@
 
         .wk-ci-pend {
             background: rgba(234, 179, 8, .38);
-            color: #BE992A
+            color: var(--warning)
         }
 
         .wk-ci-paid {
@@ -3005,8 +3005,8 @@
             gap: 10px;
             flex-wrap: wrap;
             background: #FBFBF3;
-            border: 1px solid #09371F;
-            border-top: 3px solid #09371F;
+            border: 1px solid var(--brand-primary);
+            border-top: 3px solid var(--brand-primary);
             border-radius: 0;
             padding: 14px 20px;
             margin: 0;
@@ -3016,7 +3016,7 @@
         .claim-day-banner-label {
             font-size: 13px;
             font-weight: 900;
-            color: #09371F;
+            color: var(--brand-primary);
             opacity: .55;
             text-transform: uppercase;
             letter-spacing: .7px;
@@ -3038,24 +3038,24 @@
         }
 
         .cds-total {
-            color: #09371F;
-            border-color: #09371F;
+            color: var(--brand-primary);
+            border-color: var(--brand-primary);
             opacity: .7
         }
 
         .cds-pend {
-            color: #BE992A;
-            border-color: #BE992A
+            color: var(--warning);
+            border-color: var(--warning)
         }
 
         .cds-paid {
-            color: #16A34A;
-            border-color: #16A34A
+            color: var(--success);
+            border-color: var(--success)
         }
 
         .cds-denied {
             color: #791F1F;
-            border-color: #DC2626
+            border-color: var(--error)
         }
 
         .cds-resub {
@@ -3064,8 +3064,8 @@
         }
 
         .cds-nosub {
-            color: #BE992A;
-            border-color: #BE992A
+            color: var(--warning);
+            border-color: var(--warning)
         }
 
         /* ── "Unsigned Notes" stat — reuses the same Danger red already used for
@@ -3073,7 +3073,7 @@
        since both represent an item needing the same kind of attention. ── */
         .cds-unsigned {
             color: #791F1F;
-            border-color: #DC2626
+            border-color: var(--error)
         }
 
         /* ── Day-banner context stats (Total appointments / Unsigned notes) —
@@ -3098,22 +3098,22 @@
        background-inversion pattern as .mthd-btn.on-* (Billing Channel
        selector): fill with the stat's own color, flip text to white. ── */
         .cds-nosub.cds-active {
-            background: #BE992A;
+            background: var(--warning);
             color: #FFFFFF
         }
 
         .cds-pend.cds-active {
-            background: #BE992A;
+            background: var(--warning);
             color: #FFFFFF
         }
 
         .cds-paid.cds-active {
-            background: #16A34A;
+            background: var(--success);
             color: #FFFFFF
         }
 
         .cds-denied.cds-active {
-            background: #DC2626;
+            background: var(--error);
             color: #FFFFFF
         }
 
@@ -3151,18 +3151,18 @@
         }
 
         .csb-pend {
-            color: #BE992A;
-            border-color: #BE992A
+            color: var(--warning);
+            border-color: var(--warning)
         }
 
         .csb-paid {
-            color: #16A34A;
-            border-color: #16A34A
+            color: var(--success);
+            border-color: var(--success)
         }
 
         .csb-denied {
             color: #791F1F;
-            border-color: #DC2626
+            border-color: var(--error)
         }
 
         .csb-resub {
@@ -3174,9 +3174,9 @@
             width: 110px;
             padding: 6px 10px;
             border-radius: 0;
-            border: 1px solid #16A34A;
+            border: 1px solid var(--success);
             background: #FBFBF3;
-            color: #16A34A;
+            color: var(--success);
             font-size: 15px;
             font-weight: 800;
             text-align: center;
@@ -3184,7 +3184,7 @@
         }
 
         .csb-amt-input:focus {
-            border-color: #16A34A;
+            border-color: var(--success);
             background: #F2EDDB
         }
 
@@ -3198,9 +3198,9 @@
             font-weight: 700;
             padding: 6px 14px;
             border-radius: 0;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             background: #FBFBF3;
-            color: #09371F;
+            color: var(--brand-primary);
             cursor: pointer;
             white-space: nowrap;
             transition: none;
@@ -3231,13 +3231,13 @@
         }
 
         .csb-sm-pend {
-            color: #BE992A;
-            border-color: #BE992A
+            color: var(--warning);
+            border-color: var(--warning)
         }
 
         .csb-sm-denied {
             color: #791F1F;
-            border-color: #DC2626
+            border-color: var(--error)
         }
 
         .csb-sm-resub {
@@ -3246,8 +3246,8 @@
         }
 
         .csb-sm-paid {
-            color: #16A34A;
-            border-color: #16A34A
+            color: var(--success);
+            border-color: var(--success)
         }
 
         .csb-sm-pend:hover {
@@ -3274,7 +3274,7 @@
 
         .csb-sm-cancel:hover {
             background: #F2EDDB;
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         /* ── Week view card claim stamp ──────────────────────────────────────── */
@@ -3294,19 +3294,19 @@
 
         .wk-cs-pend {
             background: #FBFBF3;
-            border-color: #BE992A;
-            color: #BE992A
+            border-color: var(--warning);
+            color: var(--warning)
         }
 
         .wk-cs-paid {
             background: #FBFBF3;
-            border-color: #16A34A;
-            color: #16A34A
+            border-color: var(--success);
+            color: var(--success)
         }
 
         .wk-cs-denied {
             background: #FBFBF3;
-            border-color: #DC2626;
+            border-color: var(--error);
             color: #791F1F
         }
 
@@ -3350,8 +3350,8 @@
 
         .wk-nc-done {
             background: #FBFBF3;
-            border-color: #16A34A;
-            color: #16A34A;
+            border-color: var(--success);
+            color: var(--success);
         }
 
         .wk-nc-num {
@@ -3383,7 +3383,7 @@
         .wk-comm-preview-box {
             width: 100%;
             background: #FBFBF3;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             border-radius: 0;
             padding: 4px 8px;
             font-size: 10px;
@@ -3449,7 +3449,7 @@
 
         .wk-appt {
             background: #FBFBF3;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             border-radius: 0;
             padding: 7px 9px;
             cursor: pointer;
@@ -3467,15 +3467,15 @@
        Post-visit card systems, so "In-Process/Issue/Valid" reads the same
        color everywhere in the suite. */
         .wk-appt.wk-ok {
-            border-left: 2px solid #16A34A
+            border-left: 2px solid var(--success)
         }
 
         .wk-appt.wk-err {
-            border-left: 2px solid #DC2626
+            border-left: 2px solid var(--error)
         }
 
         .wk-appt.wk-pend {
-            border-left: 2px solid #BE992A
+            border-left: 2px solid var(--warning)
         }
 
         /* ── RIGHT border = POST-VISIT status (note-signing + claim lifecycle) ──
@@ -3483,7 +3483,7 @@
        "Valid" (left, green) while still Post-visit "Not Signed" (right, red)
        once the appointment has passed. */
         .wk-appt.wk-post-notsigned {
-            border-right: 2px solid #DC2626
+            border-right: 2px solid var(--error)
         }
 
         .wk-appt.wk-post-signed {
@@ -3491,11 +3491,11 @@
         }
 
         .wk-appt.wk-post-pending {
-            border-right: 2px solid #BE992A
+            border-right: 2px solid var(--warning)
         }
 
         .wk-appt.wk-post-paid {
-            border-right: 2px solid #16A34A
+            border-right: 2px solid var(--success)
         }
 
         /* ── Direct-pay (Clinic Submit) patient cards ───────────────────────── */
@@ -3506,15 +3506,15 @@
         }
 
         .wk-appt.wk-direct.wk-ok {
-            border-left: 2px solid #16A34A
+            border-left: 2px solid var(--success)
         }
 
         .wk-appt.wk-direct.wk-err {
-            border-left: 2px solid #DC2626
+            border-left: 2px solid var(--error)
         }
 
         .wk-appt.wk-direct.wk-pend {
-            border-left: 2px solid #BE992A
+            border-left: 2px solid var(--warning)
         }
 
         /* .wk-appt.wk-direct sets the `border` shorthand above (all 4 sides), which
@@ -3522,7 +3522,7 @@
        by .wk-post-* — these 3-class overrides restore it for Clinic Submit cards,
        same fix pattern as the .wk-direct.wk-ok/err/pend left-border overrides. */
         .wk-appt.wk-direct.wk-post-notsigned {
-            border-right: 2px solid #DC2626
+            border-right: 2px solid var(--error)
         }
 
         .wk-appt.wk-direct.wk-post-signed {
@@ -3530,11 +3530,11 @@
         }
 
         .wk-appt.wk-direct.wk-post-pending {
-            border-right: 2px solid #BE992A
+            border-right: 2px solid var(--warning)
         }
 
         .wk-appt.wk-direct.wk-post-paid {
-            border-right: 2px solid #16A34A
+            border-right: 2px solid var(--success)
         }
 
         .wk-r1 {
@@ -3548,7 +3548,7 @@
         .wk-time {
             font-size: 9px;
             font-weight: 700;
-            color: #09371F;
+            color: var(--brand-primary);
             opacity: .6;
             letter-spacing: .3px;
             white-space: nowrap
@@ -3575,7 +3575,7 @@
         .wk-pat {
             font-size: 11.5px;
             font-weight: 800;
-            color: #09371F;
+            color: var(--brand-primary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -3586,7 +3586,7 @@
         .wk-prov {
             font-size: 9px;
             font-weight: 700;
-            color: #09371F;
+            color: var(--brand-primary);
             opacity: .6;
             margin-bottom: 3px;
             white-space: nowrap;
@@ -3601,19 +3601,19 @@
         }
 
         .wk-copay.pay-pend {
-            color: #BE992A
+            color: var(--warning)
         }
 
         .wk-copay.pay-coll {
-            color: #16A34A
+            color: var(--success)
         }
 
         .wk-copay.pay-fail {
-            color: #DC2626
+            color: var(--error)
         }
 
         .wk-copay.pay-ins {
-            color: #09371F;
+            color: var(--brand-primary);
             opacity: .65
         }
 
@@ -3628,8 +3628,8 @@
             font-size: 8px;
             font-weight: 700;
             background: #FBFBF3;
-            border: 1px solid #BE992A;
-            color: #BE992A;
+            border: 1px solid var(--warning);
+            color: var(--warning);
             border-radius: 0;
             padding: 1px 4px;
             white-space: nowrap
@@ -3637,7 +3637,7 @@
 
         .wk-nd.nd-red {
             background: #FBFBF3;
-            border-color: #DC2626;
+            border-color: var(--error);
             color: #791F1F
         }
 
@@ -3650,15 +3650,15 @@
         }
 
         .wk-pay-dot.pend {
-            background: #BE992A
+            background: var(--warning)
         }
 
         .wk-pay-dot.coll {
-            background: #16A34A
+            background: var(--success)
         }
 
         .wk-pay-dot.fail {
-            background: #DC2626
+            background: var(--error)
         }
 
         /* ── Calendar Popup ─────────────────────────────────────── */
@@ -3755,13 +3755,13 @@
         }
 
         .cal-d.cal-sel {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             font-weight: 800
         }
 
         .cal-d.cal-sel:hover {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         .cal-tip {
@@ -3778,7 +3778,7 @@
         .tbl-wrap {
             background: #FBFBF3;
             border-radius: 0;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             border-top: none;
             box-shadow: none;
             overflow: visible
@@ -3786,8 +3786,8 @@
 
         .tbl-hd {
             padding: 13px 20px;
-            border-bottom: 1px solid #09371F;
-            background: #09371F;
+            border-bottom: 1px solid var(--brand-primary);
+            background: var(--brand-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -3858,14 +3858,14 @@
             top: 106px;
             z-index: 19;
             overflow-x: hidden;
-            border-bottom: 1px solid #09371F;
+            border-bottom: 1px solid var(--brand-primary);
         }
 
         /* Taller rows + a clear, high-contrast divider between them (was a pale
        1px cream line that barely read as a border at all). */
         tbody td {
             padding: 16px 12px;
-            border-bottom: 2px solid #09371F;
+            border-bottom: 2px solid var(--brand-primary);
             vertical-align: middle;
             color: #2B2716;
             font-size: 13px;
@@ -3887,25 +3887,25 @@
 
         td.cv {
             background: #F0FDF4 !important;
-            color: #09371F;
+            color: var(--brand-primary);
             font-weight: 700
         }
 
         td.ce {
             background: #FEF2F2 !important;
-            color: #DC2626;
+            color: var(--error);
             font-weight: 700
         }
 
         td.cp {
             background: #F8EFD8 !important;
-            color: #BE992A;
+            color: var(--warning);
             font-weight: 600
         }
 
         .uns-tag {
             display: inline-block;
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             padding: 2px 7px;
             border-radius: 0;
@@ -3925,9 +3925,9 @@
         }
 
         .add-btn {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             padding: 8px 16px;
             border-radius: 0;
             font-size: 13px;
@@ -3949,7 +3949,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             padding: 7px 14px;
             border-radius: 0;
@@ -3978,7 +3978,7 @@
 
         .bulk-apply {
             background: #F2EDDB;
-            color: #09371F;
+            color: var(--brand-primary);
             border: 1px solid #F2EDDB;
             padding: 6px 14px;
             border-radius: 0;
@@ -3995,7 +3995,7 @@
         .bulk-apply.del {
             background: #FBFBF3;
             color: #791F1F;
-            border-color: #DC2626;
+            border-color: var(--error);
         }
 
         .bulk-apply.del:hover {
@@ -4028,7 +4028,7 @@
             width: 15px;
             height: 15px;
             cursor: pointer;
-            accent-color: #09371F;
+            accent-color: var(--brand-primary);
             vertical-align: middle;
         }
 
@@ -4086,7 +4086,7 @@
         }
 
         .void-archive-table-wrap {
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             border-radius: 0;
             overflow: hidden;
             margin-top: 6px;
@@ -4164,15 +4164,15 @@
             align-items: center;
             gap: 12px;
             margin-bottom: 7px;
-            border: 1px solid #09371F;
-            border-left: 4px solid #09371F
+            border: 1px solid var(--brand-primary);
+            border-left: 4px solid var(--brand-primary)
         }
 
         .b-name {
             font-weight: 800;
             font-size: 14px;
             min-width: 120px;
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .b-time {
@@ -4244,18 +4244,18 @@
         }
 
         .sub-btn.ready {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB
         }
 
         .sub-btn.ready:hover {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         .sub-btn.done {
             background: #FBFBF3;
-            border: 1px solid #16A34A;
-            color: #16A34A;
+            border: 1px solid var(--success);
+            color: var(--success);
             cursor: default
         }
 
@@ -4337,7 +4337,7 @@
 
         .dp-row.pend {
             background: #FEF2F2;
-            border-left: 4px solid #DC2626;
+            border-left: 4px solid var(--error);
             padding-left: 12px
         }
 
@@ -4446,7 +4446,7 @@
         }
 
         .dp-platform-sel:focus {
-            border-color: #09371F
+            border-color: var(--brand-primary)
         }
 
         .dp-platform-other {
@@ -4463,14 +4463,14 @@
         }
 
         .dp-platform-other:focus {
-            border-color: #09371F
+            border-color: var(--brand-primary)
         }
 
         /* ── $0 Copay — standalone confirmation (no collection patients) ── */
         /* Flush against .claim-day-banner right below it (see .dp-section for the
        non-zero-copay equivalent) — no bottom border/margin, matches Rail-and-stile. */
         .dp-zero-standalone {
-            border: 1px solid #16A34A;
+            border: 1px solid var(--success);
             border-bottom: none;
             background: #FBFBF3;
             border-radius: 0;
@@ -4566,7 +4566,7 @@
             margin-left: auto;
             font-size: 10px;
             font-weight: 800;
-            color: #16A34A;
+            color: var(--success);
             white-space: nowrap
         }
 
@@ -4576,8 +4576,8 @@
             align-items: center;
             gap: 3px;
             background: #FBFBF3;
-            border: 1px solid #16A34A;
-            color: #16A34A;
+            border: 1px solid var(--success);
+            color: var(--success);
             border-radius: 0;
             padding: 2px 8px;
             font-size: 10px;
@@ -4590,7 +4590,7 @@
         /* Dark mode — $0 copay elements */
         body.dark .dp-zero-standalone {
             background: #051F11;
-            border-color: #09371F
+            border-color: var(--brand-primary)
         }
 
         body.dark .dp-zero-sa-hdr {
@@ -4599,7 +4599,7 @@
 
         body.dark .dp-zero-strip {
             background: #051F11;
-            border-color: #09371F
+            border-color: var(--brand-primary)
         }
 
         body.dark .dp-zero-strip-hdr {
@@ -4607,7 +4607,7 @@
         }
 
         body.dark .dp-zero-strip-count {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #6B9E8A
         }
 
@@ -4620,11 +4620,11 @@
         }
 
         body.dark .dp-zero-time {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .dp-zero-ins {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #6B9E8A
         }
 
@@ -4633,7 +4633,7 @@
         }
 
         body.dark .b-zero-copay-badge {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #6B9E8A
         }
 
@@ -4673,7 +4673,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             border-radius: 12px 12px 0 0;
             position: sticky;
@@ -4747,7 +4747,7 @@
         }
 
         .step-num {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             width: 19px;
             height: 19px;
@@ -4780,7 +4780,7 @@
         }
 
         .fi:focus {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             box-shadow: 0 0 0 2px rgba(9, 55, 31, .1)
         }
 
@@ -4815,8 +4815,8 @@
         }
 
         .mthd-btn:hover {
-            border-color: #09371F;
-            color: #09371F
+            border-color: var(--brand-primary);
+            color: var(--brand-primary)
         }
 
         /* Selected-state channel colors — Solrei brand rule, always these hex values */
@@ -4866,7 +4866,7 @@
         .rreq {
             font-size: 10px;
             font-weight: 800;
-            color: #DC2626;
+            color: var(--error);
             text-transform: uppercase;
             margin-left: 5px
         }
@@ -4887,15 +4887,15 @@
 
         .ropt input {
             cursor: pointer;
-            accent-color: #09371F
+            accent-color: var(--brand-primary)
         }
 
         .c-ok {
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .c-err {
-            color: #DC2626
+            color: var(--error)
         }
 
         .c-unk {
@@ -4908,7 +4908,7 @@
             border-radius: 8px;
             padding: 8px 12px;
             margin: 2px 0 6px 0;
-            border-left: 3px solid #09371F;
+            border-left: 3px solid var(--brand-primary);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -4939,13 +4939,13 @@
         .scr-score-input {
             width: 56px;
             padding: 5px 8px;
-            border: 1.5px solid #BE992A;
+            border: 1.5px solid var(--warning);
             border-radius: 6px;
             font-size: 15px;
             font-weight: 900;
             text-align: center;
             background: #FBFBF3;
-            color: #09371F;
+            color: var(--brand-primary);
             outline: none;
             -moz-appearance: textfield;
         }
@@ -4957,7 +4957,7 @@
         }
 
         .scr-score-input:focus {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             box-shadow: 0 0 0 2px rgba(9, 55, 31, .14);
         }
 
@@ -4980,24 +4980,24 @@
             box-sizing: border-box;
             min-height: 72px;
             padding: 9px 11px;
-            border: 1.5px solid #BE992A;
+            border: 1.5px solid var(--warning);
             border-radius: 8px;
             font-size: 13px;
             font-family: inherit;
             background: #FBFBF3;
-            color: #09371F;
+            color: var(--brand-primary);
             resize: vertical;
             outline: none;
             line-height: 1.5;
         }
 
         .scr-note-area:focus {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             box-shadow: 0 0 0 2px rgba(9, 55, 31, .13);
         }
 
         .scr-note-area::placeholder {
-            color: #BE992A;
+            color: var(--warning);
             font-style: italic;
         }
 
@@ -5027,7 +5027,7 @@
         }
 
         .pim-hdr {
-            background: linear-gradient(135deg, #09371F, #09371F);
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary));
             color: #F2EDDB;
             padding: 18px 20px 14px;
             border-radius: 16px 16px 0 0;
@@ -5096,7 +5096,7 @@
             border-radius: 10px;
             padding: 11px 14px;
             margin-bottom: 7px;
-            border-left: 4px solid #BE992A;
+            border-left: 4px solid var(--warning);
         }
 
         .scr-result-card:last-child {
@@ -5107,7 +5107,7 @@
             font-size: 13px;
             font-weight: 900;
             min-width: 50px;
-            color: #09371F;
+            color: var(--brand-primary);
         }
 
         .scr-result-score {
@@ -5138,7 +5138,7 @@
             font-size: 13px;
             line-height: 1.6;
             color: #2B2716;
-            border-left: 3px solid #09371F;
+            border-left: 3px solid var(--brand-primary);
             white-space: pre-wrap;
         }
 
@@ -5181,7 +5181,7 @@
         }
 
         .pv-name-link:hover {
-            color: #09371F;
+            color: var(--brand-primary);
             text-decoration-style: solid;
         }
 
@@ -5221,7 +5221,7 @@
         .cpt-code {
             font-size: 14px;
             font-weight: 800;
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .cpt-desc {
@@ -5241,7 +5241,7 @@
         .cpt-sel-lbl {
             font-size: 11px;
             font-weight: 800;
-            color: #09371F;
+            color: var(--brand-primary);
             margin-bottom: 6px;
             text-transform: uppercase
         }
@@ -5253,7 +5253,7 @@
         }
 
         .cpt-sel-chip {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             padding: 3px 9px;
             border-radius: 4px;
@@ -5263,7 +5263,7 @@
         }
 
         .cpt-sel-chip:hover {
-            background: #DC2626
+            background: var(--error)
         }
 
         /* ── CPT Modal redesigned layout ─────────────────────────── */
@@ -5274,7 +5274,7 @@
         .cpt-section-lbl {
             font-size: 10px;
             font-weight: 800;
-            color: #09371F;
+            color: var(--brand-primary);
             text-transform: uppercase;
             letter-spacing: .7px;
             margin-bottom: 7px
@@ -5326,7 +5326,7 @@
         .cpt-combo-pri {
             font-size: 16px;
             font-weight: 900;
-            color: #09371F;
+            color: var(--brand-primary);
             letter-spacing: -.4px
         }
 
@@ -5460,7 +5460,7 @@
 
         .uchip {
             background: #F8EFD8;
-            color: #BE992A;
+            color: var(--warning);
             padding: 2px 8px;
             border-radius: 4px;
             font-size: 13px;
@@ -5472,13 +5472,13 @@
 
         .uchip-x {
             cursor: pointer;
-            color: #BE992A;
+            color: var(--warning);
             font-size: 15px;
             line-height: 1
         }
 
         .uchip-x:hover {
-            color: #DC2626
+            color: var(--error)
         }
 
         .btn {
@@ -5493,12 +5493,12 @@
         }
 
         .btn-p {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB
         }
 
         .btn-p:hover {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         .btn-p:disabled {
@@ -5518,12 +5518,12 @@
 
         .btn-d {
             background: #FEF2F2;
-            color: #DC2626
+            color: var(--error)
         }
 
         .btn-d:hover {
             background: #FEF2F2;
-            color: #DC2626
+            color: var(--error)
         }
 
         .btn-sm {
@@ -5537,18 +5537,18 @@
             background: #F8EFD8;
             border-radius: 6px;
             font-size: 13px;
-            color: #BE992A;
+            color: var(--warning);
             font-weight: 500
         }
 
         .billing-warn {
             background: #F8EFD8;
             border: 1.5px solid #FBFBF3;
-            border-left: 4px solid #BE992A;
+            border-left: 4px solid var(--warning);
             border-radius: 7px;
             padding: 9px 13px;
             font-size: 13px;
-            color: #DC2626;
+            color: var(--error);
             margin-bottom: 10px;
             font-weight: 500
         }
@@ -5570,7 +5570,7 @@
             left: 0;
             right: 0;
             background: #FBFBF3;
-            border: 1.5px solid #09371F;
+            border: 1.5px solid var(--brand-primary);
             border-top: none;
             border-radius: 0 0 7px 7px;
             max-height: 200px;
@@ -5597,7 +5597,7 @@
 
         .ac-item:hover {
             background: #F2EDDB;
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .ac-name {
@@ -5626,7 +5626,7 @@
 
         /* ── Assistant table cell classes (replaces inline colors) ── */
         .td-patient {
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .td-ins-name {
@@ -5638,11 +5638,11 @@
         }
 
         .tm-ok {
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .tm-err {
-            color: #DC2626
+            color: var(--error)
         }
 
         .tm-pend {
@@ -5681,7 +5681,7 @@
         }
 
         .ts-badge.ts-confirmed {
-            color: #16A34A;
+            color: var(--success);
             background: #F0FDF4
         }
 
@@ -5696,22 +5696,22 @@
         }
 
         .ts-badge.ts-roomed {
-            color: #BE992A;
+            color: var(--warning);
             background: #F8EFD8
         }
 
         .ts-badge.ts-checked-out {
-            color: #BE992A;
+            color: var(--warning);
             background: #F8EFD8
         }
 
         .ts-badge.ts-rescheduled {
-            color: #BE992A;
+            color: var(--warning);
             background: #F8EFD8
         }
 
         .ts-badge.ts-no-show {
-            color: #DC2626;
+            color: var(--error);
             background: #FEF2F2
         }
 
@@ -5729,13 +5729,13 @@
         .ts-none {
             font-size: 10px;
             font-weight: 600;
-            color: #BE992A;
+            color: var(--warning);
             letter-spacing: .2px
         }
 
         .ts-none-cell {
             font-size: 11px;
-            color: #BE992A
+            color: var(--warning)
         }
 
         /* ── Theme toggle button ─────────────────────────────────── */
@@ -5848,20 +5848,20 @@
 
         body.dark .scard.s-ok {
             background: #051F11;
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             color: #6B9E8A
         }
 
         body.dark .scard.s-err {
             background: #791F1F;
-            border-color: #DC2626;
-            color: #DC2626
+            border-color: var(--error);
+            color: var(--error)
         }
 
         body.dark .scard.s-pend {
             background: #7A5A00;
             border-color: #7A5A00;
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .scard.s-out {
@@ -5874,7 +5874,7 @@
        dark-green gradient reads fine unchanged in either theme. */
 
         body.dark .wk-week-label {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .act-bar {
@@ -5882,13 +5882,13 @@
         }
 
         body.dark .add-btn {
-            background: #09371F;
-            border-color: #09371F;
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
             color: #6B9E8A
         }
 
         body.dark .add-btn:hover {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         /* Provider Day View cards */
@@ -5921,7 +5921,7 @@
         }
 
         body.dark .pv-method {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .pv-copay.pay-coll {
@@ -5929,11 +5929,11 @@
         }
 
         body.dark .pv-copay.pay-fail {
-            color: #DC2626
+            color: var(--error)
         }
 
         body.dark .pv-copay.pay-pend {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .pv-copay.pay-none {
@@ -5945,11 +5945,11 @@
         }
 
         body.dark .pv-stat-val.err {
-            color: #DC2626
+            color: var(--error)
         }
 
         body.dark .pv-stat-val.pend {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .pv-stxt.ok {
@@ -5957,11 +5957,11 @@
         }
 
         body.dark .pv-stxt.err {
-            color: #DC2626
+            color: var(--error)
         }
 
         body.dark .pv-stxt.pend {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .pv-notes-ta {
@@ -5981,8 +5981,8 @@
 
         body.dark .pv-unote {
             background: #791F1F;
-            border-color: #DC2626;
-            color: #DC2626
+            border-color: var(--error);
+            color: var(--error)
         }
 
         body.dark .una-date-dismiss {
@@ -5990,7 +5990,7 @@
         }
 
         body.dark .una-date-dismiss:hover {
-            color: #DC2626;
+            color: var(--error);
             background: #791F1F;
         }
 
@@ -5999,17 +5999,17 @@
         }
 
         body.dark .pv-unote-dismiss:hover {
-            color: #DC2626;
+            color: var(--error);
         }
 
         body.dark .pv-sign-btn.unsigned {
-            background: #09371F;
-            border-color: #09371F;
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
             color: #6B9E8A
         }
 
         body.dark .pv-sign-btn.unsigned:hover {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         body.dark .pv-sign-btn.signed {
@@ -6019,7 +6019,7 @@
 
         body.dark .pv-sign-undo {
             border-color: #2B2716;
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .pv-sign-undo:hover {
@@ -6031,20 +6031,20 @@
         /* Cumulative Unsigned Notes pill — dark mode */
         body.dark .utb-pill.utb-high {
             background: #791F1F;
-            border-color: #DC2626;
+            border-color: var(--error);
             color: #FEF2F2
         }
 
         body.dark .utb-pill.utb-med {
             background: #7A5A00;
-            border-color: #BE992A;
-            color: #BE992A
+            border-color: var(--warning);
+            color: var(--warning)
         }
 
         body.dark .utb-pill.utb-low {
             background: #791F1F;
-            border-color: #BE992A;
-            color: #BE992A
+            border-color: var(--warning);
+            color: var(--warning)
         }
 
         /* Provider Week View */
@@ -6058,26 +6058,26 @@
 
         body.dark .wk-dp-banner.dp-all-done {
             background: #065F46;
-            border-color: #16A34A;
+            border-color: var(--success);
             color: #6B9E8A
         }
 
         body.dark .wk-dp-banner.dp-has-pending {
             background: #7A5A00;
-            border-color: #BE992A;
-            color: #BE992A
+            border-color: var(--warning);
+            color: var(--warning)
         }
 
         body.dark .wk-dp-banner.dp-has-failed {
             background: #791F1F;
-            border-color: #DC2626;
+            border-color: var(--error);
             color: #FEF2F2
         }
 
         body.dark .wk-dp-banner.dp-has-pending .wk-dp-banner-col-done,
         body.dark .wk-dp-banner.dp-has-failed .wk-dp-banner-col-done {
             background: #065F46;
-            border-left-color: #16A34A;
+            border-left-color: var(--success);
             color: #6B9E8A;
         }
 
@@ -6089,20 +6089,20 @@
         }
 
         body.dark .pvdp-wrap.dp-all-done {
-            border-left-color: #16A34A
+            border-left-color: var(--success)
         }
 
         body.dark .pvdp-wrap.dp-has-pending {
-            border-left-color: #BE992A
+            border-left-color: var(--warning)
         }
 
         body.dark .pvdp-wrap.dp-has-failed {
-            border-left-color: #DC2626
+            border-left-color: var(--error)
         }
 
         body.dark .pvdp-wrap.dp-has-pending .pvdp-col-done,
         body.dark .pvdp-wrap.dp-has-failed .pvdp-col-done {
-            border-left-color: #16A34A !important;
+            border-left-color: var(--success) !important;
             color: #D8D3BF;
         }
 
@@ -6121,7 +6121,7 @@
 
         body.dark .wk-col.wk-sel .wk-col-hd,
         body.dark .wk-hdr-row .wk-sel {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         body.dark .wk-col {
@@ -6134,7 +6134,7 @@
         }
 
         body.dark .wk-col.wk-sel {
-            box-shadow: 0 0 0 2px #09371F, 0 2px 10px rgba(9, 55, 31, .5)
+            box-shadow: 0 0 0 2px var(--brand-primary), 0 2px 10px rgba(9, 55, 31, .5)
         }
 
         body.dark .wk-appt {
@@ -6143,21 +6143,21 @@
 
         body.dark .wk-appt.wk-ok {
             background: #051F11;
-            border-left-color: #16A34A
+            border-left-color: var(--success)
         }
 
         body.dark .wk-appt.wk-err {
             background: #791F1F;
-            border-left-color: #DC2626
+            border-left-color: var(--error)
         }
 
         body.dark .wk-appt.wk-pend {
             background: #7A5A00;
-            border-left-color: #BE992A
+            border-left-color: var(--warning)
         }
 
         body.dark .wk-appt.wk-post-notsigned {
-            border-right-color: #DC2626
+            border-right-color: var(--error)
         }
 
         body.dark .wk-appt.wk-post-signed {
@@ -6165,11 +6165,11 @@
         }
 
         body.dark .wk-appt.wk-post-pending {
-            border-right-color: #BE992A
+            border-right-color: var(--warning)
         }
 
         body.dark .wk-appt.wk-post-paid {
-            border-right-color: #16A34A
+            border-right-color: var(--success)
         }
 
         body.dark .wk-appt.wk-direct {
@@ -6179,19 +6179,19 @@
         }
 
         body.dark .wk-appt.wk-direct.wk-ok {
-            border-left-color: #16A34A
+            border-left-color: var(--success)
         }
 
         body.dark .wk-appt.wk-direct.wk-err {
-            border-left-color: #DC2626
+            border-left-color: var(--error)
         }
 
         body.dark .wk-appt.wk-direct.wk-pend {
-            border-left-color: #BE992A
+            border-left-color: var(--warning)
         }
 
         body.dark .wk-appt.wk-direct.wk-post-notsigned {
-            border-right-color: #DC2626
+            border-right-color: var(--error)
         }
 
         body.dark .wk-appt.wk-direct.wk-post-signed {
@@ -6199,11 +6199,11 @@
         }
 
         body.dark .wk-appt.wk-direct.wk-post-pending {
-            border-right-color: #BE992A
+            border-right-color: var(--warning)
         }
 
         body.dark .wk-appt.wk-direct.wk-post-paid {
-            border-right-color: #16A34A
+            border-right-color: var(--success)
         }
 
         body.dark .wk-pat {
@@ -6211,11 +6211,11 @@
         }
 
         body.dark .wk-prov {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .wk-time {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .wk-dayname {
@@ -6235,23 +6235,23 @@
         }
 
         body.dark .wk-copay.pay-fail {
-            color: #DC2626
+            color: var(--error)
         }
 
         body.dark .wk-copay.pay-pend {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .wk-nd {
             background: #7A5A00;
-            border-color: #BE992A;
-            color: #BE992A
+            border-color: var(--warning);
+            color: var(--warning)
         }
 
         body.dark .wk-nd.nd-red {
             background: #791F1F;
-            border-color: #DC2626;
-            color: #DC2626
+            border-color: var(--error);
+            color: var(--error)
         }
 
         /* Assistant table */
@@ -6311,12 +6311,12 @@
 
         body.dark .ce {
             background: #791F1F;
-            color: #DC2626
+            color: var(--error)
         }
 
         body.dark .cp {
             background: #7A5A00;
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .cpt-chip {
@@ -6326,8 +6326,8 @@
 
         body.dark .unsigned-badge {
             background: #791F1F;
-            color: #DC2626;
-            border-color: #DC2626
+            color: var(--error);
+            border-color: var(--error)
         }
 
         /* CPT modal redesign — dark mode */
@@ -6341,11 +6341,11 @@
 
         body.dark .cpt-combo-btn {
             background: #051F11;
-            border-color: #09371F
+            border-color: var(--brand-primary)
         }
 
         body.dark .cpt-combo-btn:hover {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         /* Same Forest 20 the individual tiles use when selected — a light
@@ -6357,7 +6357,7 @@
         }
 
         body.dark .cpt-combo-btn.on .cpt-combo-pri {
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         body.dark .cpt-combo-btn.on .cpt-combo-add {
@@ -6386,7 +6386,7 @@
         }
 
         body.dark .cpt-sec-hd {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .cpt-bh-toggle {
@@ -6418,7 +6418,7 @@
         }
 
         body.dark .td-method-lbl {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .td-notes {
@@ -6455,22 +6455,22 @@
         }
 
         body.dark .ts-badge.ts-roomed {
-            color: #BE992A;
+            color: var(--warning);
             background: #7A5A00
         }
 
         body.dark .ts-badge.ts-checked-out {
-            color: #BE992A;
+            color: var(--warning);
             background: #7A5A00
         }
 
         body.dark .ts-badge.ts-rescheduled {
-            color: #BE992A;
+            color: var(--warning);
             background: #7A5A00
         }
 
         body.dark .ts-badge.ts-no-show {
-            color: #DC2626;
+            color: var(--error);
             background: #791F1F
         }
 
@@ -6497,11 +6497,11 @@
         }
 
         body.dark .tm-err {
-            color: #DC2626
+            color: var(--error)
         }
 
         body.dark .tm-pend {
-            color: #BE992A
+            color: var(--warning)
         }
 
         /* Billing / Direct Pay */
@@ -6511,7 +6511,7 @@
         }
 
         body.dark .bill-section-hd {
-            color: #BE992A;
+            color: var(--warning);
             border-bottom-color: #2B2716
         }
 
@@ -6521,7 +6521,7 @@
 
         body.dark .dp-row.pend {
             background: #791F1F;
-            border-left-color: #DC2626
+            border-left-color: var(--error)
         }
 
         body.dark .dp-name {
@@ -6529,7 +6529,7 @@
         }
 
         body.dark .dp-label {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .dp-val {
@@ -6541,11 +6541,11 @@
         }
 
         body.dark .pay-pending {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .pay-failed {
-            color: #DC2626
+            color: var(--error)
         }
 
         body.dark .dp-date-wrap {
@@ -6555,7 +6555,7 @@
         }
 
         body.dark .dp-date-wrap.coll {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             background: #051F11
         }
 
@@ -6595,7 +6595,7 @@
 
         .cpt-rate-amt {
             display: inline-block;
-            background: #16A34A;
+            background: var(--success);
             color: #FFFFFF;
             border-radius: 4px;
             padding: 0px 6px;
@@ -6608,7 +6608,7 @@
         }
 
         .cpt-rate-amt:hover {
-            background: #16A34A
+            background: var(--success)
         }
 
         .cpt-rate-amt.just-copied {
@@ -6663,7 +6663,7 @@
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: .6px;
-            color: #09371F;
+            color: var(--brand-primary);
             margin-bottom: 14px
         }
 
@@ -6746,7 +6746,7 @@
         }
 
         .csm-save-pt-btn:hover:not(:disabled) {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         .csm-save-pt-btn:disabled {
@@ -6763,7 +6763,7 @@
         .csm-pt-saved {
             font-size: 12px;
             font-weight: 700;
-            color: #16A34A
+            color: var(--success)
         }
 
         .csm-row-field {
@@ -6794,7 +6794,7 @@
             font-weight: 800;
             cursor: pointer;
             font-family: inherit;
-            color: #09371F;
+            color: var(--brand-primary);
             transition: background .15s
         }
 
@@ -6813,7 +6813,7 @@
         }
 
         .csm-signed {
-            background: linear-gradient(135deg, #16A34A, #16A34A);
+            background: linear-gradient(135deg, var(--success), var(--success));
             color: #FFFFFF;
             border-radius: 5px;
             padding: 3px 10px;
@@ -6823,7 +6823,7 @@
 
         .csm-unsigned {
             background: #F8EFD8;
-            color: #BE992A;
+            color: var(--warning);
             border-radius: 5px;
             padding: 3px 10px;
             font-size: 11px;
@@ -6895,7 +6895,7 @@
         }
 
         .csm-save-btn:hover {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         .csm-submit-btn {
@@ -6913,12 +6913,12 @@
         }
 
         .csm-submit-btn.ready {
-            background: linear-gradient(135deg, #16A34A, #16A34A);
+            background: linear-gradient(135deg, var(--success), var(--success));
             color: #FFFFFF
         }
 
         .csm-submit-btn.ready:hover {
-            background: linear-gradient(135deg, #16A34A, #09371F)
+            background: linear-gradient(135deg, var(--success), var(--brand-primary))
         }
 
         .csm-submit-btn.done {
@@ -6951,7 +6951,7 @@
        4. Signed / claim submitted / paid */
         .b-card.b-card-baseline {
             background: #F8EFD8;
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             border-left: 6px solid #F8EFD8;
         }
 
@@ -6961,28 +6961,28 @@
 
         .b-card.b-card-unsubmitted {
             background: #FEF2F2;
-            border-color: #09371F;
-            border-left: 6px solid #DC2626;
+            border-color: var(--brand-primary);
+            border-left: 6px solid var(--error);
         }
 
         .b-card.b-card-unsubmitted.b-card-direct:hover {
-            background: #DC2626;
+            background: var(--error);
         }
 
         .b-card.b-card-pending {
-            background: #BE992A;
-            border-color: #09371F;
-            border-left: 6px solid #BE992A;
+            background: var(--warning);
+            border-color: var(--brand-primary);
+            border-left: 6px solid var(--warning);
         }
 
         .b-card.b-card-pending.b-card-direct:hover {
-            background: #BE992A;
+            background: var(--warning);
         }
 
         .b-card.b-card-paid {
             background: #F0FDF4;
-            border-color: #09371F;
-            border-left: 6px solid #16A34A;
+            border-color: var(--brand-primary);
+            border-left: 6px solid var(--success);
         }
 
         .b-card.b-card-paid.b-card-direct:hover {
@@ -7012,8 +7012,8 @@
         .b-method-badge {
             display: inline-block;
             background: #FBFBF3;
-            border: 1px solid #09371F;
-            color: #09371F;
+            border: 1px solid var(--brand-primary);
+            color: var(--brand-primary);
             font-size: 9px;
             font-weight: 800;
             padding: 2px 7px;
@@ -7057,19 +7057,19 @@
 
         .pct-pend {
             background: rgba(234, 179, 8, .13);
-            color: #BE992A;
+            color: var(--warning);
             border-color: rgba(234, 179, 8, .30)
         }
 
         .pct-paid {
             background: rgba(22, 163, 74, .13);
-            color: #16A34A;
+            color: var(--success);
             border-color: rgba(22, 163, 74, .28)
         }
 
         .pct-denied {
             background: rgba(220, 38, 38, .13);
-            color: #DC2626;
+            color: var(--error);
             border-color: rgba(220, 38, 38, .28)
         }
 
@@ -7091,7 +7091,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             border-radius: 0;
             padding: 5px 11px;
@@ -7184,7 +7184,7 @@
         body.dark .b-card.b-card-baseline {
             background: #2B2716;
             border-color: #2B2716;
-            border-left-color: #BE992A;
+            border-left-color: var(--warning);
         }
 
         body.dark .b-card.b-card-baseline.b-card-direct:hover {
@@ -7194,17 +7194,17 @@
         body.dark .b-card.b-card-unsubmitted {
             background: #791F1F;
             border-color: #2B2716;
-            border-left-color: #DC2626;
+            border-left-color: var(--error);
         }
 
         body.dark .b-card.b-card-unsubmitted.b-card-direct:hover {
-            background: #DC2626;
+            background: var(--error);
         }
 
         body.dark .b-card.b-card-pending {
             background: #7A5A00;
             border-color: #2B2716;
-            border-left-color: #BE992A;
+            border-left-color: var(--warning);
         }
 
         body.dark .b-card.b-card-pending.b-card-direct:hover {
@@ -7212,13 +7212,13 @@
         }
 
         body.dark .b-card.b-card-paid {
-            background: #09371F;
+            background: var(--brand-primary);
             border-color: #2B2716;
-            border-left-color: #16A34A;
+            border-left-color: var(--success);
         }
 
         body.dark .b-card.b-card-paid.b-card-direct:hover {
-            background: #09371F;
+            background: var(--brand-primary);
         }
 
         body.dark .b-card-open-hint {
@@ -7274,20 +7274,20 @@
 
         .csm-claim-status-pill.st-Pending {
             background: #F8EFD8;
-            color: #BE992A;
-            border: 1px solid #BE992A
+            color: var(--warning);
+            border: 1px solid var(--warning)
         }
 
         .csm-claim-status-pill.st-Paid {
             background: #F0FDF4;
             color: #065F46;
-            border: 1px solid #16A34A
+            border: 1px solid var(--success)
         }
 
         .csm-claim-status-pill.st-Denied {
             background: #FEF2F2;
-            color: #DC2626;
-            border: 1px solid #DC2626
+            color: var(--error);
+            border: 1px solid var(--error)
         }
 
         .csm-claim-status-pill.st-Resubmitted {
@@ -7356,12 +7356,12 @@
 
         body.dark .csm-claim-title {
             color: #6B9E8A;
-            border-color: #09371F
+            border-color: var(--brand-primary)
         }
 
         body.dark .csm-claim-grp {
             color: #6B9E8A;
-            border-color: #09371F
+            border-color: var(--brand-primary)
         }
 
         body.dark .csm-claim-notes {
@@ -7386,20 +7386,20 @@
 
         body.dark .csm-claim-status-pill.st-Pending {
             background: #7A5A00;
-            color: #BE992A;
-            border-color: #BE992A
+            color: var(--warning);
+            border-color: var(--warning)
         }
 
         body.dark .csm-claim-status-pill.st-Paid {
             background: #065F46;
             color: #6B9E8A;
-            border-color: #16A34A
+            border-color: var(--success)
         }
 
         body.dark .csm-claim-status-pill.st-Denied {
             background: #791F1F;
             color: #FEF2F2;
-            border-color: #DC2626
+            border-color: var(--error)
         }
 
         body.dark .csm-claim-status-pill.st-Resubmitted {
@@ -7420,7 +7420,7 @@
         }
 
         body.dark .modal-hd {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         body.dark .modal-body {
@@ -7430,7 +7430,7 @@
         body.dark .frow label,
         body.dark .fcol label,
         body.dark .form-label {
-            color: #BE992A
+            color: var(--warning)
         }
 
         body.dark .modal-footer {
@@ -7451,11 +7451,11 @@
 
         body.dark .modal-body input:focus,
         body.dark .modal-body select:focus {
-            border-color: #16A34A
+            border-color: var(--success)
         }
 
         body.dark .modal-section-hd {
-            color: #BE992A;
+            color: var(--warning);
             border-bottom-color: #2B2716
         }
 
@@ -7476,7 +7476,7 @@
         }
 
         body.dark .toggle-sub {
-            color: #BE992A
+            color: var(--warning)
         }
 
         /* Calendar picker */
@@ -7505,11 +7505,11 @@
         }
 
         body.dark .cal-day.sel {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         body.dark .cal-dow {
-            color: #BE992A
+            color: var(--warning)
         }
 
         /* ══════════════════════════════════════════════════════════════
@@ -7581,18 +7581,18 @@
         }
 
         .ci-red {
-            background: #DC2626;
+            background: var(--error);
             color: #FFFFFF;
             animation: ci-pulse 2s ease-in-out infinite;
         }
 
         .ci-yellow {
-            background: #BE992A;
+            background: var(--warning);
             color: #FFFFFF;
         }
 
         .ci-green {
-            background: #16A34A;
+            background: var(--success);
             color: #FFFFFF;
             animation: ci-green-pulse 2s ease-in-out infinite;
         }
@@ -7747,13 +7747,13 @@
 
         body.dark .cp-list .comm-item {
             background: #051F11;
-            border-color: #09371F;
-            border-left-color: #16A34A;
+            border-color: var(--brand-primary);
+            border-left-color: var(--success);
         }
 
         body.dark .cp-to-select {
             background: #051F11;
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             color: #6B9E8A;
         }
 
@@ -7782,7 +7782,7 @@
 
         .c-to-assistant {
             background: #F8EFD8;
-            color: #BE992A;
+            color: var(--warning);
         }
 
         .c-to-biller {
@@ -7799,7 +7799,7 @@
             justify-content: center;
             min-width: 17px;
             height: 17px;
-            background: #DC2626;
+            background: var(--error);
             color: #FFFFFF;
             font-size: 9px;
             font-weight: 900;
@@ -7824,7 +7824,7 @@
         }
 
         body.dark .unread-dot {
-            background: #DC2626;
+            background: var(--error);
         }
 
         /* ══════════════════════════════════════════════════════════════
@@ -7852,13 +7852,13 @@
         }
 
         .ns-badge.ns-prog {
-            border-color: #BE992A;
-            color: #BE992A;
+            border-color: var(--warning);
+            color: var(--warning);
         }
 
         .ns-badge.ns-ready {
-            border-color: #16A34A;
-            color: #16A34A;
+            border-color: var(--success);
+            color: var(--success);
         }
 
         /* ── Claim-status variants — reuses .ns-badge shape, shown in the
@@ -7869,18 +7869,18 @@
         }
 
         .ns-badge.ns-pend {
-            border-color: #BE992A;
-            color: #BE992A;
+            border-color: var(--warning);
+            color: var(--warning);
         }
 
         .ns-badge.ns-paid {
-            border-color: #16A34A;
-            color: #16A34A;
+            border-color: var(--success);
+            color: var(--success);
         }
 
         .ns-badge.ns-denied {
-            border-color: #DC2626;
-            color: #DC2626;
+            border-color: var(--error);
+            color: var(--error);
         }
 
         .ns-badge.ns-resub {
@@ -7969,7 +7969,7 @@
         }
 
         body.dark .pv-row .pv-sep-cell {
-            border-left-color: #09371F;
+            border-left-color: var(--brand-primary);
             background: rgba(99, 102, 241, .06);
         }
 
@@ -8002,7 +8002,7 @@
         }
 
         .pam-hdr {
-            background: linear-gradient(135deg, #09371F, #09371F);
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary));
             color: #F2EDDB;
             border-radius: 16px 16px 0 0;
             padding: 16px 20px 14px;
@@ -8080,7 +8080,7 @@
 
         .pam-sec-hdr.rx-hdr {
             background: #F2EDDB;
-            color: #09371F;
+            color: var(--brand-primary);
             border-bottom: 1.5px solid #FBFBF3;
         }
 
@@ -8092,7 +8092,7 @@
 
         .pam-sec-hdr.scr-hdr {
             background: #F8EFD8;
-            color: #09371F;
+            color: var(--brand-primary);
             border-bottom: 1.5px solid #F8EFD8;
         }
 
@@ -8226,12 +8226,12 @@
         }
 
         body.dark .pam-section {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
         }
 
         body.dark .pam-comm-item {
             background: #051F11;
-            border-left-color: #09371F;
+            border-left-color: var(--brand-primary);
         }
 
         body.dark .pam-comm-meta {
@@ -8244,11 +8244,11 @@
 
         body.dark .pam-sec-hdr.comms {
             background: #051F11;
-            border-bottom-color: #09371F;
+            border-bottom-color: var(--brand-primary);
         }
 
         body.dark .pam-foot {
-            border-top-color: #09371F;
+            border-top-color: var(--brand-primary);
         }
 
         /* 💬 button in Provider Day View */
@@ -8274,13 +8274,13 @@
         }
 
         .pam-day-btn.has-unread {
-            border-color: #DC2626;
-            color: #DC2626;
+            border-color: var(--error);
+            color: var(--error);
             background: #FEF2F2;
         }
 
         body.dark .pam-day-btn {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             color: #777355;
         }
 
@@ -8338,8 +8338,8 @@
             bottom: 10px;
             right: 300px;
             z-index: 140;
-            background: #BE992A;
-            color: #09371F;
+            background: var(--warning);
+            color: var(--brand-primary);
             border: none;
             border-radius: 0;
             padding: 10px 20px;
@@ -8356,18 +8356,18 @@
         }
 
         .pt-fab:hover {
-            background: #BE992A;
+            background: var(--warning);
             transform: translateY(-2px);
             box-shadow: 0 8px 28px rgba(190, 153, 42, .42);
         }
 
         .pt-fab.open {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
         }
 
         .pt-fab.open:hover {
-            background: #09371F;
+            background: var(--brand-primary);
         }
 
         /* ── Import Payments FAB (Billing View only) ─────────────────────────── */
@@ -8376,7 +8376,7 @@
             bottom: 28px;
             right: 530px;
             z-index: 140;
-            background: #09371F;
+            background: var(--brand-primary);
             color: #FFFFFF;
             border: none;
             border-radius: 0;
@@ -8404,7 +8404,7 @@
         }
 
         .imp-fab.open:hover {
-            background: #09371F;
+            background: var(--brand-primary);
         }
 
         .nb-overlay {
@@ -8617,14 +8617,14 @@
 
         body.dark .nb-attrib-sel {
             background: #051F11;
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             color: #F0FDF4;
         }
 
         .nb-cell-signed {
             font-size: 10px;
             font-weight: 800;
-            color: #16A34A;
+            color: var(--success);
             text-transform: uppercase;
             letter-spacing: .3px;
         }
@@ -8648,12 +8648,12 @@
 
         body.dark .nb-date-hdr {
             background: #051F11;
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             color: #6B9E8A;
         }
 
         body.dark .nb-row {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
         }
 
         body.dark .nb-row:hover {
@@ -8669,7 +8669,7 @@
         }
 
         body.dark .nb-filter-bar {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
         }
 
         /* ══════════════════════════════════════════════════════════════
@@ -8853,7 +8853,7 @@
                outside Appointment Flow, so no need for a separate wrapper. */
             font-size: 21.3px;
             font-weight: 900;
-            color: #09371F;
+            color: var(--brand-primary);
             letter-spacing: .2px;
         }
         .af-list-block {
@@ -8909,7 +8909,7 @@
         .af-cell-signal {
             font-size: 11px;
             font-weight: 800;
-            color: #16A34A;
+            color: var(--success);
         }
         .af-cell-otherdates {
             display: flex;
@@ -8963,7 +8963,7 @@
                the FIX (2026-07-26) comment on .asst-hd-sticky), which is why
                plain position:sticky works here without that same escape
                hatch. */
-            background: #09371F;
+            background: var(--brand-primary);
             padding: 6px 12px;
             text-align: left;
             color: rgba(242, 237, 219, .85);
@@ -9028,8 +9028,8 @@
             cursor: default;
         }
         .af-confirm-btn.af-confirm-done {
-            background: #16A34A;
-            border-color: #16A34A;
+            background: var(--success);
+            border-color: var(--success);
             color: #FFFFFF;
             opacity: 1;
             cursor: default;
@@ -9070,13 +9070,13 @@
             color: #777355;
         }
         .af-flag-toggle.af-flag-yes {
-            border-color: #16A34A;
-            color: #16A34A;
+            border-color: var(--success);
+            color: var(--success);
             background: #16A34A1A;
         }
         .af-flag-toggle.af-flag-no {
-            border-color: #DC2626;
-            color: #DC2626;
+            border-color: var(--error);
+            color: var(--error);
             background: #DC26261A;
         }
         .af-flag-icon {
@@ -9085,7 +9085,7 @@
         .af-flag-error {
             font-size: 10px;
             font-weight: 700;
-            color: #DC2626;
+            color: var(--error);
         }
         .af-cc-toggle {
             background: none;
@@ -9103,13 +9103,13 @@
             cursor: default;
         }
         .af-cc-toggle.af-cc-yes {
-            border-color: #16A34A;
-            color: #16A34A;
+            border-color: var(--success);
+            color: var(--success);
             background: #16A34A1A;
         }
         .af-cc-toggle.af-cc-no {
-            border-color: #DC2626;
-            color: #DC2626;
+            border-color: var(--error);
+            color: var(--error);
             background: #DC26261A;
         }
         .af-rate-issues {
@@ -9122,7 +9122,7 @@
         .af-rate-issue {
             font-size: 10px;
             font-weight: 700;
-            color: #DC2626;
+            color: var(--error);
             white-space: normal;
         }
         .af-attrib-line {
@@ -9279,7 +9279,7 @@
             background: #051F11;
         }
         body.dark .af-row-wrap {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
         }
         body.dark .af-row:hover {
             background: #051F11;
@@ -9296,11 +9296,11 @@
         }
         body.dark .af-detail {
             background: #051F11;
-            border-color: #09371F;
+            border-color: var(--brand-primary);
         }
         body.dark .af-day-section,
         body.dark .af-list-block {
-            border-color: #09371F;
+            border-color: var(--brand-primary);
         }
         body.dark .af-rate-table td {
             color: #F0FDF4;
@@ -9380,7 +9380,7 @@
         }
 
         .bc-fab.open {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         .bc-fab.open:hover {
@@ -9405,7 +9405,7 @@
 
         .bfab-btn {
             background: #6B9E8A;
-            color: #09371F;
+            color: var(--brand-primary);
             border: none;
             border-radius: 0;
             padding: 10px 18px;
@@ -9423,17 +9423,17 @@
         }
 
         .bfab-btn:hover {
-            background: #16A34A;
+            background: var(--success);
             transform: translateY(-2px);
         }
 
         .bfab-btn.open {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
         }
 
         .bfab-btn.open:hover {
-            background: #09371F;
+            background: var(--brand-primary);
         }
 
         .bc-panel {
@@ -9466,7 +9466,7 @@
 
         .bc-panel-hdr {
             padding: 12px 16px;
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             border-radius: 10px 10px 0 0;
             font-size: 13px;
@@ -9571,8 +9571,8 @@
         }
 
         .bc-btn:hover {
-            border-color: #09371F;
-            color: #09371F;
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
         }
 
         .bc-btn.saving {
@@ -9684,7 +9684,7 @@
         }
 
         .cl-hdr {
-            background: linear-gradient(135deg, #3D768A, #09371F);
+            background: linear-gradient(135deg, #3D768A, var(--brand-primary));
             color: #FFFFFF;
             border-radius: 0;
             padding: 16px 20px 14px;
@@ -9731,7 +9731,7 @@
         }
 
         .cl-filter-select option {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #FFFFFF
         }
 
@@ -9824,7 +9824,7 @@
         .cl-stat-num {
             font-size: 15px;
             font-weight: 900;
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .cl-stat-sep {
@@ -9863,7 +9863,7 @@
         }
 
         .cl-carrier-hdr {
-            background: linear-gradient(90deg, #09371F 0%, #09371F 100%);
+            background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-primary) 100%);
             color: #FFFFFF;
             padding: 9px 16px;
             font-size: 11px;
@@ -9952,7 +9952,7 @@
         .cl-carrier-group-td {
             padding: 0;
             border-right: none !important;
-            background: #09371F;
+            background: var(--brand-primary);
             position: sticky;
             top: 36px;
             z-index: 2;
@@ -9978,7 +9978,7 @@
         }
 
         .cl-table tbody tr.cl-complete td {
-            border-bottom: 1px solid #16A34A
+            border-bottom: 1px solid var(--success)
         }
 
         .cl-table tbody tr.cl-complete:hover {
@@ -9999,7 +9999,7 @@
         }
 
         body.dark .cl-table tbody tr.cl-pt-sep.cl-complete td {
-            border-top: 2px solid #16A34A
+            border-top: 2px solid var(--success)
         }
 
         .cl-table td {
@@ -10057,7 +10057,7 @@
 
         .cl-complete .cl-cpt-chip {
             background: rgba(242, 237, 219, .45);
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .cl-sub-main {
@@ -10098,20 +10098,20 @@
 
         /* #BE992A — same Pending gold used in the Billing window */
         .cl-status-block.st-Pending {
-            background: #BE992A;
+            background: var(--warning);
             color: #7A5A00
         }
 
         /* Deeper green + light mint text per Dean's revision — better contrast
        than the original #16A34A/black pairing. */
         .cl-status-block.st-Paid {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F0FDF4
         }
 
         .cl-status-block.st-Denied {
             background: #FEF2F2;
-            color: #DC2626
+            color: var(--error)
         }
 
         .cl-status-block.st-Resubmitted {
@@ -10125,7 +10125,7 @@
         }
 
         .cl-complete .cl-status-block.st-Paid {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F0FDF4
         }
 
@@ -10138,12 +10138,12 @@
         .cl-paid-amt {
             font-size: 13px;
             font-weight: 800;
-            color: #16A34A;
+            color: var(--success);
             margin-top: 2px
         }
 
         .cl-complete .cl-paid-amt {
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .cl-check-main {
@@ -10166,7 +10166,7 @@
 
         .cl-complete .cl-bundle-badge {
             background: rgba(242, 237, 219, .45);
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .cl-dep-main {
@@ -10188,7 +10188,7 @@
         }
 
         .cl-complete .cl-dep-amt {
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .cl-copay-line {
@@ -10199,7 +10199,7 @@
         }
 
         .cl-complete .cl-copay-line {
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         /* Date collected / PPC / CSC lines — lighter weight than the Amount line
@@ -10245,7 +10245,7 @@
         }
 
         .cl-copay-line-owed {
-            color: #DC2626;
+            color: var(--error);
             /* red-700 */
             font-weight: 800;
         }
@@ -10322,7 +10322,7 @@
         }
 
         .cl-complete .cl-notes-input:focus {
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         body.dark .cl-notes-input {
@@ -10453,7 +10453,7 @@
 
         body.dark .cl-stats {
             background: #051F11;
-            border-color: #09371F
+            border-color: var(--brand-primary)
         }
 
         body.dark .cl-stat-item {
@@ -10488,15 +10488,15 @@
         }
 
         body.dark .cl-table tbody tr.cl-complete {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         body.dark .cl-table tbody tr.cl-complete td {
-            border-bottom-color: #09371F
+            border-bottom-color: var(--brand-primary)
         }
 
         body.dark .cl-table tbody tr.cl-complete:hover {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         body.dark .cl-table td {
@@ -10571,7 +10571,7 @@
 
         body.dark .cl-footer {
             background: #051F11;
-            border-color: #09371F;
+            border-color: var(--brand-primary);
             color: #6B9E8A
         }
 
@@ -10583,12 +10583,12 @@
         /* Dean's Pending/Paid colors come from the Biller window and stay fixed
        regardless of theme, so dark mode doesn't re-tint these two. */
         body.dark .cl-status-block.st-Pending {
-            background: #BE992A;
+            background: var(--warning);
             color: #7A5A00
         }
 
         body.dark .cl-status-block.st-Paid {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F0FDF4
         }
 
@@ -10622,7 +10622,7 @@
         }
 
         .mtm-btn {
-            background: #09371F;
+            background: var(--brand-primary);
             color: #F2EDDB;
             border: none;
             border-radius: 0;
@@ -10636,14 +10636,14 @@
         }
 
         .mtm-btn.open {
-            background: #09371F;
+            background: var(--brand-primary);
         }
 
         .mtm-menu {
             display: flex;
             flex-direction: column;
             background: #FBFBF3;
-            border: 1px solid #09371F;
+            border: 1px solid var(--brand-primary);
             min-width: 220px;
             box-shadow: 0 6px 20px rgba(9, 55, 31, .3);
         }
@@ -10652,7 +10652,7 @@
             background: #FBFBF3;
             border: none;
             border-bottom: 1px solid #F8EFD8;
-            color: #09371F;
+            color: var(--brand-primary);
             text-align: left;
             padding: 13px 16px;
             font-size: 14px;
@@ -10901,7 +10901,7 @@
                 top: 100%;
                 left: 0;
                 right: 0;
-                background: #09371F;
+                background: var(--brand-primary);
                 border-bottom: 4px solid #7494AA;
                 padding: 10px 10px 14px;
                 display: flex;
@@ -11226,9 +11226,9 @@
         }
 
         .pt-filters-btn.active {
-            background: #BE992A;
-            border-color: #BE992A;
-            color: #09371F
+            background: var(--warning);
+            border-color: var(--warning);
+            color: var(--brand-primary)
         }
 
         .pt-filters-row {
@@ -11319,7 +11319,7 @@
         }
 
         .pt-th-sortable:hover {
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .pt-sort-arrow {
@@ -11384,11 +11384,11 @@
         }
 
         .pt-tag.legacy {
-            color: #BE992A
+            color: var(--warning)
         }
 
         .pt-tag.manual {
-            color: #09371F
+            color: var(--brand-primary)
         }
 
         .pt-patient {
@@ -11408,18 +11408,18 @@
         }
 
         .pt-badge.paid {
-            color: #16A34A;
-            border-color: #16A34A
+            color: var(--success);
+            border-color: var(--success)
         }
 
         .pt-badge.declined {
-            color: #DC2626;
-            border-color: #DC2626
+            color: var(--error);
+            border-color: var(--error)
         }
 
         .pt-badge.reversed {
-            color: #BE992A;
-            border-color: #BE992A
+            color: var(--warning);
+            border-color: var(--warning)
         }
 
         .pt-badge.pending {
@@ -11429,7 +11429,7 @@
 
         body.dark .pt-filters-row {
             background: #051F11;
-            border-bottom-color: #09371F
+            border-bottom-color: var(--brand-primary)
         }
 
         body.dark .pt-field label {
@@ -11439,7 +11439,7 @@
 
         body.dark .pt-field input,
         body.dark .pt-field select {
-            background: #09371F;
+            background: var(--brand-primary);
             border-color: #3D768A;
             color: #F2EDDB;
         }
@@ -11452,7 +11452,7 @@
         }
 
         body.dark .pt-table tbody tr:hover {
-            background: #09371F
+            background: var(--brand-primary)
         }
 
         body.dark .pt-table tbody tr.pt-future-row {
@@ -11464,7 +11464,7 @@
         }
 
         body.dark .pt-table tbody td {
-            border-bottom-color: #09371F;
+            border-bottom-color: var(--brand-primary);
             color: #F2EDDB
         }
 
@@ -12985,8 +12985,8 @@
                                     <input className="fi" value={time}
                                         onChange={e => { setTime(e.target.value); setTimeErr(''); }}
                                         onBlur={e => normalizeTime(e.target.value)}
-                                        placeholder="e.g. 9:00 AM, 1pm, 1300" style={timeErr ? { borderColor: '#DC2626' } : {}} />
-                                    {timeErr && <div style={{ fontSize: 11, color: '#DC2626', marginTop: 3 }}>{timeErr}</div>}
+                                        placeholder="e.g. 9:00 AM, 1pm, 1300" style={timeErr ? { borderColor: 'var(--error)' } : {}} />
+                                    {timeErr && <div style={{ fontSize: 11, color: 'var(--error)', marginTop: 3 }}>{timeErr}</div>}
                                 </div>
                                 <div><label className="fl">Patient Name</label>
                                     <PatientSearch value={patient} onChange={setPatient} onSelect={handleSelect} patientDb={patientDb} autoFocus /></div>
@@ -13351,7 +13351,7 @@
                                     <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #F2EDDB' }}>
                                         <div style={{ fontSize: 11, fontWeight: 800, color: '#777355', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
                                             ⚠️ Issue Notes
-                                            <span style={{ fontSize: 10, fontWeight: 600, color: '#BE992A', textTransform: 'none', letterSpacing: 0 }}>— reason for any Issue designation</span>
+                                            <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--warning)', textTransform: 'none', letterSpacing: 0 }}>— reason for any Issue designation</span>
                                         </div>
                                         <textarea
                                             className="scr-note-area"
@@ -13414,7 +13414,7 @@
                                                         </span>
                                                     )}
                                                     {sd.score !== '' && !result && (
-                                                        <span className="scr-indicates-chip" style={{ background: '#F8EFD8', color: '#BE992A', border: '1px solid #BE992A' }}>
+                                                        <span className="scr-indicates-chip" style={{ background: '#F8EFD8', color: 'var(--warning)', border: '1px solid var(--warning)' }}>
                                                             Out of range (0–{cfg.max})
                                                         </span>
                                                     )}
@@ -13479,7 +13479,7 @@
                             )}
                             {onDelete && confirmDelete && (
                                 <span style={{ marginRight: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <span style={{ fontSize: 13, color: '#DC2626', fontWeight: 700 }}>Remove this appointment?</span>
+                                    <span style={{ fontSize: 13, color: 'var(--error)', fontWeight: 700 }}>Remove this appointment?</span>
                                     <button className="btn btn-d btn-sm" onClick={() => onDelete(appt.id)}>Yes, Remove</button>
                                     <button className="btn btn-s btn-sm" onClick={() => setConfirmDelete(false)}>Cancel</button>
                                 </span>
@@ -13650,28 +13650,28 @@
             'PHQ-9': {
                 max: 27,
                 ranges: [
-                    [0, 4, 'Minimal or no depression', '#16A34A'],
-                    [5, 9, 'Mild depression', '#16A34A'],
-                    [10, 14, 'Moderate depression', '#BE992A'],
-                    [15, 19, 'Moderately severe depression', '#BE992A'],
-                    [20, 27, 'Severe depression', '#DC2626'],
+                    [0, 4, 'Minimal or no depression', 'var(--success)'],
+                    [5, 9, 'Mild depression', 'var(--success)'],
+                    [10, 14, 'Moderate depression', 'var(--warning)'],
+                    [15, 19, 'Moderately severe depression', 'var(--warning)'],
+                    [20, 27, 'Severe depression', 'var(--error)'],
                 ],
             },
             'GAD-7': {
                 max: 21,
                 ranges: [
-                    [0, 4, 'Minimal to no anxiety', '#16A34A'],
-                    [5, 9, 'Mild anxiety', '#16A34A'],
-                    [10, 14, 'Moderate anxiety', '#BE992A'],
-                    [15, 21, 'Severe anxiety', '#DC2626'],
+                    [0, 4, 'Minimal to no anxiety', 'var(--success)'],
+                    [5, 9, 'Mild anxiety', 'var(--success)'],
+                    [10, 14, 'Moderate anxiety', 'var(--warning)'],
+                    [15, 21, 'Severe anxiety', 'var(--error)'],
                 ],
             },
             'PCL-5': {
                 max: 80,
                 ranges: [
-                    [0, 30, 'Below clinical threshold', '#16A34A'],
-                    [31, 33, 'Diagnostic cutoff range (Probable PTSD)', '#BE992A'],
-                    [34, 80, 'High clinical severity', '#DC2626'],
+                    [0, 30, 'Below clinical threshold', 'var(--success)'],
+                    [31, 33, 'Diagnostic cutoff range (Probable PTSD)', 'var(--warning)'],
+                    [34, 80, 'High clinical severity', 'var(--error)'],
                 ],
             },
         };
@@ -13829,7 +13829,7 @@
                                                         if (checked === null || checked === undefined) return null;
                                                         const cfg = SCR_CONFIG[s];
                                                         if (checked === false) return (
-                                                            <span key={s} style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 20, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FEF2F2' }}>
+                                                            <span key={s} style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 20, background: '#FEF2F2', color: 'var(--error)', border: '1px solid #FEF2F2' }}>
                                                                 {s} ✗
                                                             </span>
                                                         );
@@ -13840,7 +13840,7 @@
                                                             </span>
                                                         );
                                                         return (
-                                                            <span key={s} style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 20, background: '#F8EFD8', color: '#BE992A', border: '1px solid #BE992A' }}>
+                                                            <span key={s} style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 20, background: '#F8EFD8', color: 'var(--warning)', border: '1px solid var(--warning)' }}>
                                                                 {s} ✓
                                                             </span>
                                                         );
@@ -13848,14 +13848,14 @@
                                                 </div>
                                             ) : null}
                                             {appt.scrNote ? (
-                                                <div style={{ marginTop: anyData ? 6 : 0, background: '#F8EFD8', borderRadius: 7, padding: '8px 11px', fontSize: 12.5, color: '#2B2716', lineHeight: 1.55, borderLeft: '3px solid #09371F', whiteSpace: 'pre-wrap' }}>
+                                                <div style={{ marginTop: anyData ? 6 : 0, background: '#F8EFD8', borderRadius: 7, padding: '8px 11px', fontSize: 12.5, color: '#2B2716', lineHeight: 1.55, borderLeft: '3px solid var(--brand-primary)', whiteSpace: 'pre-wrap' }}>
                                                     <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: .5, color: '#777355', display: 'block', marginBottom: 3 }}>📝 Clinical Notes</span>
                                                     {appt.scrNote}
                                                 </div>
                                             ) : null}
                                             {appt.checklistNote ? (
-                                                <div style={{ marginTop: 6, background: '#F8EFD8', borderRadius: 7, padding: '8px 11px', fontSize: 12.5, color: '#2B2716', lineHeight: 1.55, borderLeft: '3px solid #BE992A', whiteSpace: 'pre-wrap' }}>
-                                                    <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: .5, color: '#BE992A', display: 'block', marginBottom: 3 }}>⚠️ Issue Notes</span>
+                                                <div style={{ marginTop: 6, background: '#F8EFD8', borderRadius: 7, padding: '8px 11px', fontSize: 12.5, color: '#2B2716', lineHeight: 1.55, borderLeft: '3px solid var(--warning)', whiteSpace: 'pre-wrap' }}>
+                                                    <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: .5, color: 'var(--warning)', display: 'block', marginBottom: 3 }}>⚠️ Issue Notes</span>
                                                     {appt.checklistNote}
                                                 </div>
                                             ) : null}
@@ -13868,7 +13868,7 @@
                             <div className="pam-section">
                                 <div className="pam-sec-hdr rx-hdr">
                                     💊 Controlled Substances Prescribed
-                                    {rxMeds.length > 0 && <span style={{ background: '#F2EDDB', color: '#09371F', borderRadius: 20, padding: '1px 8px', fontSize: 10, fontWeight: 900 }}>{rxMeds.length}</span>}
+                                    {rxMeds.length > 0 && <span style={{ background: '#F2EDDB', color: 'var(--brand-primary)', borderRadius: 20, padding: '1px 8px', fontSize: 10, fontWeight: 900 }}>{rxMeds.length}</span>}
                                 </div>
                                 <div className="pam-sec-body">
                                     <div className="pam-rx-list">
@@ -13909,13 +13909,13 @@
                                     <div className="pam-sign-row">
                                         {out ? (
                                             <>
-                                                <span style={{ background: '#FBFBF3', border: '1px solid #16A34A', color: '#16A34A', borderRadius: 0, padding: '6px 16px', fontSize: 14, fontWeight: 800 }}>✓ Note Signed</span>
+                                                <span style={{ background: '#FBFBF3', border: '1px solid var(--success)', color: 'var(--success)', borderRadius: 0, padding: '6px 16px', fontSize: 14, fontWeight: 800 }}>✓ Note Signed</span>
                                                 <button className="btn btn-s btn-sm" onClick={() => setOut(false)}>↩ Undo Signature</button>
                                             </>
                                         ) : (
                                             <button
                                                 className="btn btn-sm"
-                                                style={{ background: '#09371F', color: '#F2EDDB', padding: '8px 22px', fontSize: 14, fontWeight: 800, border: 'none', borderRadius: 0, cursor: 'pointer' }}
+                                                style={{ background: 'var(--brand-primary)', color: '#F2EDDB', padding: '8px 22px', fontSize: 14, fontWeight: 800, border: 'none', borderRadius: 0, cursor: 'pointer' }}
                                                 onClick={() => setOut(true)}>
                                                 ✍ Mark Note Signed
                                             </button>
@@ -13929,7 +13929,7 @@
                             <button className="btn btn-s" onClick={onClose}>Cancel</button>
                             <button
                                 className="btn"
-                                style={{ background: 'linear-gradient(135deg,#09371F,#09371F)', color: '#F2EDDB', border: 'none', borderRadius: 8, padding: '8px 20px', fontWeight: 800, cursor: 'pointer' }}
+                                style={{ background: 'linear-gradient(135deg,var(--brand-primary),var(--brand-primary))', color: '#F2EDDB', border: 'none', borderRadius: 8, padding: '8px 20px', fontWeight: 800, cursor: 'pointer' }}
                                 onClick={handleSave}>
                                 Save
                             </button>
@@ -14336,16 +14336,16 @@
                             <div className="cl-stats">
                                 <div className="cl-stat-item"><span className="cl-stat-num">{totalCount}</span>&nbsp;Claims</div>
                                 <span className="cl-stat-sep">|</span>
-                                <div className="cl-stat-item" style={{ color: '#16A34A' }}>
-                                    <span className="cl-stat-num" style={{ color: '#16A34A' }}>{paidCount}</span>&nbsp;Paid
+                                <div className="cl-stat-item" style={{ color: 'var(--success)' }}>
+                                    <span className="cl-stat-num" style={{ color: 'var(--success)' }}>{paidCount}</span>&nbsp;Paid
                                 </div>
                                 <span className="cl-stat-sep">|</span>
-                                <div className="cl-stat-item" style={{ color: '#BE992A' }}>
-                                    <span className="cl-stat-num" style={{ color: '#BE992A' }}>{pendCount}</span>&nbsp;Pending
+                                <div className="cl-stat-item" style={{ color: 'var(--warning)' }}>
+                                    <span className="cl-stat-num" style={{ color: 'var(--warning)' }}>{pendCount}</span>&nbsp;Pending
                                 </div>
                                 <span className="cl-stat-sep">|</span>
-                                <div className="cl-stat-item" style={{ color: '#16A34A' }}>
-                                    <span className="cl-stat-num" style={{ color: '#16A34A' }}>{fmtAmt(totalPaid)}</span>&nbsp;Total Paid
+                                <div className="cl-stat-item" style={{ color: 'var(--success)' }}>
+                                    <span className="cl-stat-num" style={{ color: 'var(--success)' }}>{fmtAmt(totalPaid)}</span>&nbsp;Total Paid
                                 </div>
                                 {totalDep > 0 && <>
                                     <span className="cl-stat-sep">|</span>
@@ -15897,11 +15897,11 @@
                                     <input className="fi" value={paymentAmount} placeholder="0" onChange={e => setPaymentAmount(e.target.value)} />
                                 </div>
                                 <div className="csm-chks">
-                                    <label className="dp-chk" style={{ color: paymentCollected ? '#16A34A' : '#3D768A' }}>
+                                    <label className="dp-chk" style={{ color: paymentCollected ? 'var(--success)' : '#3D768A' }}>
                                         <input type="checkbox" checked={paymentCollected} onChange={e => toggleCollected(e.target.checked)} />
                                         Collected
                                     </label>
-                                    <label className="dp-chk" style={{ color: paymentFailed ? '#DC2626' : '#3D768A' }}>
+                                    <label className="dp-chk" style={{ color: paymentFailed ? 'var(--error)' : '#3D768A' }}>
                                         <input type="checkbox" checked={paymentFailed} onChange={e => toggleFailed(e.target.checked)} />
                                         Failed
                                     </label>
@@ -15937,7 +15937,7 @@
                                     </select>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 8 }}>
-                                    <label className="dp-chk" style={{ color: paymentPlan ? '#BE992A' : '#3D768A' }}>
+                                    <label className="dp-chk" style={{ color: paymentPlan ? 'var(--warning)' : '#3D768A' }}>
                                         <input type="checkbox" checked={paymentPlan} onChange={e => setPaymentPlan(e.target.checked)} />
                                         Part of a payment plan
                                     </label>
@@ -15949,7 +15949,7 @@
                                 <textarea className="fi" rows={2} value={comments} onChange={e => setComments(e.target.value)} placeholder="Optional notes…" />
                             </div>
 
-                            {err && <div style={{ fontSize: 12, color: '#DC2626', marginTop: 4 }}>{err}</div>}
+                            {err && <div style={{ fontSize: 12, color: 'var(--error)', marginTop: 4 }}>{err}</div>}
                         </div>
                         <div className="m-foot">
                             <button className="btn btn-s" onClick={onClose}>Cancel</button>
@@ -16146,23 +16146,23 @@
                             <div className="cl-stats">
                                 <div className="cl-stat-item"><span className="cl-stat-num">{filtered.length}</span>&nbsp;of {totalCount}</div>
                                 <span className="cl-stat-sep">|</span>
-                                <div className="cl-stat-item" style={{ color: '#16A34A' }}>
-                                    <span className="cl-stat-num" style={{ color: '#16A34A' }}>{paidRows.length}</span>&nbsp;Paid
+                                <div className="cl-stat-item" style={{ color: 'var(--success)' }}>
+                                    <span className="cl-stat-num" style={{ color: 'var(--success)' }}>{paidRows.length}</span>&nbsp;Paid
                                 </div>
                                 <span className="cl-stat-sep">|</span>
-                                <div className="cl-stat-item" style={{ color: '#16A34A' }}>
-                                    <span className="cl-stat-num" style={{ color: '#16A34A' }}>${totalPaid.toFixed(2)}</span>&nbsp;Total Paid
+                                <div className="cl-stat-item" style={{ color: 'var(--success)' }}>
+                                    <span className="cl-stat-num" style={{ color: 'var(--success)' }}>${totalPaid.toFixed(2)}</span>&nbsp;Total Paid
                                 </div>
                                 {declinedCount > 0 && <>
                                     <span className="cl-stat-sep">|</span>
-                                    <div className="cl-stat-item" style={{ color: '#DC2626' }}>
-                                        <span className="cl-stat-num" style={{ color: '#DC2626' }}>{declinedCount}</span>&nbsp;Declined
+                                    <div className="cl-stat-item" style={{ color: 'var(--error)' }}>
+                                        <span className="cl-stat-num" style={{ color: 'var(--error)' }}>{declinedCount}</span>&nbsp;Declined
                                     </div>
                                 </>}
                                 {reversedCount > 0 && <>
                                     <span className="cl-stat-sep">|</span>
-                                    <div className="cl-stat-item" style={{ color: '#BE992A' }}>
-                                        <span className="cl-stat-num" style={{ color: '#BE992A' }}>{reversedCount}</span>&nbsp;Reversed
+                                    <div className="cl-stat-item" style={{ color: 'var(--warning)' }}>
+                                        <span className="cl-stat-num" style={{ color: 'var(--warning)' }}>{reversedCount}</span>&nbsp;Reversed
                                     </div>
                                 </>}
                             </div>
@@ -16345,15 +16345,15 @@
                                 ) : (
                                     scrRows.map(({ name, checked, hasScore, score, result, cfg }) => {
                                         if (checked === null || checked === undefined) return null;
-                                        let borderColor = '#BE992A';
+                                        let borderColor = 'var(--warning)';
                                         if (checked === false) borderColor = '#FEF2F2';
                                         else if (result) borderColor = result.color;
-                                        else if (checked) borderColor = '#BE992A';
+                                        else if (checked) borderColor = 'var(--warning)';
                                         return (
                                             <div key={name} className="scr-result-card" style={{ borderLeftColor: borderColor }}>
                                                 <div className="scr-result-name">{name}</div>
                                                 {checked === false ? (
-                                                    <div style={{ fontSize: 13, color: '#DC2626', fontWeight: 700 }}>✗ Not completed</div>
+                                                    <div style={{ fontSize: 13, color: 'var(--error)', fontWeight: 700 }}>✗ Not completed</div>
                                                 ) : hasScore && result ? (
                                                     <>
                                                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
@@ -16370,10 +16370,10 @@
                                                             <span className="scr-result-score" style={{ color: '#777355' }}>{score}</span>
                                                             <span className="scr-result-of">/ {cfg.max}</span>
                                                         </div>
-                                                        <span className="scr-result-tag" style={{ background: '#F8EFD8', color: '#BE992A', border: '1px solid #BE992A' }}>Out of range</span>
+                                                        <span className="scr-result-tag" style={{ background: '#F8EFD8', color: 'var(--warning)', border: '1px solid var(--warning)' }}>Out of range</span>
                                                     </>
                                                 ) : (
-                                                    <div style={{ fontSize: 13, color: '#BE992A', fontWeight: 700 }}>✓ Completed — score not entered</div>
+                                                    <div style={{ fontSize: 13, color: 'var(--warning)', fontWeight: 700 }}>✓ Completed — score not entered</div>
                                                 )}
                                             </div>
                                         );
@@ -16395,7 +16395,7 @@
                                 <div className="pim-sec-hdr">✅ Pre-Encounter Checklist</div>
                                 <div className="pim-checklist-grid">
                                     {checklist.map(({ label, val }) => {
-                                        const color = val === true ? '#16A34A' : val === false ? '#DC2626' : '#BE992A';
+                                        const color = val === true ? 'var(--success)' : val === false ? 'var(--error)' : 'var(--warning)';
                                         const icon = val === true ? '✓' : val === false ? '✗' : '?';
                                         return (
                                             <div key={label} className="pim-check-item">
@@ -16411,7 +16411,7 @@
                                         ⚠️ Issue Notes
                                     </div>
                                     {appt.checklistNote
-                                        ? <div className="pim-note-box" style={{ borderLeftColor: '#BE992A', background: '#F8EFD8' }}>{appt.checklistNote}</div>
+                                        ? <div className="pim-note-box" style={{ borderLeftColor: 'var(--warning)', background: '#F8EFD8' }}>{appt.checklistNote}</div>
                                         : <div style={{ fontSize: 13, color: '#777355', fontStyle: 'italic', padding: '4px 2px' }}>No issues noted.</div>
                                     }
                                 </div>
@@ -16433,7 +16433,7 @@
                         <div className="pim-foot">
                             <button
                                 className="btn"
-                                style={{ background: 'linear-gradient(135deg,#09371F,#09371F)', color: '#F2EDDB', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 800, cursor: 'pointer', fontSize: 14 }}
+                                style={{ background: 'linear-gradient(135deg,var(--brand-primary),var(--brand-primary))', color: '#F2EDDB', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 800, cursor: 'pointer', fontSize: 14 }}
                                 onClick={onClose}>
                                 Close
                             </button>
@@ -16733,9 +16733,9 @@
                             const pBadge = a.paymentCollected ? 'coll' : a.paymentFailed ? 'fail' : 'pend';
                             const pTxt = a.paymentCollected ? '✓ Collected' : a.paymentFailed ? '✗ Failed' : '$ Pending';
                             const copayColor = showPay
-                                ? (a.paymentCollected ? '#16A34A' : a.paymentFailed ? '#DC2626' : '#BE992A')
+                                ? (a.paymentCollected ? 'var(--success)' : a.paymentFailed ? 'var(--error)' : 'var(--warning)')
                                 : '#777355';
-                            const statusColor = sCls === 'ok' ? '#16A34A' : sCls === 'err' ? '#DC2626' : '#BE992A';
+                            const statusColor = sCls === 'ok' ? 'var(--success)' : sCls === 'err' ? 'var(--error)' : 'var(--warning)';
                             const currentNotes = notesDraft[a.id] !== undefined ? notesDraft[a.id] : (a.notes || '');
                             const detailOpen = !!expandedDetail[a.id];
                             const unsignedOpen = !!expandedUnsigned[a.id];
@@ -18118,7 +18118,7 @@
                                                 </td>
                                                 <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                                                     {a.out
-                                                        ? <span style={{ background: '#FBFBF3', border: '1px solid #16A34A', color: '#16A34A', borderRadius: 0, padding: '3px 9px', fontSize: 11, fontWeight: 800 }}>✓ Signed</span>
+                                                        ? <span style={{ background: '#FBFBF3', border: '1px solid var(--success)', color: 'var(--success)', borderRadius: 0, padding: '3px 9px', fontSize: 11, fontWeight: 800 }}>✓ Signed</span>
                                                         : <span style={{ color: '#777355', fontSize: 12 }}>—</span>}
                                                 </td>
                                             </tr>
@@ -18591,7 +18591,7 @@
                                         'Alma': { bg: '#0C4A34', bd: '#0C4A34', tx: '#FFFFFF', lb: 'Alma' },
                                         'Grow Therapy': { bg: '#B06D12', bd: '#B06D12', tx: '#FFFFFF', lb: 'Grow Therapy' },
                                     };
-                                    const bc = BC[_savedChannel.channel] || { bg: '#F8EFD8', bd: '#BE992A', tx: '#BE992A', lb: _savedChannel.channel };
+                                    const bc = BC[_savedChannel.channel] || { bg: '#F8EFD8', bd: 'var(--warning)', tx: 'var(--warning)', lb: _savedChannel.channel };
                                     const rate = _savedChannel.rate ? ` · $${parseFloat(_savedChannel.rate).toFixed(2)}/99214` : '';
                                     return (
                                         <div style={{ marginBottom: 12, padding: '10px 14px', background: bc.bg, border: `1.5px solid ${bc.bd}`, borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -18654,7 +18654,7 @@
                                                         </div>
                                                         <div style={{ marginTop: '8px' }}>
                                                             {channelSaved
-                                                                ? <span style={{ color: '#16A34A', fontSize: '.72rem', fontWeight: 700 }}>✓ Saved to patient record</span>
+                                                                ? <span style={{ color: 'var(--success)', fontSize: '.72rem', fontWeight: 700 }}>✓ Saved to patient record</span>
                                                                 : <button
                                                                     onClick={saveChannelToPatient}
                                                                     disabled={savingChannel}
@@ -18855,7 +18855,7 @@
                                                 }} />
                                         </div>
                                         <div className="csm-chks">
-                                            <label className="dp-chk" style={{ color: localAppt.paymentCollected ? '#16A34A' : '#3D768A' }}>
+                                            <label className="dp-chk" style={{ color: localAppt.paymentCollected ? 'var(--success)' : '#3D768A' }}>
                                                 <input type="checkbox" checked={!!localAppt.paymentCollected}
                                                     onChange={e => {
                                                         const checked = e.target.checked;
@@ -18876,7 +18876,7 @@
                                                     }} />
                                                 Collected
                                             </label>
-                                            <label className="dp-chk" style={{ color: localAppt.paymentFailed ? '#DC2626' : '#3D768A' }}>
+                                            <label className="dp-chk" style={{ color: localAppt.paymentFailed ? 'var(--error)' : '#3D768A' }}>
                                                 <input type="checkbox" checked={!!localAppt.paymentFailed}
                                                     onChange={e => {
                                                         const checked = e.target.checked;
@@ -19282,7 +19282,7 @@
                                         </div>
                                         <div className="dp-pay-controls">
                                             <div className="dp-chks">
-                                                <label className="dp-chk" style={{ color: a.paymentCollected ? '#16A34A' : '#3D768A' }}>
+                                                <label className="dp-chk" style={{ color: a.paymentCollected ? 'var(--success)' : '#3D768A' }}>
                                                     <input type="checkbox" checked={!!a.paymentCollected}
                                                         onChange={e => {
                                                             const checked = e.target.checked;
@@ -19297,7 +19297,7 @@
                                                         }} />
                                                     Collected
                                                 </label>
-                                                <label className="dp-chk" style={{ color: a.paymentFailed ? '#DC2626' : '#3D768A' }}>
+                                                <label className="dp-chk" style={{ color: a.paymentFailed ? 'var(--error)' : '#3D768A' }}>
                                                     <input type="checkbox" checked={!!a.paymentFailed}
                                                         onChange={e => {
                                                             const checked = e.target.checked;
@@ -19553,12 +19553,12 @@
                                                 'Note formatting has not been started yet.'}
                                     </span>
                                 </div>
-                                {d.out && <div style={{ marginTop: 8, fontSize: 12, color: '#16A34A', fontWeight: 700 }}>✓ Provider has signed this note.</div>}
+                                {d.out && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--success)', fontWeight: 700 }}>✓ Provider has signed this note.</div>}
                             </div>
 
                             {/* ── Section 3: Comments ── */}
                             <div className="step">
-                                <div className="step-hd" style={{ background: 'linear-gradient(135deg,#BE992A,#BE992A)', color: '#FFFFFF', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
+                                <div className="step-hd" style={{ background: 'linear-gradient(135deg,var(--warning),var(--warning))', color: '#FFFFFF', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
                                     💬 Comments
                                 </div>
                                 <div style={{ fontSize: 12, color: '#777355', marginBottom: 8, fontStyle: 'italic' }}>
@@ -19724,7 +19724,7 @@
                 }
             }
 
-            const IND = '#09371F'; // indigo
+            const IND = 'var(--brand-primary)'; // indigo
             const IND_LT = '#F2EDDB';
 
             return (
@@ -19791,7 +19791,7 @@
 
                                 {error && <div style={{
                                     marginTop: 12, background: '#FEF2F2', border: '1px solid #FEF2F2',
-                                    borderRadius: 8, padding: '10px 14px', color: '#DC2626', fontSize: 13
+                                    borderRadius: 8, padding: '10px 14px', color: 'var(--error)', fontSize: 13
                                 }}>{error}</div>}
                             </>}
 
@@ -19824,7 +19824,7 @@
                                                     <td style={{ padding: '6px 11px', color: '#2B2716' }}>{r.date}</td>
                                                     <td style={{ padding: '6px 11px', color: '#2B2716' }}>{r.providerName}</td>
                                                     <td style={{ padding: '6px 11px', color: '#2B2716' }}>{r.patientName}</td>
-                                                    <td style={{ padding: '6px 11px', color: '#16A34A', fontWeight: 700 }}>${r.paymentAmount}</td>
+                                                    <td style={{ padding: '6px 11px', color: 'var(--success)', fontWeight: 700 }}>${r.paymentAmount}</td>
                                                 </tr>
                                             ))}
                                             {rows.length > 60 && <tr><td colSpan={4} style={{ padding: '8px 11px', color: '#777355', fontSize: 11 }}>
@@ -19835,7 +19835,7 @@
                                 </div>
                                 {error && <div style={{
                                     marginTop: 12, background: '#FEF2F2', border: '1px solid #FEF2F2',
-                                    borderRadius: 8, padding: '10px 14px', color: '#DC2626', fontSize: 13
+                                    borderRadius: 8, padding: '10px 14px', color: 'var(--error)', fontSize: 13
                                 }}>{error}</div>}
                             </>}
 
@@ -19857,8 +19857,8 @@
                                         flex: 1, background: '#F0FDF4', border: '1px solid #6B9E8A', borderRadius: 10,
                                         padding: '16px', textAlign: 'center'
                                     }}>
-                                        <div style={{ fontSize: 32, fontWeight: 800, color: '#16A34A' }}>{importResult.matched.length}</div>
-                                        <div style={{ fontSize: 12, color: '#16A34A', fontWeight: 700, marginTop: 3 }}>✅ Matched &amp; Updated</div>
+                                        <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--success)' }}>{importResult.matched.length}</div>
+                                        <div style={{ fontSize: 12, color: 'var(--success)', fontWeight: 700, marginTop: 3 }}>✅ Matched &amp; Updated</div>
                                     </div>
                                     <div style={{
                                         flex: 1,
@@ -19866,12 +19866,12 @@
                                         border: `1px solid ${importResult.unmatched.length > 0 ? '#FEF2F2' : '#FBFBF3'}`,
                                         borderRadius: 10, padding: '16px', textAlign: 'center'
                                     }}>
-                                        <div style={{ fontSize: 32, fontWeight: 800, color: importResult.unmatched.length > 0 ? '#DC2626' : '#777355' }}>
+                                        <div style={{ fontSize: 32, fontWeight: 800, color: importResult.unmatched.length > 0 ? 'var(--error)' : '#777355' }}>
                                             {importResult.unmatched.length}
                                         </div>
                                         <div style={{
                                             fontSize: 12, fontWeight: 700, marginTop: 3,
-                                            color: importResult.unmatched.length > 0 ? '#DC2626' : '#777355'
+                                            color: importResult.unmatched.length > 0 ? 'var(--error)' : '#777355'
                                         }}>
                                             {importResult.unmatched.length > 0 ? '⚠️ Unmatched' : '✓ No Unmatched'}
                                         </div>
@@ -19879,11 +19879,11 @@
                                 </div>
 
                                 {importResult.unmatched.length > 0 && <>
-                                    <div style={{ fontWeight: 700, color: '#DC2626', fontSize: 13, marginBottom: 7 }}>Unmatched Rows</div>
+                                    <div style={{ fontWeight: 700, color: 'var(--error)', fontSize: 13, marginBottom: 7 }}>Unmatched Rows</div>
                                     <div style={{ overflow: 'auto', maxHeight: 200, borderRadius: 8, border: '1px solid #FEF2F2' }}>
                                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                                             <thead>
-                                                <tr style={{ background: '#FEF2F2', color: '#DC2626' }}>
+                                                <tr style={{ background: '#FEF2F2', color: 'var(--error)' }}>
                                                     {['Date', 'Provider', 'Patient', 'Amount', 'Reason'].map(h => (
                                                         <th key={h} style={{ padding: '5px 8px', textAlign: 'left', fontWeight: 600 }}>{h}</th>
                                                     ))}
@@ -19896,7 +19896,7 @@
                                                         <td style={{ padding: '5px 8px', color: '#2B2716' }}>{(u.row || {}).providerName || ''}</td>
                                                         <td style={{ padding: '5px 8px', color: '#2B2716' }}>{(u.row || {}).patientName || ''}</td>
                                                         <td style={{ padding: '5px 8px', color: '#2B2716' }}>${(u.row || {}).paymentAmount || ''}</td>
-                                                        <td style={{ padding: '5px 8px', color: '#DC2626', fontSize: 10 }}>{u.reason || ''}</td>
+                                                        <td style={{ padding: '5px 8px', color: 'var(--error)', fontSize: 10 }}>{u.reason || ''}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -20250,11 +20250,11 @@
                                 onClick={e => { e.stopPropagation(); setBestRateOpen(false); }}>
                                 <div style={{
                                     background: '#FBFBF3', borderRadius: 0, boxShadow: '0 10px 44px rgba(43,39,22,.28)',
-                                    width: 'min(480px,95vw)', maxHeight: '85vh', overflow: 'auto', border: '1px solid #09371F'
+                                    width: 'min(480px,95vw)', maxHeight: '85vh', overflow: 'auto', border: '1px solid var(--brand-primary)'
                                 }}
                                     onClick={e => e.stopPropagation()}>
                                     <div style={{
-                                        background: 'linear-gradient(135deg, #09371F, #09371F)', padding: '14px 18px', borderRadius: 0,
+                                        background: 'linear-gradient(135deg, var(--brand-primary), var(--brand-primary))', padding: '14px 18px', borderRadius: 0,
                                         display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                                     }}>
                                         <div>
@@ -20294,7 +20294,7 @@
                                                     </div>
                                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                                         <thead>
-                                                            <tr style={{ background: '#09371F' }}>
+                                                            <tr style={{ background: 'var(--brand-primary)' }}>
                                                                 <th style={{ padding: '6px 8px', textAlign: 'left', color: 'rgba(242,237,219,.8)', fontWeight: 700, fontSize: 11 }}>CPT</th>
                                                                 {['Clinic Submit', 'Headway', 'Alma', 'Grow Therapy'].map(ch2 => {
                                                                     const labels = { 'Clinic Submit': 'CLINIC', 'Headway': 'HEADWAY', 'Alma': 'ALMA', 'Grow Therapy': 'GROW' };
@@ -20333,7 +20333,7 @@
                                                             })}
                                                         </tbody>
                                                         <tfoot>
-                                                            <tr style={{ borderTop: '2px solid #09371F', background: '#F2EDDB' }}>
+                                                            <tr style={{ borderTop: '2px solid var(--brand-primary)', background: '#F2EDDB' }}>
                                                                 <td style={{
                                                                     padding: '8px 8px', fontWeight: 800, color: '#2B2716', fontSize: 11,
                                                                     textTransform: 'uppercase', letterSpacing: '.5px'
@@ -20368,8 +20368,8 @@
                                                             {METHOD_LABEL[a.method] || a.method}
                                                         </span>
                                                         {METHOD_LABEL[a.method] !== ch
-                                                            ? <span style={{ color: '#BE992A', fontWeight: 700 }}>⚠ Consider switching to {ch}</span>
-                                                            : <span style={{ color: '#16A34A', fontWeight: 700 }}>✓ Already on best channel</span>}
+                                                            ? <span style={{ color: 'var(--warning)', fontWeight: 700 }}>⚠ Consider switching to {ch}</span>
+                                                            : <span style={{ color: 'var(--success)', fontWeight: 700 }}>✓ Already on best channel</span>}
                                                     </div>
                                                 </>
                                             );
@@ -20431,17 +20431,17 @@
                                 {isDirect && isZeroRate(info.rate)
                                     ? <div className="b-zero-copay-badge">💚 $0 Copay</div>
                                     : (info.portion || info.rate) && (
-                                        <div style={{ fontSize: 12, color: isSubmitted ? (isPaid ? '#16A34A' : '#EAF1F1') : '#777355', marginTop: 2 }}>
-                                            {info.portion && <span style={{ background: isSubmitted ? '#FBFBF3' : '#F2EDDB', border: isSubmitted ? '1px solid #09371F' : 'none', color: isSubmitted ? '#09371F' : '#7A5A00', padding: '1px 6px', borderRadius: 0, fontWeight: 700, fontSize: 11, marginRight: 5 }}>{info.portion}</span>}
+                                        <div style={{ fontSize: 12, color: isSubmitted ? (isPaid ? 'var(--success)' : '#EAF1F1') : '#777355', marginTop: 2 }}>
+                                            {info.portion && <span style={{ background: isSubmitted ? '#FBFBF3' : '#F2EDDB', border: isSubmitted ? '1px solid var(--brand-primary)' : 'none', color: isSubmitted ? 'var(--brand-primary)' : '#7A5A00', padding: '1px 6px', borderRadius: 0, fontWeight: 700, fontSize: 11, marginRight: 5 }}>{info.portion}</span>}
                                             {info.rate && <span>Rate: <strong>{info.rate}</strong></span>}
                                         </div>
                                     )
                                 }
-                                {ms.text && <div style={{ fontSize: 12, color: isSubmitted ? (isPaid ? '#16A34A' : '#EAF1F1') : (ms.valid === true ? '#09371F' : ms.valid === false ? '#DC2626' : '#777355'), fontWeight: 600, marginTop: 3 }}>{ms.text}</div>}
+                                {ms.text && <div style={{ fontSize: 12, color: isSubmitted ? (isPaid ? 'var(--success)' : '#EAF1F1') : (ms.valid === true ? 'var(--brand-primary)' : ms.valid === false ? 'var(--error)' : '#777355'), fontWeight: 600, marginTop: 3 }}>{ms.text}</div>}
                                 <div style={{ marginTop: 5 }}>
                                     {a.out
-                                        ? <span style={{ background: '#FBFBF3', border: '1px solid #16A34A', color: '#16A34A', borderRadius: 0, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>✓ Note Signed</span>
-                                        : <span style={{ background: '#FBFBF3', border: '1px solid #BE992A', color: '#BE992A', borderRadius: 0, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>⚠ Awaiting Signature</span>}
+                                        ? <span style={{ background: '#FBFBF3', border: '1px solid var(--success)', color: 'var(--success)', borderRadius: 0, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>✓ Note Signed</span>
+                                        : <span style={{ background: '#FBFBF3', border: '1px solid var(--warning)', color: 'var(--warning)', borderRadius: 0, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>⚠ Awaiting Signature</span>}
                                     {a.out && a.noteSignedAt && (
                                         <div style={{ fontSize: 10, color: '#777355', fontWeight: 600, marginTop: 2 }}>{fmtAttribAt(a.noteSignedAt)}</div>
                                     )}
@@ -20451,7 +20451,7 @@
                                     <button
                                         onClick={openBestRate}
                                         style={{
-                                            marginTop: 6, background: '#09371F', border: 'none', color: '#F2EDDB',
+                                            marginTop: 6, background: 'var(--brand-primary)', border: 'none', color: '#F2EDDB',
                                             padding: '3px 10px', borderRadius: 0, fontSize: 10, fontWeight: 800,
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit'
                                         }}>
@@ -20467,7 +20467,7 @@
                                     return (
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                                             {cptArr.map(c => (
-                                                <span key={c} style={{ background: '#09371F', color: '#F2EDDB', borderRadius: 0, padding: '5px 14px', fontSize: 15, fontWeight: 900, letterSpacing: .3 }}>{String(c).trim()}</span>
+                                                <span key={c} style={{ background: 'var(--brand-primary)', color: '#F2EDDB', borderRadius: 0, padding: '5px 14px', fontSize: 15, fontWeight: 900, letterSpacing: .3 }}>{String(c).trim()}</span>
                                             ))}
                                             <button className="sub-btn plain"
                                                 style={{ fontSize: 13, padding: '5px 12px' }}
@@ -20479,9 +20479,9 @@
                                 })()}
                                 {isSubmitted && (() => {
                                     const stStyle = {
-                                        Paid: { bd: '#16A34A', fg: '#16A34A' },
-                                        Pending: { bd: '#BE992A', fg: '#BE992A' },
-                                        Denied: { bd: '#DC2626', fg: '#791F1F' },
+                                        Paid: { bd: 'var(--success)', fg: 'var(--success)' },
+                                        Pending: { bd: 'var(--warning)', fg: 'var(--warning)' },
+                                        Denied: { bd: 'var(--error)', fg: '#791F1F' },
                                         Resubmitted: { bd: '#7494AA', fg: '#3D768A' },
                                     }[st] || { bd: '#777355', fg: '#777355' };
                                     const stIcon = { Paid: '✅', Pending: '⏳', Denied: '✗', Resubmitted: '🔄' }[st] || '⏳';
@@ -20495,8 +20495,8 @@
                             </div>
                             {/* ── RIGHT: CS Prescribed (compact) + Action ── */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, alignItems: 'flex-end', minWidth: 140 }}>
-                                <div style={{ background: '#F2EDDB', border: '1px solid #09371F', borderRadius: 0, padding: '5px 10px', fontSize: 11 }}>
-                                    <div style={{ fontSize: 9, fontWeight: 800, color: '#09371F', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 3 }}>CS Prescribed</div>
+                                <div style={{ background: '#F2EDDB', border: '1px solid var(--brand-primary)', borderRadius: 0, padding: '5px 10px', fontSize: 11 }}>
+                                    <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 3 }}>CS Prescribed</div>
                                     {(a.rxMeds || []).length === 0
                                         ? <span style={{ color: '#777355', fontStyle: 'italic' }}>None</span>
                                         : <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
@@ -20684,7 +20684,7 @@
             const isToday = r.date === TODAY;
             const isPast = r.date < TODAY;
             const sCls = r.status === 'valid' ? 'ok' : r.status === 'issue' ? 'err' : 'pend';
-            const sColor = { ok: '#16A34A', err: '#DC2626', pend: '#BE992A' }[sCls];
+            const sColor = { ok: 'var(--success)', err: 'var(--error)', pend: 'var(--warning)' }[sCls];
             const sLabel = { ok: '● Valid', err: '● Issue', pend: '● In Process' }[sCls];
             return (
                 <div className={`psearch-result ${isPast ? 'psearch-past' : ''} ${active ? 'psr-active' : ''}`}
@@ -21831,13 +21831,13 @@
                                     title={tebraApiOn ? 'Tebra API connected — click to disable' : 'Tebra API disabled — click to enable'}>
                                     <span>Tebra API</span>
                                     <div className="admin-api-switch" style={{
-                                        background: tebraApiToggling ? '#777355' : tebraApiOn ? '#16A34A' : '#DC2626',
+                                        background: tebraApiToggling ? '#777355' : tebraApiOn ? 'var(--success)' : 'var(--error)',
                                     }}>
                                         <div className="admin-api-knob" style={{ left: tebraApiOn ? 16 : 2 }} />
                                     </div>
                                     <span style={{
                                         fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
-                                        color: tebraApiToggling ? '#777355' : tebraApiOn ? '#16A34A' : '#DC2626',
+                                        color: tebraApiToggling ? '#777355' : tebraApiOn ? 'var(--success)' : 'var(--error)',
                                     }}>
                                         {tebraApiToggling ? 'Wait…' : tebraApiOn ? 'Live' : 'Off'}
                                     </span>
@@ -21848,14 +21848,14 @@
                                     title={!tebraApiOn ? 'Tebra API is currently offline' : period === 'week' ? 'Pull this week + next week from Tebra' : 'Pull today\'s schedule from Tebra'}>
                                     {tebraSync === 'syncing' ? '⏳ Syncing…' : '📥 Sync Tebra'}
                                 </button>
-                                {tebraMsg && <div className="admin-msg" style={{ color: tebraSync === 'error' ? '#DC2626' : '#09371F' }}>{tebraMsg}</div>}
+                                {tebraMsg && <div className="admin-msg" style={{ color: tebraSync === 'error' ? 'var(--error)' : 'var(--brand-primary)' }}>{tebraMsg}</div>}
 
                                 <button className="admin-row admin-action admin-action-danger" onClick={fullSyncTebra}
                                     disabled={fullTebraSync === 'syncing' || tebraSync === 'syncing' || !tebraApiOn}
                                     title={!tebraApiOn ? 'Tebra API is off — use the toggle above to enable' : 'Full Tebra Sync — pulls all providers, last 90 days through 8 weeks ahead. Use sparingly.'}>
                                     {fullTebraSync === 'syncing' ? '⏳ Full Syncing…' : '⚡ Full Sync'}
                                 </button>
-                                {fullTebraMsg && <div className="admin-msg" style={{ color: fullTebraSync === 'error' ? '#DC2626' : '#09371F' }}>{fullTebraMsg}</div>}
+                                {fullTebraMsg && <div className="admin-msg" style={{ color: fullTebraSync === 'error' ? 'var(--error)' : 'var(--brand-primary)' }}>{fullTebraMsg}</div>}
                             </div>
                         )}
                     </div>
