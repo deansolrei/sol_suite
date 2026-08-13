@@ -16399,7 +16399,7 @@
             );
         }
 
-        function ProviderView({ appts, date, prov, onUpdate, onSignNote, totalUnsigned, onClearPhantom, userRole, userProvID, onForceRefresh, patientDb, dayMode, setDayMode, pendingModalRequest, onConsumePendingModalRequest, navigateAndOpenModal }) {
+        function ProviderView({ appts, date, prov, onUpdate, onSignNote, totalUnsigned, onClearPhantom, userRole, userProvID, onForceRefresh, patientDb, dayMode, setDayMode, pendingModalRequest, onConsumePendingModalRequest, navigateAndOpenModal, returnToAppointmentFlow, onConsumeReturnToAppointmentFlow }) {
             const [cptModal, setCptModal] = useState(null);
             const [rxModal, setRxModal] = useState(null);
             const [notesDraft, setNotesDraft] = useState({});
@@ -16429,6 +16429,32 @@
                 else setPamModal(match);
                 if (onConsumePendingModalRequest) onConsumePendingModalRequest();
             }, [pendingModalRequest, appts]);
+
+            // A5 — detects the moment cptModal/pamModal actually CLOSES
+            // (non-null → null), regardless of which button caused it
+            // (Save, Cancel, X, backdrop). This is what correctly handles
+            // ProviderApptModal's onSave/onClose asymmetry: its own Save
+            // path never calls onClose (only the mount site's separate
+            // onSave wrapper closes it), so watching onClose alone would
+            // miss that path entirely — watching the STATE transition
+            // itself catches both paths identically, since either way
+            // pamModal ends up null. Refs hold each modal's previous value
+            // so the first effect run (mount, where both start null) never
+            // reads as a "just closed" transition. Either modal closing
+            // triggers the same return-to-Appointment-Flow check, since
+            // both belong to this view.
+            const prevCptModalRef = useRef(cptModal);
+            const prevPamModalRef = useRef(pamModal);
+            useEffect(() => {
+                const cptJustClosed = prevCptModalRef.current && !cptModal;
+                const pamJustClosed = prevPamModalRef.current && !pamModal;
+                prevCptModalRef.current = cptModal;
+                prevPamModalRef.current = pamModal;
+                if ((cptJustClosed || pamJustClosed) && returnToAppointmentFlow) {
+                    setShowAppointmentFlow(true);
+                    if (onConsumeReturnToAppointmentFlow) onConsumeReturnToAppointmentFlow();
+                }
+            }, [cptModal, pamModal, returnToAppointmentFlow]);
 
             // Billing Channel (assigned via the biller's "Assign Channel" tool) + Insurance
             // Carrier lookup, keyed by patient name — same pattern as BillingView's
@@ -19831,7 +19857,7 @@
             );
         }
 
-        function BillingView({ appts, date, onUpdate, patientDb, onRefreshPatients, pendingModalRequest, onConsumePendingModalRequest, navigateAndOpenModal }) {
+        function BillingView({ appts, date, onUpdate, patientDb, onRefreshPatients, pendingModalRequest, onConsumePendingModalRequest, navigateAndOpenModal, returnToAppointmentFlow, onConsumeReturnToAppointmentFlow }) {
             const [cptModal, setCptModal] = useState(null);
             const [rxModal, setRxModal] = useState(null);
             const [claimModal, setClaimModal] = useState(null);
@@ -19856,6 +19882,22 @@
                 setClaimModal(match);
                 if (onConsumePendingModalRequest) onConsumePendingModalRequest();
             }, [pendingModalRequest, appts]);
+
+            // A5 — same close-transition watcher as ProviderView's, scoped
+            // to claimModal only. Detects non-null → null regardless of
+            // which button caused it (ClaimSubmitModal's Save/Submit path
+            // does call onClose itself, unlike ProviderApptModal's, but
+            // watching the state transition instead of the callback keeps
+            // both views' watchers built the same way).
+            const prevClaimModalRef = useRef(claimModal);
+            useEffect(() => {
+                const claimJustClosed = prevClaimModalRef.current && !claimModal;
+                prevClaimModalRef.current = claimModal;
+                if (claimJustClosed && returnToAppointmentFlow) {
+                    setShowAppointmentFlow(true);
+                    if (onConsumeReturnToAppointmentFlow) onConsumeReturnToAppointmentFlow();
+                }
+            }, [claimModal, returnToAppointmentFlow]);
             // ── Claims banner filter — clicking a stat in ClaimDayBanner narrows
             // the row sections below to that status. null = no filter (default).
             // Resets whenever the viewed date changes, same as everything else in
@@ -20714,6 +20756,15 @@
             // loaded. { apptId, modalType } | null.
             const [pendingModalRequest, setPendingModalRequest] = useState(null);
             function clearPendingModalRequest() { setPendingModalRequest(null); }
+            // A5 — set by navigateAndOpenModal whenever it opens a modal on
+            // Appointment Flow's behalf, so whichever view's modal actually
+            // gets used knows to reopen its own showAppointmentFlow once
+            // that modal closes (Save, Cancel, X, or backdrop — see
+            // ProviderView's/BillingView's own close-transition watchers).
+            // One shared boolean, not per-modal-type, since
+            // navigateAndOpenModal only ever opens exactly one modal per call.
+            const [returnToAppointmentFlow, setReturnToAppointmentFlow] = useState(false);
+            function clearReturnToAppointmentFlow() { setReturnToAppointmentFlow(false); }
             // Lifted out of ProviderView (2026-08-03): the {apptLoading ? spinner :
             // <ProviderView/>} swap below unmounts/remounts ProviderView on every
             // date navigation that needs a fetch, which was silently resetting
@@ -21526,24 +21577,26 @@
             function switchToDay(ds) { setDate(ds); setPeriod('day'); }
             function onCalSelect(ds) { setDate(ds); setCalOpen(false); }
 
-            // A5 (proof stage) — navigates to a specific appointment's date/
-            // provider/view using the exact same setProv/switchToDay
-            // mechanics GlobalSearch's own onNavigate implementations
-            // already use (not a new navigation mechanism — this doesn't
-            // touch GlobalSearch/onNavigate/pick at all, just reuses the
-            // same underlying pieces independently of that UI), then sets a
-            // pending request for whichever view owns the target modal's
-            // local visibility state to pick up once it renders with that
-            // appointment loaded — see ProviderView's and BillingView's own
-            // consuming useEffect. modalType: 'cpt' | 'noteSigned' (both
-            // ProviderView) | 'claimSubmit' (BillingView). Not wired to any
-            // click target yet — this stage only proves the mechanism
-            // itself is callable and works.
+            // A5 — navigates to a specific appointment's date/provider/view
+            // using the exact same setProv/switchToDay mechanics
+            // GlobalSearch's own onNavigate implementations already use
+            // (not a new navigation mechanism — doesn't touch GlobalSearch/
+            // onNavigate/pick at all, just reuses the same underlying
+            // pieces independently of that UI), then sets a pending request
+            // for whichever view owns the target modal's local visibility
+            // state to pick up once it renders with that appointment loaded
+            // — see ProviderView's and BillingView's own consuming
+            // useEffect. modalType: 'cpt' | 'noteSigned' (both ProviderView)
+            // | 'claimSubmit' (BillingView). Also flags returnToAppointmentFlow
+            // unconditionally — safe today since this function has exactly
+            // one real caller (Appointment Flow's own CPT/Provider/Biller
+            // click handlers), not gated behind a parameter.
             function navigateAndOpenModal(dateStr, provID, apptId, modalType) {
                 if (provID) setProv(provID);
                 switchToDay(dateStr);
                 setView(modalType === 'claimSubmit' ? 'billing' : 'provider');
                 setPendingModalRequest({ apptId, modalType });
+                setReturnToAppointmentFlow(true);
             }
 
             // Page-reactive calendar icon values — show WHERE you are, not what day it is today.
@@ -21963,11 +22016,11 @@
                             <div className="page-loading"><div className="spinner" /><span>Loading appointments…</span></div>
                         ) : (
                             <>
-                                {view === 'provider' && period === 'day' && <ProviderView appts={appts} date={date} prov={prov} onUpdate={updateAppt} onSignNote={signNote} totalUnsigned={totalUnsigned} onClearPhantom={clearPhantom} userRole={userRole} userProvID={userProvID} onForceRefresh={forceRefreshDay} patientDb={patientDb} dayMode={providerDayMode} setDayMode={setProviderDayMode} pendingModalRequest={pendingModalRequest} onConsumePendingModalRequest={clearPendingModalRequest} navigateAndOpenModal={navigateAndOpenModal} />}
+                                {view === 'provider' && period === 'day' && <ProviderView appts={appts} date={date} prov={prov} onUpdate={updateAppt} onSignNote={signNote} totalUnsigned={totalUnsigned} onClearPhantom={clearPhantom} userRole={userRole} userProvID={userProvID} onForceRefresh={forceRefreshDay} patientDb={patientDb} dayMode={providerDayMode} setDayMode={setProviderDayMode} pendingModalRequest={pendingModalRequest} onConsumePendingModalRequest={clearPendingModalRequest} navigateAndOpenModal={navigateAndOpenModal} returnToAppointmentFlow={returnToAppointmentFlow} onConsumeReturnToAppointmentFlow={clearReturnToAppointmentFlow} />}
                                 {view === 'provider' && period === 'week' && <WeekView prov={prov} date={date} data={data} onUpdateForDate={updateApptForDate} onSwitchToDay={switchToDay} onDeleteForDate={deleteApptForDate} totalUnsigned={totalUnsigned} />}
                                 {view === 'assistant' && period === 'day' && <AssistantView appts={appts} date={date} onUpdate={updateAppt} onAdd={addAppt} onDelete={deleteAppt} patientDb={patientDb} onForceRefresh={forceRefreshDay} navigateAndOpenModal={navigateAndOpenModal} />}
                                 {view === 'assistant' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} onUpdateForDate={updateApptForDate} />}
-                                {view === 'billing' && period === 'day' && <BillingView appts={appts} date={date} onUpdate={updateAppt} patientDb={patientDb} onRefreshPatients={refreshPatientDb} pendingModalRequest={pendingModalRequest} onConsumePendingModalRequest={clearPendingModalRequest} navigateAndOpenModal={navigateAndOpenModal} />}
+                                {view === 'billing' && period === 'day' && <BillingView appts={appts} date={date} onUpdate={updateAppt} patientDb={patientDb} onRefreshPatients={refreshPatientDb} pendingModalRequest={pendingModalRequest} onConsumePendingModalRequest={clearPendingModalRequest} navigateAndOpenModal={navigateAndOpenModal} returnToAppointmentFlow={returnToAppointmentFlow} onConsumeReturnToAppointmentFlow={clearReturnToAppointmentFlow} />}
                                 {view === 'billing' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} view="billing" onUpdateForDate={updateApptForDate} />}
                             </>
                         )}
