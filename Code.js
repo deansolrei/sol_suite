@@ -4613,7 +4613,6 @@ function importTebraAppointments(sheetId, dryRun) {
       'jensen': 'jodene',
       'katie': 'katie',
       'robins': 'katie',
-      'megan': 'megan',
       'lori': 'lori',
     };
 
@@ -4856,7 +4855,6 @@ const TEBRA_PROVIDER_MAP = {
   'jensen': 'jodene',   // Jodene's last name
   'katie': 'katie',
   'robins': 'katie',    // Katie's last name
-  'megan': 'megan',
   'lori': 'lori',
 };
 
@@ -8615,3 +8613,4 @@ function bulkImportPayments(rowsJson) {
     return JSON.stringify({ error: e.message });
   }
 }
+
