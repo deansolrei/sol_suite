@@ -5976,7 +5976,7 @@
         }
 
         body.dark .pv-notes-ta::placeholder {
-            color: #2B2716
+            color: var(--text-secondary)
         }
 
         body.dark .pv-unote {
@@ -5995,7 +5995,7 @@
         }
 
         body.dark .pv-unote-dismiss {
-            color: #2B2716;
+            color: var(--text-secondary);
         }
 
         body.dark .pv-unote-dismiss:hover {
@@ -6268,6 +6268,12 @@
             background: #065F46
         }
 
+        /* Ambient background undeterminable from static CSS: traced through
+           .void-archive-wrap (no background), .void-archive-table-wrap (no
+           background), .asst-table, and AssistantView's own return wrapper —
+           none set a background at any level. Resolving further requires
+           knowing what renders <AssistantView>, beyond reasonable static
+           tracing. Left as literal #2B2716 pending live verification. */
         body.dark .void-archive-toggle {
             color: #2B2716;
         }
@@ -6278,7 +6284,7 @@
 
         body.dark .void-archive-count {
             background: #2B2716;
-            color: #2B2716;
+            color: #777355;
         }
 
         body.dark .void-archive-table-wrap {
@@ -6287,15 +6293,19 @@
 
         body.dark .void-archive-table-wrap th {
             background: #2B2716;
-            color: #2B2716;
+            color: #777355;
             border-bottom-color: #2B2716;
         }
 
+        /* Same undeterminable-ambient situation as .void-archive-toggle above
+           — this <td> has no background of its own, and neither does its
+           table/wrap/panel ancestry as far as static tracing could follow. */
         body.dark .void-archive-table-wrap td {
             color: #2B2716;
             border-bottom-color: #2B2716;
         }
 
+        /* Same undeterminable-ambient situation as .void-archive-toggle above. */
         body.dark .void-archive-name {
             color: #2B2716;
         }
@@ -6378,11 +6388,11 @@
         }
 
         body.dark .cpt-combo-plus {
-            color: #2B2716
+            color: var(--text-secondary)
         }
 
         body.dark .cpt-combo-desc {
-            color: #2B2716
+            color: var(--text-secondary)
         }
 
         body.dark .cpt-sec-hd {
@@ -6390,9 +6400,9 @@
         }
 
         body.dark .cpt-bh-toggle {
-            background: #2B2716;
-            border-color: #2B2716;
-            color: #2B2716
+            background: var(--success-fill);
+            border-color: var(--warning);
+            color: var(--text-primary)
         }
 
         body.dark .cpt-bh-toggle:hover {
@@ -6400,7 +6410,7 @@
         }
 
         body.dark .cpt-bh-note {
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         body.dark .cpt-bh-tiles {
@@ -6425,6 +6435,9 @@
             color: #D8D3BF
         }
 
+        /* Confirmed dead — no JSX anywhere in the file applies this class
+           (checked exhaustively). Contrast question is moot since it never
+           renders; left as-is rather than guessing at a fix for unused CSS. */
         body.dark .td-notes-empty {
             color: #2B2716
         }
@@ -6480,14 +6493,22 @@
         }
 
         body.dark .ts-badge.ts-unknown {
-            color: #2B2716;
+            color: #777355;
             background: #2B2716
         }
 
+        /* Different problem from the .void-archive/.ts-none-cell group: this
+           one's ambient background is genuinely variable, not merely untraced
+           — traced to a billing card whose className is built from live state
+           (b-card-baseline / b-card-paid / b-card-pending / b-card-unsubmitted),
+           each with its own distinct dark-mode background. No single fixed
+           background exists to check contrast against. */
         body.dark .ts-none {
             color: #2B2716
         }
 
+        /* Same undeterminable-ambient situation as .void-archive-toggle above
+           — this is the same AssistantView / .asst-table context. */
         body.dark .ts-none-cell {
             color: #2B2716
         }
@@ -10565,6 +10586,10 @@
             color: #777355
         }
 
+        /* Ambient background undeterminable: traced to the parent <td> (class
+           .cl-td-sub, no background of its own); resolving further requires
+           tracing the enclosing claims table/row, beyond reasonable static
+           analysis depth. Left as literal #2B2716 pending live verification. */
         body.dark .cl-none {
             color: #2B2716
         }
@@ -10604,7 +10629,7 @@
 
         body.dark .cl-status-block.st-none {
             background: #051F11;
-            color: #2B2716
+            color: var(--text-secondary)
         }
 
         /* ── Phone-only "Tools" button + drop-up menu (MobileToolsMenu) ── */
