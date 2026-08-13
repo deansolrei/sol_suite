@@ -116,7 +116,6 @@ const STAFF_COLS = ['Email', 'Role', 'ProvID', 'DisplayName'];
 const STAFF_SEED = [
   ['jodene@solreibehavioralhealth.com', 'provider', 'jodene', 'Jodene'],
   ['katie@solreibehavioralhealth.com', 'provider', 'katie', 'Katie'],
-  ['megan@solreibehavioralhealth.com', 'provider', 'megan', 'Megan'],
   ['lori@solreibehavioralhealth.com', 'provider', 'lori', 'Lori'],
   ['jeloah@solreibehavioralhealth.com', 'assistant', '*', 'Jeloah'],
   ['jemaica@solreibehavioralhealth.com', 'assistant', '*', 'Jemaica'],
@@ -8490,7 +8489,6 @@ function bulkImportPayments(rowsJson) {
       jodene: 'jodene',
       katherine: 'katie',   // Headway full name
       katie: 'katie',
-      megan: 'megan',
       lori: 'lori',
     };
     var staffSheet = ss.getSheetByName(TAB_STAFF);

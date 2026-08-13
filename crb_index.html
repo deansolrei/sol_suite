@@ -11394,7 +11394,6 @@
         const PROVIDERS = [
             { id: 'jodene', name: 'Jodene' },
             { id: 'katie', name: 'Katie' },
-            { id: 'megan', name: 'Megan' },
             { id: 'lori', name: 'Lori' },
         ];
         const METHODS = [
@@ -11479,10 +11478,6 @@
             katie: {
                 rendering: ['1831127117'],
                 billing: ['1831127117', '1003521006'],
-            },
-            megan: {
-                rendering: ['1801895636'],
-                billing: ['1801895636', '1003521006'],
             },
             lori: {
                 rendering: ['1376234641'],
@@ -15769,7 +15764,7 @@
                                 <div><label className="fl">Provider</label>
                                     <select className="fi" value={provID} onChange={e => setProvID(e.target.value)}>
                                         <option value="">— Select —</option>
-                                        {PROVIDERS.filter(p => p.id !== 'megan').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                        {PROVIDERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                     </select>
                                 </div>
                                 <div><label className="fl">Patient Name</label>
@@ -16003,7 +15998,7 @@
                                     <label>Provider</label>
                                     <select value={fProvider} onChange={e => setFProvider(e.target.value)}>
                                         <option value="">All Providers</option>
-                                        {PROVIDERS.filter(p => p.id !== 'megan').map(p => (
+                                        {PROVIDERS.map(p => (
                                             <option key={p.id} value={p.id}>{p.name}</option>
                                         ))}
                                     </select>
