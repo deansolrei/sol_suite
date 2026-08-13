@@ -55,6 +55,13 @@
                (e.g. primary button labels). Verified 4.57:1. */
             --text-on-brand: #FFFFFF;
 
+            /* Theme-invariant dark fill — deliberately defined once here with
+               NO body.dark override, for backgrounds/text that must stay dark
+               in both themes (e.g. protected vendor-badge fallbacks, the
+               METHOD_COLOR fallback pattern). --text-primary is unsafe for
+               this role since it inverts to near-white in dark mode. */
+            --ink-fill: #2B2716;
+
             /* Ledger-paper layer — named in the guide's prose (not its own
                CSS block) as a real, distinct layer of the system. */
             --paper: #F5F2EA;
@@ -126,7 +133,7 @@
         body {
             font-family: 'Wix Madefor Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--app-background);
-            color: #2B2716;
+            color: var(--text-primary);
             min-height: 100vh;
             min-height: 100dvh;
         }
@@ -278,7 +285,7 @@
             min-width: 104px;
             font-size: 12px;
             font-weight: 700;
-            color: #2B2716;
+            color: var(--text-primary);
             line-height: 1.3
         }
 
@@ -310,7 +317,7 @@
         .psearch-time {
             font-size: 12px;
             font-weight: 800;
-            color: #2B2716;
+            color: var(--text-primary);
             min-width: 50px
         }
 
@@ -843,7 +850,7 @@
             font-family: inherit;
             font-size: 12px;
             font-weight: 700;
-            color: #2B2716;
+            color: var(--text-primary);
             border-radius: 6px;
             padding: 7px 9px;
             border: 1px solid #D8D3BF;
@@ -957,7 +964,7 @@
             gap: 2px 8px;
             font-family: inherit;
             font-size: 12px;
-            color: #2B2716;
+            color: var(--text-primary);
             border-radius: 6px;
             padding: 6px 9px;
             border: 1px solid #D8D3BF;
@@ -1361,7 +1368,7 @@
             grid-template-columns: 88px 1fr 170px 110px 150px 160px 60px 100px;
             gap: 10px;
             padding: 11px 20px;
-            background: #2B2716;
+            background: var(--ink-fill);
             position: sticky;
             top: 148px;
             z-index: 16;
@@ -1578,7 +1585,7 @@
             border-radius: 0;
             font-size: 12px;
             font-weight: 600;
-            color: #2B2716;
+            color: var(--text-primary);
             text-align: center;
         }
 
@@ -1697,7 +1704,7 @@
             padding: 6px 8px;
             font-size: 12px;
             font-family: inherit;
-            color: #2B2716;
+            color: var(--text-primary);
             resize: vertical;
             outline: none;
             background: #FBFBF3;
@@ -1815,12 +1822,12 @@
         }
 
         .pv-fail-close:hover {
-            color: #2B2716;
+            color: var(--text-primary);
         }
 
         .pv-fail-body {
             font-size: 13px;
-            color: #2B2716;
+            color: var(--text-primary);
             margin: 5px 0 10px;
             line-height: 1.4;
         }
@@ -1872,11 +1879,11 @@
         }
 
         body.dark .day-date-sticky-wrap {
-            background: #2B2716;
+            background: var(--surface);
         }
 
         body.dark .billing-frozen-header {
-            background: #2B2716;
+            background: var(--surface);
         }
 
         .day-date-sticky-wrap .day-date-banner {
@@ -1919,7 +1926,7 @@
         .pv-time {
             font-size: 14px;
             font-weight: 900;
-            color: #2B2716;
+            color: var(--text-primary);
             font-variant-numeric: tabular-nums;
             letter-spacing: -.2px;
             white-space: nowrap
@@ -2188,7 +2195,7 @@
             padding: 7px 10px;
             font-size: 13px;
             font-family: inherit;
-            color: #2B2716;
+            color: var(--text-primary);
             background: #FBFBF3;
             outline: none;
             cursor: pointer
@@ -2207,7 +2214,7 @@
             font-size: 13px;
             font-family: inherit;
             outline: none;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .rx-dosage-input:focus {
@@ -2253,7 +2260,7 @@
             font-size: 13px;
             font-family: inherit;
             outline: none;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .rx-manual-input:focus {
@@ -2488,7 +2495,7 @@
 
         .co-btn.out:hover {
             background: #FBFBF3;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .co-btn.done {
@@ -3692,7 +3699,7 @@
         .cal-month-title {
             font-size: 15px;
             font-weight: 800;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .cal-nav-btn {
@@ -3735,7 +3742,7 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: 500;
-            color: #2B2716;
+            color: var(--text-primary);
             transition: all .1s
         }
 
@@ -3867,7 +3874,7 @@
             padding: 16px 12px;
             border-bottom: 2px solid var(--brand-primary);
             vertical-align: middle;
-            color: #2B2716;
+            color: var(--text-primary);
             font-size: 13px;
             transition: background .15s
         }
@@ -4266,7 +4273,7 @@
 
         .sub-btn.plain:hover {
             background: #FBFBF3;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         /* No bottom margin/border — sits flush against .claim-day-banner right below it,
@@ -4402,7 +4409,7 @@
             background: transparent;
             font-size: 12px;
             font-weight: 700;
-            color: #2B2716;
+            color: var(--text-primary);
             font-family: inherit;
             cursor: pointer;
             padding: 0;
@@ -4438,7 +4445,7 @@
             padding: 4px 7px;
             font-size: 12px;
             font-family: inherit;
-            color: #2B2716;
+            color: var(--text-primary);
             background: #FBFBF3;
             cursor: pointer;
             outline: none;
@@ -4455,7 +4462,7 @@
             padding: 4px 8px;
             font-size: 12px;
             font-family: inherit;
-            color: #2B2716;
+            color: var(--text-primary);
             background: #FBFBF3;
             width: 110px;
             outline: none;
@@ -4543,7 +4550,7 @@
 
         .dp-zero-name {
             font-weight: 800;
-            color: #2B2716;
+            color: var(--text-primary);
             min-width: 110px
         }
 
@@ -4763,7 +4770,7 @@
             display: block;
             font-size: 12px;
             font-weight: 700;
-            color: #2B2716;
+            color: var(--text-primary);
             margin-bottom: 5px
         }
 
@@ -4776,7 +4783,7 @@
             outline: none;
             font-family: inherit;
             background: #FBFBF3;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .fi:focus {
@@ -4828,7 +4835,7 @@
 
         .mthd-btn.on-hw {
             background: #87D1B0;
-            color: #2B2716;
+            color: var(--text-primary);
             border-color: #87D1B0
         }
 
@@ -4860,7 +4867,7 @@
             flex: 1;
             font-size: 14px;
             font-weight: 500;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .rreq {
@@ -5137,7 +5144,7 @@
             padding: 12px 14px;
             font-size: 13px;
             line-height: 1.6;
-            color: #2B2716;
+            color: var(--text-primary);
             border-left: 3px solid var(--brand-primary);
             white-space: pre-wrap;
         }
@@ -5446,7 +5453,7 @@
 
         .comm-note {
             font-size: 13px;
-            color: #2B2716;
+            color: var(--text-primary);
             line-height: 1.5;
         }
 
@@ -5513,7 +5520,7 @@
 
         .btn-s:hover {
             background: #FBFBF3;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .btn-d {
@@ -5583,7 +5590,7 @@
             padding: 8px 12px;
             cursor: pointer;
             font-size: 13px;
-            color: #2B2716;
+            color: var(--text-primary);
             border-bottom: 1px solid #F2EDDB;
             display: flex;
             align-items: center;
@@ -5650,7 +5657,7 @@
         }
 
         .td-notes {
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .td-notes-empty {
@@ -5770,16 +5777,16 @@
 
         /* Base */
         body.dark {
-            background: #2B2716;
+            background: var(--app-background);
             color: #D8D3BF
         }
 
         body.dark ::-webkit-scrollbar-track {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark ::-webkit-scrollbar-thumb {
-            background: #2B2716
+            background: var(--surface)
         }
 
         /* Header */
@@ -5808,10 +5815,12 @@
 
         body.dark .psearch-results {
             background: #051F11;
-            border-color: #2B2716;
+            border-color: var(--border);
             box-shadow: 0 4px 20px rgba(9, 55, 31, .5)
         }
 
+        /* border-bottom-color reverted: confirmed dead -- no JSX anywhere
+           applies this class (checked exhaustively). */
         body.dark .psearch-item {
             color: #D8D3BF;
             border-bottom-color: #2B2716
@@ -5819,7 +5828,7 @@
 
         body.dark .psearch-item:hover,
         body.dark .psearch-item.psi-active {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .period-btn {
@@ -5833,12 +5842,12 @@
 
         /* Page / Summary bar */
         body.dark .summary-row {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .scard {
-            background: #2B2716;
-            border-color: #2B2716;
+            background: var(--surface);
+            border-color: var(--surface);
             color: #D8D3BF
         }
 
@@ -5877,6 +5886,8 @@
             color: var(--warning)
         }
 
+        /* Same untraceable-ambient AssistantView tree as .void-archive-toggle
+           elsewhere in this file -- reverted rather than guessed. */
         body.dark .act-bar {
             border-bottom-color: #2B2716
         }
@@ -5893,19 +5904,23 @@
 
         /* Provider Day View cards */
         body.dark .pv-card {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .pv-thead {
             background: #1C6FA3
         }
 
+        /* Structurally variable, not merely untraced: className is built
+           from several conditional pieces (pv-row-pre/pv-stile-*, post-mode
+           border/background/direct classes) -- no single background to
+           check contrast against, same situation as .ts-none. */
         body.dark .pv-row {
             border-bottom-color: #2B2716
         }
 
         body.dark .pv-row:hover {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .pv-name {
@@ -5966,7 +5981,7 @@
 
         body.dark .pv-notes-ta {
             background: #051F11;
-            border-color: #2B2716;
+            border-color: var(--border);
             color: #D8D3BF
         }
 
@@ -5986,7 +6001,7 @@
         }
 
         body.dark .una-date-dismiss {
-            color: #2B2716;
+            color: var(--ink-fill);
         }
 
         body.dark .una-date-dismiss:hover {
@@ -6017,13 +6032,16 @@
             color: #6B9E8A
         }
 
+        /* border-color reverted: sits in .pv-strip-col.pv-strip-col-action,
+           which has no background of its own; further ancestry not
+           confirmed. */
         body.dark .pv-sign-undo {
             border-color: #2B2716;
             color: var(--warning)
         }
 
         body.dark .pv-sign-undo:hover {
-            background: #2B2716;
+            background: var(--surface);
             color: #D8D3BF;
             border-color: #6B9E8A
         }
@@ -6049,11 +6067,11 @@
 
         /* Provider Week View */
         body.dark .wk-hdr-row {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .wk-grid {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .wk-dp-banner.dp-all-done {
@@ -6084,7 +6102,7 @@
         /* Provider Day View direct pay card — dark */
         body.dark .pvdp-wrap {
             background: #051F11;
-            border-color: #2B2716;
+            border-color: var(--border);
             color: #D8D3BF;
         }
 
@@ -6138,7 +6156,7 @@
         }
 
         body.dark .wk-appt {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .wk-appt.wk-ok {
@@ -6174,8 +6192,8 @@
 
         body.dark .wk-appt.wk-direct {
             background: #1C6FA3;
-            border-color: #2B2716;
-            box-shadow: 0 2px 12px rgba(9, 55, 31, .50), 0 0 0 1px #2B2716;
+            border-color: var(--border);
+            box-shadow: 0 2px 12px rgba(9, 55, 31, .50), 0 0 0 1px var(--border);
         }
 
         body.dark .wk-appt.wk-direct.wk-ok {
@@ -6256,9 +6274,13 @@
 
         /* Assistant table */
         body.dark .tbl-wrap {
-            background: #2B2716
+            background: var(--surface)
         }
 
+        /* Generic element selector, not a component class -- applies to
+           <td> inside ANY <tbody> (8 distinct tables in this file), each
+           potentially with a different ambient background. No single
+           instance to trace. */
         body.dark tbody td {
             color: #D8D3BF;
             border-bottom-color: #2B2716
@@ -6283,23 +6305,29 @@
         }
 
         body.dark .void-archive-count {
-            background: #2B2716;
+            background: var(--surface);
             color: #777355;
         }
 
+        /* Same untraceable-ambient AssistantView tree as .void-archive-toggle
+           elsewhere in this file. */
         body.dark .void-archive-table-wrap {
             border-color: #2B2716;
         }
 
         body.dark .void-archive-table-wrap th {
-            background: #2B2716;
+            background: var(--surface);
             color: #777355;
-            border-bottom-color: #2B2716;
+            border-bottom-color: var(--surface);
         }
 
-        /* Same undeterminable-ambient situation as .void-archive-toggle above
-           — this <td> has no background of its own, and neither does its
-           table/wrap/panel ancestry as far as static tracing could follow. */
+        /* color: still undeterminable-ambient, same situation as
+           .void-archive-toggle above — left as literal #2B2716. The
+           border-bottom-color is migrated per the bucket (b) border-family
+           pass: no own background on this rule, so it mirrors the page
+           canvas it's currently flush against. */
+        /* Same untraceable-ambient AssistantView tree as .void-archive-toggle
+           elsewhere in this file -- both properties revert. */
         body.dark .void-archive-table-wrap td {
             color: #2B2716;
             border-bottom-color: #2B2716;
@@ -6311,7 +6339,7 @@
         }
 
         body.dark .wk-appt.wk-void-audit {
-            border-color: #2B2716;
+            border-color: var(--surface);
         }
 
         body.dark .cv {
@@ -6376,7 +6404,7 @@
 
         body.dark .cpt-combo-btn.on .cpt-combo-plus,
         body.dark .cpt-combo-btn.on .cpt-combo-desc {
-            color: #2B2716
+            color: var(--ink-fill)
         }
 
         body.dark .cpt-combo-pri {
@@ -6406,7 +6434,7 @@
         }
 
         body.dark .cpt-bh-toggle:hover {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .cpt-bh-note {
@@ -6414,8 +6442,8 @@
         }
 
         body.dark .cpt-bh-tiles {
-            background: #2B2716;
-            border-color: #2B2716
+            background: var(--surface);
+            border-color: var(--surface)
         }
 
         /* Cell classes that replaced inline colors */
@@ -6489,12 +6517,12 @@
 
         body.dark .ts-badge.ts-cancelled {
             color: #777355;
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .ts-badge.ts-unknown {
             color: #777355;
-            background: #2B2716
+            background: var(--surface)
         }
 
         /* Different problem from the .void-archive/.ts-none-cell group: this
@@ -6527,15 +6555,21 @@
 
         /* Billing / Direct Pay */
         body.dark .bill-card {
-            background: #2B2716;
-            border-color: #2B2716
+            background: var(--surface);
+            border-color: var(--surface)
         }
 
+        /* border-bottom-color reverted: confirmed dead -- no JSX anywhere
+           applies this class. */
         body.dark .bill-section-hd {
             color: var(--warning);
             border-bottom-color: #2B2716
         }
 
+        /* Structurally variable: the base class has no background of its
+           own, but .dp-row.pend/.coll/.fail each get a distinct dark-mode
+           background (or none) depending on runtime state -- same situation
+           as .ts-none, no single answer. */
         body.dark .dp-row {
             border-bottom-color: #2B2716
         }
@@ -6570,8 +6604,8 @@
         }
 
         body.dark .dp-date-wrap {
-            background: #2B2716;
-            border-color: #2B2716;
+            background: var(--surface);
+            border-color: var(--surface);
             color: #777355
         }
 
@@ -6592,8 +6626,8 @@
 
         body.dark .dp-platform-sel,
         body.dark .dp-platform-other {
-            background: #2B2716;
-            border-color: #2B2716;
+            background: var(--surface);
+            border-color: var(--surface);
             color: #D8D3BF
         }
 
@@ -6731,7 +6765,7 @@
             padding: 6px 10px;
             font-size: 13px;
             font-family: inherit;
-            color: #2B2716;
+            color: var(--text-primary);
             background: #FBFBF3;
             outline: none;
             font-weight: 600;
@@ -6825,7 +6859,7 @@
 
         .csm-note-text {
             font-size: 12px;
-            color: #2B2716;
+            color: var(--text-primary);
             background: #FBFBF3;
             border: 1px solid #D8D3BF;
             border-radius: 6px;
@@ -7123,13 +7157,13 @@
 
         /* Dark mode — Claim Submit Modal */
         body.dark .csm-section.csm-static {
-            background: #2B2716;
-            border-color: #2B2716
+            background: var(--surface);
+            border-color: var(--surface)
         }
 
         body.dark .csm-section.csm-appt {
-            background: #2B2716;
-            border-color: #2B2716
+            background: var(--surface);
+            border-color: var(--surface)
         }
 
         body.dark .csm-section-title {
@@ -7142,14 +7176,14 @@
 
         body.dark .csm-field input,
         body.dark .csm-field select {
-            background: #2B2716;
-            border-color: #2B2716;
+            background: var(--surface);
+            border-color: var(--surface);
             color: #D8D3BF
         }
 
         body.dark .csm-fields-group-lbl {
             color: #3D768A;
-            border-color: #2B2716
+            border-color: var(--surface)
         }
 
         body.dark .csm-row-label {
@@ -7158,12 +7192,12 @@
 
         body.dark .csm-note-text {
             background: #051F11;
-            border-color: #2B2716;
+            border-color: var(--border);
             color: #D8D3BF
         }
 
         body.dark .csm-save-row {
-            border-color: #2B2716
+            border-color: var(--surface)
         }
 
         body.dark .csm-save-note {
@@ -7171,31 +7205,35 @@
         }
 
         body.dark .csm-edit-btn {
-            background: #2B2716;
-            border-color: #2B2716;
+            background: var(--surface);
+            border-color: var(--surface);
             color: #6B9E8A
         }
 
         body.dark .csm-edit-btn:hover {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .csm-footer {
             background: #051F11;
-            border-color: #2B2716
+            border-color: var(--border)
         }
 
+        /* border-color reverted: confirmed real ambient is .csm-footer's
+           literal #051F11 background -- not undeterminable, just not one of
+           today's four tokens (#051F11 itself isn't tokenized yet). Left
+           literal pending that decision rather than force-fitting it. */
         body.dark .csm-cancel-btn {
             border-color: #2B2716;
             color: #777355
         }
 
         body.dark .csm-cancel-btn:hover {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .csm-payment-row {
-            border-color: #2B2716
+            border-color: var(--surface)
         }
 
         /* ── Billing Day View — dark-mode equivalents of the 4-state system
@@ -7203,18 +7241,18 @@
        desaturated counterparts, same border-left widths and per-state
        hover treatment for Clinic Submit cards). ── */
         body.dark .b-card.b-card-baseline {
-            background: #2B2716;
-            border-color: #2B2716;
+            background: var(--surface);
+            border-color: var(--surface);
             border-left-color: var(--warning);
         }
 
         body.dark .b-card.b-card-baseline.b-card-direct:hover {
-            background: #2B2716;
+            background: var(--surface);
         }
 
         body.dark .b-card.b-card-unsubmitted {
             background: #791F1F;
-            border-color: #2B2716;
+            border-color: var(--border);
             border-left-color: var(--error);
         }
 
@@ -7224,7 +7262,7 @@
 
         body.dark .b-card.b-card-pending {
             background: #7A5A00;
-            border-color: #2B2716;
+            border-color: var(--border);
             border-left-color: var(--warning);
         }
 
@@ -7234,7 +7272,7 @@
 
         body.dark .b-card.b-card-paid {
             background: var(--brand-primary);
-            border-color: #2B2716;
+            border-color: var(--border);
             border-left-color: var(--success);
         }
 
@@ -7346,7 +7384,7 @@
             background: #FBFBF3;
             line-height: 1.4;
             box-sizing: border-box;
-            color: #2B2716;
+            color: var(--text-primary);
         }
 
         .csm-claim-notes:focus {
@@ -7436,7 +7474,7 @@
 
         body.dark .modal-box,
         body.dark .add-modal-box {
-            background: #2B2716;
+            background: var(--surface);
             box-shadow: 0 8px 40px rgba(9, 55, 31, .65)
         }
 
@@ -7455,7 +7493,7 @@
         }
 
         body.dark .modal-footer {
-            border-top-color: #2B2716;
+            border-top-color: var(--border);
             background: #051F11
         }
 
@@ -7466,7 +7504,7 @@
         body.dark .add-modal-box input,
         body.dark .add-modal-box select {
             background: #051F11;
-            border-color: #2B2716;
+            border-color: var(--border);
             color: #D8D3BF
         }
 
@@ -7475,6 +7513,8 @@
             border-color: var(--success)
         }
 
+        /* border-bottom-color reverted: confirmed dead -- no JSX anywhere
+           applies this class. */
         body.dark .modal-section-hd {
             color: var(--warning);
             border-bottom-color: #2B2716
@@ -7488,6 +7528,7 @@
             color: #F2EDDB
         }
 
+        /* Confirmed dead -- no JSX anywhere applies this class. */
         body.dark .toggle-row {
             border-bottom-color: #2B2716
         }
@@ -7502,8 +7543,8 @@
 
         /* Calendar picker */
         body.dark .cal-wrap {
-            background: #2B2716;
-            border-color: #2B2716;
+            background: var(--surface);
+            border-color: var(--surface);
             box-shadow: 0 8px 30px rgba(9, 55, 31, .6)
         }
 
@@ -7517,7 +7558,7 @@
         }
 
         body.dark .cal-day:hover {
-            background: #2B2716
+            background: var(--surface)
         }
 
         body.dark .cal-day.today {
@@ -7793,7 +7834,7 @@
 
         .c-to-all {
             background: #FBFBF3;
-            color: #2B2716;
+            color: var(--text-primary);
         }
 
         .c-to-provider {
@@ -7927,7 +7968,7 @@
         /* ── Provider view: pre/post phase bar + column separator ─── */
         .pv-phase-bar {
             display: flex;
-            background: #2B2716;
+            background: var(--ink-fill);
             border-radius: 10px 10px 0 0;
             padding: 0 20px;
             border-bottom: 1px solid rgba(242, 237, 219, .08);
@@ -8173,7 +8214,7 @@
 
         .pam-comm-note {
             font-size: 13px;
-            color: #2B2716;
+            color: var(--text-primary);
             line-height: 1.5;
         }
 
@@ -8278,7 +8319,7 @@
             border: 1.5px solid #F2EDDB;
             border-radius: 8px;
             cursor: pointer;
-            color: #2B2716;
+            color: var(--text-primary);
             font-size: 13px;
             padding: 4px 8px;
             display: flex;
@@ -8516,7 +8557,7 @@
             border: 1.5px solid #FBFBF3;
             border-radius: 6px;
             padding: 5px 10px;
-            color: #2B2716;
+            color: var(--text-primary);
             background: #F0FDF4;
             cursor: pointer;
         }
@@ -8546,7 +8587,7 @@
             padding: 7px 18px;
             font-size: 11px;
             font-weight: 800;
-            color: #2B2716;
+            color: var(--text-primary);
             text-transform: uppercase;
             letter-spacing: .5px;
             z-index: 2;
@@ -8573,14 +8614,14 @@
         .nb-cell-time {
             font-size: 12px;
             font-weight: 700;
-            color: #2B2716;
+            color: var(--text-primary);
             white-space: nowrap;
         }
 
         .nb-cell-pat {
             font-size: 13px;
             font-weight: 700;
-            color: #2B2716;
+            color: var(--text-primary);
         }
 
         .nb-cell-prov {
@@ -8629,7 +8670,7 @@
             border: 1px solid #E5E0C8;
             border-radius: 4px;
             background: #FBFBF3;
-            color: #2B2716;
+            color: var(--text-primary);
         }
 
         body.dark .nb-attrib-line {
@@ -8913,7 +8954,7 @@
                this row (grep-confirmed). */
             font-size: 26px;
             font-weight: 700;
-            color: #2B2716;
+            color: var(--text-primary);
         }
         /* Collapsed-row completion indicators (Clinical Note Signed / Claim
            Submitted) — stacked under the patient name, not the otherdates
@@ -8944,7 +8985,7 @@
                row. */
             font-size: 18.1px;
             font-weight: 800;
-            color: #2B2716;
+            color: var(--text-primary);
             white-space: nowrap;
         }
         .af-otherdate-row {
@@ -9001,7 +9042,7 @@
         }
         .af-rate-table td {
             padding: 7px 12px;
-            color: #2B2716;
+            color: var(--text-primary);
         }
         .af-rate-table tbody tr:nth-child(even) {
             background: #F2EDDB;
@@ -9556,7 +9597,7 @@
         .bc-row-fullname {
             font-size: 13px;
             font-weight: 700;
-            color: #2B2716;
+            color: var(--text-primary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -9610,7 +9651,7 @@
 
         .bc-btn.on-hw {
             background: #87D1B0;
-            color: #2B2716;
+            color: var(--text-primary);
             border-color: #87D1B0
         }
 
@@ -9628,17 +9669,17 @@
 
         .bc-btn.on-unknown {
             background: #FBFBF3;
-            color: #2B2716;
+            color: var(--text-primary);
             border-color: #FBFBF3
         }
 
         body.dark .bc-panel {
-            background: #2B2716;
+            background: var(--surface);
             border-color: #7A5A00;
         }
 
         body.dark .bc-search-wrap {
-            background: #2B2716;
+            background: var(--surface);
             border-color: #7A5A00;
         }
 
@@ -10015,6 +10056,8 @@
             border-top: 2px solid #6B9E8A
         }
 
+        /* Ambient undeterminable: .cl-table itself has no background in
+           either theme; further tracing beyond that not conclusive. */
         body.dark .cl-table tbody tr.cl-pt-sep td {
             border-top: 2px solid #2B2716
         }
@@ -10026,7 +10069,7 @@
         .cl-table td {
             padding: 8px 10px;
             vertical-align: top;
-            color: #2B2716;
+            color: var(--text-primary);
             line-height: 1.4;
             border-right: 1px solid rgba(30, 41, 59, .10);
         }
@@ -10038,13 +10081,13 @@
         .cl-pt-name {
             font-weight: 800;
             font-size: 12px;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .cl-pt-last {
             font-weight: 800;
             font-size: 12px;
-            color: #2B2716;
+            color: var(--text-primary);
             margin-top: 1px
         }
 
@@ -10057,7 +10100,7 @@
 
         .cl-date-main {
             font-weight: 700;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .cl-cpt-chips {
@@ -10083,7 +10126,7 @@
 
         .cl-sub-main {
             font-weight: 700;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .cl-sub-detail {
@@ -10169,7 +10212,7 @@
 
         .cl-check-main {
             font-weight: 700;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .cl-bundle-badge {
@@ -10192,7 +10235,7 @@
 
         .cl-dep-main {
             font-weight: 700;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .cl-dep-detail {
@@ -10215,7 +10258,7 @@
         .cl-copay-line {
             font-size: 12px;
             font-weight: 700;
-            color: #2B2716;
+            color: var(--text-primary);
             letter-spacing: .1px
         }
 
@@ -10335,7 +10378,7 @@
             background: rgba(99, 102, 241, .06);
             border: 1px solid rgba(99, 102, 241, .25);
             font-style: normal;
-            color: #2B2716;
+            color: var(--text-primary);
         }
 
         .cl-complete .cl-notes-input {
@@ -11282,7 +11325,7 @@
             padding: 6px 8px;
             border: 1px solid #D8D3BF;
             background: #FBFBF3;
-            color: #2B2716;
+            color: var(--text-primary);
             border-radius: 0;
             font-size: 12px;
             font-family: inherit;
@@ -11418,7 +11461,7 @@
 
         .pt-patient {
             font-weight: 800;
-            color: #2B2716
+            color: var(--text-primary)
         }
 
         .pt-badge {
@@ -12083,7 +12126,7 @@
         }
 
         function insColor(name) {
-            if (!name) return { bg: '#2B2716', fg: '#FFFFFF' };
+            if (!name) return { bg: 'var(--ink-fill)', fg: '#FFFFFF' };
             const n = name.toLowerCase();
             // Oscar — Solrei brand rule: grouped with Optum/UHC, always #FF612B
             if (n.includes('oscar')) return { bg: '#FF612B', fg: '#FFFFFF' };
@@ -12109,7 +12152,7 @@
             // Medica standalone
             if (n.includes('medica')) return { bg: '#005A8B', fg: '#FFFFFF' };
             // MBA TPA
-            if (n.includes('mba')) return { bg: '#2B2716', fg: '#FFFFFF' };
+            if (n.includes('mba')) return { bg: 'var(--ink-fill)', fg: '#FFFFFF' };
             // Cash Pay
             if (n.includes('cash')) return { bg: '#065F46', fg: '#FFFFFF' };
             // Florida Blue — Solrei brand rule, always #0098D6 (distinct from general BCBS)
@@ -12132,7 +12175,7 @@
             if (n.includes('molina')) return { bg: '#0F4C81', fg: '#FFFFFF' };
             if (n.includes('staywell')) return { bg: '#007B5E', fg: '#FFFFFF' };
             if (n.includes('tricare')) return { bg: '#003F87', fg: '#FFFFFF' };
-            return { bg: '#2B2716', fg: '#FFFFFF' };
+            return { bg: 'var(--ink-fill)', fg: '#FFFFFF' };
         }
 
         function parseTypedDate(v) {
@@ -13873,13 +13916,13 @@
                                                 </div>
                                             ) : null}
                                             {appt.scrNote ? (
-                                                <div style={{ marginTop: anyData ? 6 : 0, background: '#F8EFD8', borderRadius: 7, padding: '8px 11px', fontSize: 12.5, color: '#2B2716', lineHeight: 1.55, borderLeft: '3px solid var(--brand-primary)', whiteSpace: 'pre-wrap' }}>
+                                                <div style={{ marginTop: anyData ? 6 : 0, background: '#F8EFD8', borderRadius: 7, padding: '8px 11px', fontSize: 12.5, color: 'var(--text-primary)', lineHeight: 1.55, borderLeft: '3px solid var(--brand-primary)', whiteSpace: 'pre-wrap' }}>
                                                     <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: .5, color: '#777355', display: 'block', marginBottom: 3 }}>📝 Clinical Notes</span>
                                                     {appt.scrNote}
                                                 </div>
                                             ) : null}
                                             {appt.checklistNote ? (
-                                                <div style={{ marginTop: 6, background: '#F8EFD8', borderRadius: 7, padding: '8px 11px', fontSize: 12.5, color: '#2B2716', lineHeight: 1.55, borderLeft: '3px solid var(--warning)', whiteSpace: 'pre-wrap' }}>
+                                                <div style={{ marginTop: 6, background: '#F8EFD8', borderRadius: 7, padding: '8px 11px', fontSize: 12.5, color: 'var(--text-primary)', lineHeight: 1.55, borderLeft: '3px solid var(--warning)', whiteSpace: 'pre-wrap' }}>
                                                     <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: .5, color: 'var(--warning)', display: 'block', marginBottom: 3 }}>⚠️ Issue Notes</span>
                                                     {appt.checklistNote}
                                                 </div>
@@ -16425,7 +16468,7 @@
                                         return (
                                             <div key={label} className="pim-check-item">
                                                 <span className="pim-check-icon" style={{ color }}>{icon}</span>
-                                                <span style={{ fontWeight: 600, color: '#2B2716', fontSize: 13 }}>{label}</span>
+                                                <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{label}</span>
                                             </div>
                                         );
                                     })}
@@ -17194,17 +17237,17 @@
                     });
             }, [carrier, state, cpts, provider]);
             if (!loading && !data) return null;
-            const C = { 'Clinic Submit': { bg: '#7494AA', bd: '#7494AA', tx: '#FFFFFF', lb: 'CLINIC' }, 'Headway': { bg: '#87D1B0', bd: '#87D1B0', tx: '#2B2716', lb: 'HEADWAY' }, 'Alma': { bg: '#0C4A34', bd: '#0C4A34', tx: '#FFFFFF', lb: 'ALMA' }, 'Grow Therapy': { bg: '#B06D12', bd: '#B06D12', tx: '#FFFFFF', lb: 'GROW' } };
+            const C = { 'Clinic Submit': { bg: '#7494AA', bd: '#7494AA', tx: '#FFFFFF', lb: 'CLINIC' }, 'Headway': { bg: '#87D1B0', bd: '#87D1B0', tx: 'var(--ink-fill)', lb: 'HEADWAY' }, 'Alma': { bg: '#0C4A34', bd: '#0C4A34', tx: '#FFFFFF', lb: 'ALMA' }, 'Grow Therapy': { bg: '#B06D12', bd: '#B06D12', tx: '#FFFFFF', lb: 'GROW' } };
             return (
                 <div style={{ margin: '6px 0', padding: '8px 12px', background: '#FBFBF3', border: '1px solid #FBFBF3', borderRadius: '7px', fontSize: '.75rem' }}>
                     {loading && <span style={{ color: '#777355' }}>Checking best channel…</span>}
                     {data && data.mapped && data.overall_best_channel && (() => {
-                        const c = C[data.overall_best_channel] || { bg: '#FBFBF3', bd: '#F2EDDB', tx: '#2B2716', lb: data.overall_best_channel };
+                        const c = C[data.overall_best_channel] || { bg: '#FBFBF3', bd: '#F2EDDB', tx: 'var(--ink-fill)', lb: data.overall_best_channel };
                         const total = (data.channel_totals || {})[data.overall_best_channel];
                         return <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#777355', textTransform: 'uppercase', letterSpacing: '.5px' }}>💰 Best rate:</span>
                             <span style={{ background: c.bg, border: `1.5px solid ${c.bd}`, color: c.tx, padding: '2px 10px', borderRadius: '20px', fontSize: '.7rem', fontWeight: 700 }}>★ {c.lb}</span>
-                            {total != null && <span style={{ color: '#2B2716', fontSize: '.72rem' }}>{data.canonical_payer} · {data.state} · total: ${total.toFixed(2)}</span>}
+                            {total != null && <span style={{ color: 'var(--text-primary)', fontSize: '.72rem' }}>{data.canonical_payer} · {data.state} · total: ${total.toFixed(2)}</span>}
                         </div>;
                     })()}
                     {data && !data.mapped && <span style={{ color: '#777355' }}>No rate data — defaults to Clinic Submit</span>}
@@ -17459,7 +17502,7 @@
                                                 })()}
                                                 <div className="wk-bottom-row">
                                                     {!a.out && <div className="wk-note-stamp" title="Note not yet signed">✎ note</div>}
-                                                    <span className="wk-ins-badge" style={{ background: METHOD_COLOR[a.method] || '#2B2716', color: '#FFFFFF' }}>
+                                                    <span className="wk-ins-badge" style={{ background: METHOD_COLOR[a.method] || 'var(--ink-fill)', color: '#FFFFFF' }}>
                                                         {isDirect ? 'Clinic Submit' : (METHOD_LABEL[a.method] || a.method)}
                                                     </span>
                                                     <CommChatIcon
@@ -17772,7 +17815,7 @@
                                                     return <div className={`wk-claim-stamp ${stCls}`}>{stIcon} {clSt}{paidAmt}</div>;
                                                 })()}
                                                 <div className="wk-bottom-row">
-                                                    <span className="wk-ins-badge" style={{ background: METHOD_COLOR[a.method] || '#2B2716', color: '#FFFFFF' }}>
+                                                    <span className="wk-ins-badge" style={{ background: METHOD_COLOR[a.method] || 'var(--ink-fill)', color: '#FFFFFF' }}>
                                                         {isDirect ? 'Clinic Submit' : (METHOD_LABEL[a.method] || a.method)}
                                                     </span>
                                                     {/* Non-billing (assistant) week: chat icon stays in bottom row */}
@@ -18612,7 +18655,7 @@
                                 {/* ── Mismatch banner: saved recommendation is NOT Clinic Submit ── */}
                                 {_savedChannel && _savedChannel.channel && _savedChannel.channel !== 'Clinic Submit' && (() => {
                                     const BC = {
-                                        'Headway': { bg: '#87D1B0', bd: '#87D1B0', tx: '#2B2716', lb: 'Headway' },
+                                        'Headway': { bg: '#87D1B0', bd: '#87D1B0', tx: 'var(--ink-fill)', lb: 'Headway' },
                                         'Alma': { bg: '#0C4A34', bd: '#0C4A34', tx: '#FFFFFF', lb: 'Alma' },
                                         'Grow Therapy': { bg: '#B06D12', bd: '#B06D12', tx: '#FFFFFF', lb: 'Grow Therapy' },
                                     };
@@ -18660,11 +18703,11 @@
                                                 const ch = bestChannel.overall_best_channel;
                                                 const C = {
                                                     'Clinic Submit': { bg: '#7494AA', bd: '#7494AA', tx: '#FFFFFF', lb: 'CLINIC' },
-                                                    'Headway': { bg: '#87D1B0', bd: '#87D1B0', tx: '#2B2716', lb: 'HEADWAY' },
+                                                    'Headway': { bg: '#87D1B0', bd: '#87D1B0', tx: 'var(--ink-fill)', lb: 'HEADWAY' },
                                                     'Alma': { bg: '#0C4A34', bd: '#0C4A34', tx: '#FFFFFF', lb: 'ALMA' },
                                                     'Grow Therapy': { bg: '#B06D12', bd: '#B06D12', tx: '#FFFFFF', lb: 'GROW' },
                                                 };
-                                                const c = C[ch] || { bg: '#FBFBF3', bd: '#F2EDDB', tx: '#2B2716', lb: ch };
+                                                const c = C[ch] || { bg: '#FBFBF3', bd: '#F2EDDB', tx: 'var(--ink-fill)', lb: ch };
                                                 const r99 = (bestChannel.cpt_results || []).find(r => r.cpt_code === '99214');
                                                 return (
                                                     <div>
@@ -18672,7 +18715,7 @@
                                                             <span style={{ background: c.bg, border: `1.5px solid ${c.bd}`, color: c.tx, padding: '3px 10px', borderRadius: '20px', fontSize: '.72rem', fontWeight: 700 }}>
                                                                 ★ {c.lb} pays best
                                                             </span>
-                                                            <span style={{ color: '#2B2716', fontSize: '.75rem' }}>
+                                                            <span style={{ color: 'var(--text-primary)', fontSize: '.75rem' }}>
                                                                 {bestChannel.canonical_payer} · {bestChannel.state}
                                                                 {r99 && r99.best_rate ? ` · $${r99.best_rate.toFixed(2)}/99214` : ''}
                                                             </span>
@@ -19284,12 +19327,12 @@
                                 return (
                                     <div key={a.id} className={`dp-row ${rc}`}>
                                         <div>
-                                            <div style={{ fontWeight: 800, fontSize: 14, color: '#2B2716' }}><PatientName name={a.patient} state={a.patientState} /></div>
+                                            <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-primary)' }}><PatientName name={a.patient} state={a.patientState} /></div>
                                             <div style={{ fontSize: 11, color: '#777355' }}>{fmtTime(a.time)} · {info.insurance || '—'}</div>
                                         </div>
                                         <div>
                                             {info.paymentType
-                                                ? <span style={{ background: fromRec ? '#E9F1F4' : '#F2EDDB', color: fromRec ? '#3D768A' : '#2B2716', padding: '2px 8px', borderRadius: 5, fontWeight: 700, fontSize: 12 }}>
+                                                ? <span style={{ background: fromRec ? '#E9F1F4' : '#F2EDDB', color: fromRec ? '#3D768A' : 'var(--text-primary)', padding: '2px 8px', borderRadius: 5, fontWeight: 700, fontSize: 12 }}>
                                                     {info.paymentType}{fromRec && <span style={{ fontSize: 9, marginLeft: 4, opacity: .7 }}>↑ record</span>}
                                                 </span>
                                                 : <span style={{ fontSize: 11, color: '#FBFBF3', fontStyle: 'italic' }}>No type set</span>}
@@ -19823,13 +19866,13 @@
                             {/* PREVIEW PHASE */}
                             {phase === 'preview' && <>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                                    <div style={{ fontWeight: 700, color: '#2B2716', fontSize: 14 }}>
+                                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>
                                         Preview — <span style={{ color: IND }}>{rows.length} payment rows</span>
                                     </div>
                                     <button onClick={() => { setRows([]); setPhase('upload'); setError(''); }}
                                         style={{
                                             background: '#FBFBF3', border: '1px solid #FBFBF3', borderRadius: 7,
-                                            padding: '5px 13px', cursor: 'pointer', fontSize: 12, color: '#2B2716', fontWeight: 600
+                                            padding: '5px 13px', cursor: 'pointer', fontSize: 12, color: 'var(--text-primary)', fontWeight: 600
                                         }}>
                                         ← Change File
                                     </button>
@@ -19846,9 +19889,9 @@
                                         <tbody>
                                             {rows.slice(0, 60).map((r, i) => (
                                                 <tr key={i} style={{ borderBottom: '1px solid #FBFBF3', background: i % 2 === 0 ? '#FFFFFF' : '#FBFBF3' }}>
-                                                    <td style={{ padding: '6px 11px', color: '#2B2716' }}>{r.date}</td>
-                                                    <td style={{ padding: '6px 11px', color: '#2B2716' }}>{r.providerName}</td>
-                                                    <td style={{ padding: '6px 11px', color: '#2B2716' }}>{r.patientName}</td>
+                                                    <td style={{ padding: '6px 11px', color: 'var(--text-primary)' }}>{r.date}</td>
+                                                    <td style={{ padding: '6px 11px', color: 'var(--text-primary)' }}>{r.providerName}</td>
+                                                    <td style={{ padding: '6px 11px', color: 'var(--text-primary)' }}>{r.patientName}</td>
                                                     <td style={{ padding: '6px 11px', color: 'var(--success)', fontWeight: 700 }}>${r.paymentAmount}</td>
                                                 </tr>
                                             ))}
@@ -19917,10 +19960,10 @@
                                             <tbody>
                                                 {importResult.unmatched.map((u, i) => (
                                                     <tr key={i} style={{ borderBottom: '1px solid #FEF2F2', background: i % 2 === 0 ? '#FBFBF3' : '#FEF2F2' }}>
-                                                        <td style={{ padding: '5px 8px', color: '#2B2716' }}>{(u.row || {}).date || ''}</td>
-                                                        <td style={{ padding: '5px 8px', color: '#2B2716' }}>{(u.row || {}).providerName || ''}</td>
-                                                        <td style={{ padding: '5px 8px', color: '#2B2716' }}>{(u.row || {}).patientName || ''}</td>
-                                                        <td style={{ padding: '5px 8px', color: '#2B2716' }}>${(u.row || {}).paymentAmount || ''}</td>
+                                                        <td style={{ padding: '5px 8px', color: 'var(--text-primary)' }}>{(u.row || {}).date || ''}</td>
+                                                        <td style={{ padding: '5px 8px', color: 'var(--text-primary)' }}>{(u.row || {}).providerName || ''}</td>
+                                                        <td style={{ padding: '5px 8px', color: 'var(--text-primary)' }}>{(u.row || {}).patientName || ''}</td>
+                                                        <td style={{ padding: '5px 8px', color: 'var(--text-primary)' }}>${(u.row || {}).paymentAmount || ''}</td>
                                                         <td style={{ padding: '5px 8px', color: 'var(--error)', fontSize: 10 }}>{u.reason || ''}</td>
                                                     </tr>
                                                 ))}
@@ -19940,7 +19983,7 @@
                                 <button onClick={onClose}
                                     style={{
                                         background: '#FBFBF3', border: '1px solid #FBFBF3', borderRadius: 8,
-                                        padding: '8px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#2B2716'
+                                        padding: '8px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)'
                                     }}>
                                     Cancel
                                 </button>
@@ -19949,7 +19992,7 @@
                                 <button onClick={onClose}
                                     style={{
                                         background: '#FBFBF3', border: '1px solid #FBFBF3', borderRadius: 8,
-                                        padding: '8px 18px', cursor: 'pointer', fontSize: 13, color: '#2B2716'
+                                        padding: '8px 18px', cursor: 'pointer', fontSize: 13, color: 'var(--text-primary)'
                                     }}>
                                     Cancel
                                 </button>
@@ -20296,7 +20339,7 @@
                                         {bestRateData && !bestRateLoading && (() => {
                                             const C = {
                                                 'Clinic Submit': { bg: '#7494AA', bd: '#7494AA', tx: '#FFFFFF', lb: 'CLINIC' },
-                                                'Headway': { bg: '#87D1B0', bd: '#87D1B0', tx: '#2B2716', lb: 'HEADWAY' },
+                                                'Headway': { bg: '#87D1B0', bd: '#87D1B0', tx: 'var(--ink-fill)', lb: 'HEADWAY' },
                                                 'Alma': { bg: '#0C4A34', bd: '#0C4A34', tx: '#FFFFFF', lb: 'ALMA' },
                                                 'Grow Therapy': { bg: '#B06D12', bd: '#B06D12', tx: '#FFFFFF', lb: 'GROW' },
                                             };
@@ -20307,7 +20350,7 @@
                                                 </div>
                                             );
                                             const ch = bestRateData.overall_best_channel;
-                                            const c = C[ch] || { bg: '#F2EDDB', bd: '#FBFBF3', tx: '#2B2716', lb: ch };
+                                            const c = C[ch] || { bg: '#F2EDDB', bd: '#FBFBF3', tx: 'var(--ink-fill)', lb: ch };
                                             return (
                                                 <>
                                                     <div style={{
@@ -20334,7 +20377,7 @@
                                                                 const maxRate = Math.max(...Object.values(rates).filter(v => v != null));
                                                                 return (
                                                                     <tr key={row.cpt_code} style={{ background: i % 2 === 0 ? '#FBFBF3' : '#F2EDDB', borderBottom: '1px solid #FBFBF3' }}>
-                                                                        <td style={{ padding: '7px 8px', fontWeight: 800, color: '#2B2716' }}>{row.cpt_code}</td>
+                                                                        <td style={{ padding: '7px 8px', fontWeight: 800, color: 'var(--text-primary)' }}>{row.cpt_code}</td>
                                                                         {['Clinic Submit', 'Headway', 'Alma', 'Grow Therapy'].map(ch2 => {
                                                                             const rate = rates[ch2];
                                                                             const isBest = rate != null && rate === maxRate;
@@ -20360,7 +20403,7 @@
                                                         <tfoot>
                                                             <tr style={{ borderTop: '2px solid var(--brand-primary)', background: '#F2EDDB' }}>
                                                                 <td style={{
-                                                                    padding: '8px 8px', fontWeight: 800, color: '#2B2716', fontSize: 11,
+                                                                    padding: '8px 8px', fontWeight: 800, color: 'var(--text-primary)', fontSize: 11,
                                                                     textTransform: 'uppercase', letterSpacing: '.5px'
                                                                 }}>TOTAL</td>
                                                                 {['Clinic Submit', 'Headway', 'Alma', 'Grow Therapy'].map(ch2 => {
@@ -20371,7 +20414,7 @@
                                                                         <td key={ch2} style={{
                                                                             padding: '8px 8px', textAlign: 'right', fontWeight: 800,
                                                                             background: isWinner && co ? co.bg : 'transparent',
-                                                                            color: isWinner && co ? co.tx : '#2B2716'
+                                                                            color: isWinner && co ? co.tx : 'var(--ink-fill)'
                                                                         }}>
                                                                             {total != null ? `$${total.toFixed(2)}` : '—'}{isWinner ? ' ★' : ''}
                                                                         </td>
@@ -20387,7 +20430,7 @@
                                                     }}>
                                                         <span>Current method:</span>
                                                         <span style={{
-                                                            background: METHOD_COLOR[a.method] || '#2B2716', color: '#FFFFFF',
+                                                            background: METHOD_COLOR[a.method] || 'var(--ink-fill)', color: '#FFFFFF',
                                                             padding: '2px 9px', borderRadius: 0, fontWeight: 700, fontSize: 11
                                                         }}>
                                                             {METHOD_LABEL[a.method] || a.method}
@@ -20424,7 +20467,7 @@
                                 </div>
                                 <div style={{ marginTop: 3 }}>
                                     <span className="b-method-badge"
-                                        style={{ background: METHOD_COLOR[a.method] || '#2B2716', color: '#FFFFFF' }}>
+                                        style={{ background: METHOD_COLOR[a.method] || 'var(--ink-fill)', color: '#FFFFFF' }}>
                                         {METHOD_LABEL[a.method] || a.method}
                                     </span>
                                 </div>
@@ -20439,11 +20482,11 @@
                                 {savedChannel && savedChannel.channel && (() => {
                                     const BC = {
                                         'Clinic Submit': { bg: '#7494AA', bd: '#7494AA', tx: '#FFFFFF', lb: 'CLINIC' },
-                                        'Headway': { bg: '#87D1B0', bd: '#87D1B0', tx: '#2B2716', lb: 'HEADWAY' },
+                                        'Headway': { bg: '#87D1B0', bd: '#87D1B0', tx: 'var(--ink-fill)', lb: 'HEADWAY' },
                                         'Alma': { bg: '#0C4A34', bd: '#0C4A34', tx: '#FFFFFF', lb: 'ALMA' },
                                         'Grow Therapy': { bg: '#B06D12', bd: '#B06D12', tx: '#FFFFFF', lb: 'GROW' },
                                     };
-                                    const bc = BC[savedChannel.channel] || { bg: '#FBFBF3', bd: '#F2EDDB', tx: '#2B2716', lb: savedChannel.channel };
+                                    const bc = BC[savedChannel.channel] || { bg: '#FBFBF3', bd: '#F2EDDB', tx: 'var(--ink-fill)', lb: savedChannel.channel };
                                     const rate = savedChannel.rate ? parseFloat(savedChannel.rate) : null;
                                     return (
                                         <div style={{ marginTop: 4 }}>
