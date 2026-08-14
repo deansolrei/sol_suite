@@ -17861,7 +17861,7 @@
             );
         }
 
-        function AllProviderWeekView({ date, allWeekData, onSwitchToDay, prov, view, onUpdateForDate }) {
+        function AllProviderWeekView({ date, allWeekData, onSwitchToDay, prov, view, onUpdateForDate, navigateAndOpenModal, showNoteBoard, setShowNoteBoard, showPaymentTracker, setShowPaymentTracker, showAppointmentFlow, setShowAppointmentFlow }) {
             const ws = weekStart(date);
             const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
             const [commPopup, setCommPopup] = useState(null); // { appt, ds }
@@ -18098,6 +18098,40 @@
                             }}
                             onClose={() => setCommPopup(null)}
                         />
+                    )}
+
+                    {/* Part B2a — Assistant Week's first wiring of .wk-tool-bar.
+                       Gated on !isBilling since this component is shared with
+                       Billing Week (Part B2b, not yet wired) — Billing's call
+                       site doesn't pass any of these props yet, so this must
+                       stay conditional, not unconditional. Matches
+                       AssistantView's real mount code exactly: no Jodene
+                       gating (Assistant's 3 tools are ungated), literal
+                       role="assistant"/initialProv="jodene", no loggedInProv
+                       (unlike Provider's Appointment Flow mount). */}
+                    {!isBilling && showNoteBoard && <NoteBoardPanel onClose={() => setShowNoteBoard(false)} role="assistant" provFilter="" />}
+
+                    {!isBilling && showPaymentTracker && <PaymentTracker onClose={() => setShowPaymentTracker(false)} provFilter="" />}
+
+                    {!isBilling && showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={true} initialProv="jodene" navigateAndOpenModal={navigateAndOpenModal} />}
+
+                    {!isBilling && (
+                        <div className="wk-tool-bar">
+                            <WeekToolButton icon="🗓️" name="Appointment Flow" color="green"
+                                open={showAppointmentFlow} onClick={() => setShowAppointmentFlow(o => !o)} />
+                            <WeekToolButton icon="📝" name="Note Board" color="green"
+                                open={showNoteBoard} onClick={() => setShowNoteBoard(o => !o)} />
+                            <WeekToolButton icon="💳" name="Payment Tracker" color="blue"
+                                open={showPaymentTracker} onClick={() => setShowPaymentTracker(o => !o)} />
+                        </div>
+                    )}
+
+                    {!isBilling && (
+                        <MobileToolsMenu items={[
+                            { key: 'apptflow', label: 'Appointment Flow', icon: '🗓️', active: showAppointmentFlow, onClick: () => setShowAppointmentFlow(o => !o) },
+                            { key: 'notes', label: 'Note Board', icon: '📝', active: showNoteBoard, onClick: () => setShowNoteBoard(o => !o) },
+                            { key: 'payment', label: 'Payment Tracker', icon: '💳', active: showPaymentTracker, onClick: () => setShowPaymentTracker(o => !o) },
+                        ]} />
                     )}
                 </div>
             );
@@ -22442,7 +22476,7 @@
                                 {view === 'provider' && period === 'day' && <ProviderView appts={appts} date={date} prov={prov} onUpdate={updateAppt} onSignNote={signNote} totalUnsigned={totalUnsigned} onClearPhantom={clearPhantom} userRole={userRole} userProvID={userProvID} onForceRefresh={forceRefreshDay} patientDb={patientDb} dayMode={providerDayMode} setDayMode={setProviderDayMode} pendingModalRequest={pendingModalRequest} onConsumePendingModalRequest={clearPendingModalRequest} navigateAndOpenModal={navigateAndOpenModal} returnToAppointmentFlow={returnToAppointmentFlow} onConsumeReturnToAppointmentFlow={clearReturnToAppointmentFlow} showLedger={showLedger} setShowLedger={setShowLedger} showNoteBoard={showNoteBoard} setShowNoteBoard={setShowNoteBoard} showPaymentTracker={showPaymentTracker} setShowPaymentTracker={setShowPaymentTracker} showAppointmentFlow={showAppointmentFlow} setShowAppointmentFlow={setShowAppointmentFlow} />}
                                 {view === 'provider' && period === 'week' && <WeekView prov={prov} date={date} data={data} onUpdateForDate={updateApptForDate} onSwitchToDay={switchToDay} onDeleteForDate={deleteApptForDate} totalUnsigned={totalUnsigned} userRole={userRole} userProvID={userProvID} navigateAndOpenModal={navigateAndOpenModal} showLedger={showLedger} setShowLedger={setShowLedger} showNoteBoard={showNoteBoard} setShowNoteBoard={setShowNoteBoard} showPaymentTracker={showPaymentTracker} setShowPaymentTracker={setShowPaymentTracker} showAppointmentFlow={showAppointmentFlow} setShowAppointmentFlow={setShowAppointmentFlow} />}
                                 {view === 'assistant' && period === 'day' && <AssistantView appts={appts} date={date} onUpdate={updateAppt} onAdd={addAppt} onDelete={deleteAppt} patientDb={patientDb} onForceRefresh={forceRefreshDay} navigateAndOpenModal={navigateAndOpenModal} showNoteBoard={showNoteBoard} setShowNoteBoard={setShowNoteBoard} showPaymentTracker={showPaymentTracker} setShowPaymentTracker={setShowPaymentTracker} showAppointmentFlow={showAppointmentFlow} setShowAppointmentFlow={setShowAppointmentFlow} />}
-                                {view === 'assistant' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} onUpdateForDate={updateApptForDate} />}
+                                {view === 'assistant' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} onUpdateForDate={updateApptForDate} navigateAndOpenModal={navigateAndOpenModal} showNoteBoard={showNoteBoard} setShowNoteBoard={setShowNoteBoard} showPaymentTracker={showPaymentTracker} setShowPaymentTracker={setShowPaymentTracker} showAppointmentFlow={showAppointmentFlow} setShowAppointmentFlow={setShowAppointmentFlow} />}
                                 {view === 'billing' && period === 'day' && <BillingView appts={appts} date={date} onUpdate={updateAppt} patientDb={patientDb} onRefreshPatients={refreshPatientDb} pendingModalRequest={pendingModalRequest} onConsumePendingModalRequest={clearPendingModalRequest} navigateAndOpenModal={navigateAndOpenModal} returnToAppointmentFlow={returnToAppointmentFlow} onConsumeReturnToAppointmentFlow={clearReturnToAppointmentFlow} showLedger={showLedger} setShowLedger={setShowLedger} showNoteBoard={showNoteBoard} setShowNoteBoard={setShowNoteBoard} showPaymentTracker={showPaymentTracker} setShowPaymentTracker={setShowPaymentTracker} showAppointmentFlow={showAppointmentFlow} setShowAppointmentFlow={setShowAppointmentFlow} showBillingChannels={showBillingChannels} setShowBillingChannels={setShowBillingChannels} showImportPanel={showImportPanel} setShowImportPanel={setShowImportPanel} />}
                                 {view === 'billing' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} view="billing" onUpdateForDate={updateApptForDate} />}
                             </>
