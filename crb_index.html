@@ -68,6 +68,16 @@
             --paper-deep: #ECE8DE;
             --ledger-line: #D8D2C5;
 
+            /* RGB-triplet companions, for rgba() composition — same pattern
+               as --shadow-tint-rgb. --paper-deep and --text-on-brand have no
+               dark override, so one value covers both themes. --border-rgb
+               and --text-primary-rgb below need their own body.dark override
+               since the hex tokens themselves invert. */
+            --paper-deep-rgb: 236, 232, 222;
+            --border-rgb: 191, 207, 213;
+            --text-primary-rgb: 32, 42, 51;
+            --text-on-brand-rgb: 255, 255, 255;
+
             --font-display: "Wix Madefor Display";
             /* Placeholder — TBD pending confirmation on IBM Plex Mono vs.
                an alternative. Not yet loaded via <link>; Phase 3 concern. */
@@ -120,6 +130,11 @@
                rgba() using this custom property plus whatever alpha the
                existing rule already used. */
             --shadow-tint-rgb: 55, 123, 173;
+
+            /* Dark-mode overrides for the RGB-triplet companions above —
+               these must invert along with their hex counterparts. */
+            --border-rgb: 84, 112, 125;
+            --text-primary-rgb: 231, 236, 239;
         }
 
         *,
@@ -150,8 +165,8 @@
         .psearch-row {
             display: flex;
             align-items: center;
-            background: rgba(242, 237, 219, .13);
-            border: 1px solid rgba(242, 237, 219, .26);
+            background: rgba(var(--paper-deep-rgb), .13);
+            border: 1px solid rgba(var(--paper-deep-rgb), .26);
             border-radius: 8px;
             padding: 0 10px;
             gap: 6px;
@@ -160,8 +175,8 @@
         }
 
         .psearch-row:focus-within {
-            background: rgba(242, 237, 219, .22);
-            border-color: rgba(242, 237, 219, .52)
+            background: rgba(var(--paper-deep-rgb), .22);
+            border-color: rgba(var(--paper-deep-rgb), .52)
         }
 
         .psearch-icon {
@@ -176,7 +191,7 @@
             background: none;
             border: none;
             outline: none;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             font-size: 13px;
             font-family: inherit;
             font-weight: 500;
@@ -184,13 +199,13 @@
         }
 
         .psearch-input::placeholder {
-            color: rgba(242, 237, 219, .48)
+            color: var(--ink-fill)
         }
 
         .psearch-clear {
             background: none;
             border: none;
-            color: rgba(242, 237, 219, .55);
+            color: var(--ink-fill);
             cursor: pointer;
             font-size: 17px;
             line-height: 1;
@@ -199,14 +214,14 @@
         }
 
         .psearch-clear:hover {
-            color: #F2EDDB
+            color: var(--text-on-brand)
         }
 
         .psearch-spin {
             width: 13px;
             height: 13px;
-            border: 2px solid rgba(242, 237, 219, .25);
-            border-top-color: #F2EDDB;
+            border: 2px solid rgba(var(--border-rgb), .25);
+            border-top-color: var(--border);
             border-radius: 50%;
             animation: spin .65s linear infinite;
             flex-shrink: 0
@@ -248,7 +263,7 @@
             font-size: 10px;
             font-weight: 700;
             color: #777355;
-            background: #F2EDDB;
+            background: var(--paper-deep);
             padding: 2px 7px;
             border-radius: 8px
         }
@@ -296,7 +311,7 @@
         .psearch-today-tag {
             display: inline-block;
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border-radius: 4px;
             padding: 1px 5px;
             font-size: 9px;
@@ -369,6 +384,10 @@
             gap: 14px
         }
 
+        /* Verified: #F2EDDB on #777355 (fixed splash background) is 4.10:1,
+           passing the 3:1 large-text threshold at this 36px size. The only
+           candidate token, var(--text-primary), computes worse (3.03:1,
+           borderline) — no safe improvement available, so left literal. */
         .splash-logo {
             font-size: 36px;
             font-weight: 800;
@@ -403,8 +422,8 @@
         .spinner {
             width: 34px;
             height: 34px;
-            border: 3px solid rgba(242, 237, 219, .3);
-            border-top-color: #F2EDDB;
+            border: 3px solid rgba(var(--border-rgb), .3);
+            border-top-color: var(--border);
             border-radius: 50%;
             animation: spin .7s linear infinite
         }
@@ -418,7 +437,7 @@
         /* ── Header ─────────────────────────────────────────────── */
         .hdr {
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             padding: 8px 24px;
             display: flex;
             align-items: center;
@@ -454,7 +473,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #F2EDDB
+            color: var(--text-on-brand)
         }
 
         /* Wordmark: Solrei "S" mark icon + "olBoard", flush together as one unit */
@@ -465,7 +484,7 @@
             font-weight: 800;
             letter-spacing: 0;
             white-space: nowrap;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             flex-shrink: 0;
         }
 
@@ -483,9 +502,9 @@
         }
 
         .hdr select {
-            background: rgba(242, 237, 219, .12);
-            border: 1px solid rgba(242, 237, 219, .25);
-            color: #F2EDDB;
+            background: rgba(var(--paper-deep-rgb), .12);
+            border: 1px solid rgba(var(--paper-deep-rgb), .25);
+            color: var(--text-on-brand);
             padding: 5px 10px;
             border-radius: 6px;
             font-size: 13px;
@@ -501,7 +520,7 @@
 
         .hdr-user {
             font-size: 11px;
-            color: rgba(242, 237, 219, .5);
+            color: var(--text-on-brand);
             font-weight: 500;
             white-space: nowrap
         }
@@ -519,7 +538,7 @@
 
         .save-ind.saving {
             opacity: 1;
-            color: #F2EDDB
+            color: var(--text-on-brand)
         }
 
         .save-ind.saved {
@@ -539,9 +558,9 @@
         }
 
         .date-btn {
-            background: rgba(242, 237, 219, .15);
-            border: 1px solid rgba(242, 237, 219, .4);
-            color: #F2EDDB;
+            background: rgba(var(--paper-deep-rgb), .15);
+            border: 1px solid rgba(var(--paper-deep-rgb), .4);
+            color: var(--text-on-brand);
             width: 28px;
             height: 28px;
             border-radius: 0;
@@ -554,7 +573,7 @@
         }
 
         .date-btn:hover {
-            background: rgba(242, 237, 219, .28)
+            background: rgba(var(--paper-deep-rgb), .28)
         }
 
         .date-lbl {
@@ -565,20 +584,26 @@
             cursor: pointer;
             padding: 3px 6px;
             border-radius: 5px;
-            border-bottom: 1px dashed rgba(242, 237, 219, .35);
+            border-bottom: 1px dashed rgba(var(--border-rgb), .35);
             transition: background .15s;
             font-family: inherit
         }
 
         .date-lbl:hover {
-            background: rgba(242, 237, 219, .12);
-            border-bottom-color: rgba(242, 237, 219, .8)
+            background: rgba(var(--paper-deep-rgb), .12);
+            border-bottom-color: rgba(var(--paper-deep-rgb), .8)
         }
 
+        /* Own background is paper-deep tinted over .hdr's ambient, which
+           differs sharply by theme: light composites to a medium blue where
+           neither white nor --text-primary clears 4.5:1 (needs a genuinely
+           dark value, verified 4.74:1); dark composites to a near-black
+           green where white already passes easily (11.66:1). Needs real
+           per-theme values, not one token for both — see body.dark below. */
         .date-input {
-            background: rgba(242, 237, 219, .15);
-            border: 1.5px solid rgba(242, 237, 219, .6);
-            color: #F2EDDB;
+            background: rgba(var(--paper-deep-rgb), .15);
+            border: 1.5px solid rgba(var(--paper-deep-rgb), .6);
+            color: #051F11;
             font-size: 13px;
             font-weight: 700;
             width: 120px;
@@ -590,13 +615,13 @@
         }
 
         .date-input::placeholder {
-            color: rgba(242, 237, 219, .4)
+            color: #051F11
         }
 
         .hdr-btn {
-            background: rgba(242, 237, 219, .12);
-            border: 1px solid rgba(242, 237, 219, .35);
-            color: #F2EDDB;
+            background: rgba(var(--paper-deep-rgb), .12);
+            border: 1px solid rgba(var(--paper-deep-rgb), .35);
+            color: var(--text-on-brand);
             padding: 4px 10px;
             border-radius: 0;
             font-size: 12px;
@@ -608,7 +633,7 @@
         }
 
         .hdr-btn:hover {
-            background: rgba(242, 237, 219, .28)
+            background: rgba(var(--paper-deep-rgb), .28)
         }
 
         /* Today button — 2-line: "TODAY" label + actual date */
@@ -635,13 +660,13 @@
             font-weight: 700;
             line-height: 1.2;
             white-space: nowrap;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
         }
 
         .hdr-icon-btn {
-            background: rgba(242, 237, 219, .12);
-            border: 1px solid rgba(242, 237, 219, .35);
-            color: #F2EDDB;
+            background: rgba(var(--paper-deep-rgb), .12);
+            border: 1px solid rgba(var(--paper-deep-rgb), .35);
+            color: var(--text-on-brand);
             width: 28px;
             height: 28px;
             border-radius: 0;
@@ -654,19 +679,19 @@
         }
 
         .hdr-icon-btn:hover {
-            background: rgba(242, 237, 219, .28)
+            background: rgba(var(--paper-deep-rgb), .28)
         }
 
         .hdr-cal-btn {
             position: relative;
             width: 44px;
             height: 40px;
-            border: 1px solid #F2EDDB;
+            border: 1px solid var(--paper-deep);
             padding: 0;
             cursor: pointer;
             border-radius: 0;
             overflow: hidden;
-            background: #F2EDDB;
+            background: var(--paper-deep);
             transition: opacity .15s;
             flex-shrink: 0
         }
@@ -685,7 +710,7 @@
             align-items: center;
             justify-content: center;
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             font-size: 8px;
             font-weight: 700;
             letter-spacing: .5px;
@@ -720,7 +745,7 @@
             align-items: center;
             justify-content: center;
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             font-size: 7px;
             font-weight: 700;
             letter-spacing: .4px;
@@ -732,7 +757,7 @@
             display: flex;
             border-radius: 0;
             overflow: hidden;
-            border: 1px solid rgba(242, 237, 219, .4)
+            border: 1px solid rgba(var(--border-rgb), .4)
         }
 
         .period-btn {
@@ -740,7 +765,7 @@
             background: transparent;
             border: none;
             border-radius: 0;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             font-size: 12px;
             font-weight: 700;
             font-family: inherit;
@@ -749,20 +774,20 @@
         }
 
         .period-btn.on {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: var(--brand-primary)
         }
 
         .period-btn:hover:not(.on) {
-            background: rgba(242, 237, 219, .15);
-            color: #F2EDDB
+            background: rgba(var(--paper-deep-rgb), .15);
+            color: var(--text-on-brand)
         }
 
         .view-tabs {
             display: flex;
             border-radius: 0;
             overflow: hidden;
-            border: 1px solid rgba(242, 237, 219, .4)
+            border: 1px solid rgba(var(--border-rgb), .4)
         }
 
         .vtab {
@@ -773,19 +798,19 @@
             font-family: inherit;
             background: transparent;
             border-radius: 0;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border: none;
             transition: all .15s
         }
 
         .vtab.on {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: var(--brand-primary)
         }
 
         .vtab:hover:not(.on) {
-            background: rgba(242, 237, 219, .15);
-            color: #F2EDDB
+            background: rgba(var(--paper-deep-rgb), .15);
+            color: var(--text-on-brand)
         }
 
         /* ── Patient count pill — small & subtle, provider-scoped ──
@@ -795,9 +820,9 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            background: rgba(242, 237, 219, .1);
-            border: 1px solid rgba(242, 237, 219, .25);
-            color: rgba(242, 237, 219, .75);
+            background: rgba(var(--paper-deep-rgb), .1);
+            border: 1px solid rgba(var(--paper-deep-rgb), .25);
+            color: var(--text-on-brand);
             padding: 3px 8px;
             border-radius: 10px;
             font-size: 10px;
@@ -809,8 +834,8 @@
         }
 
         .hdr-patient-pill:hover {
-            background: rgba(242, 237, 219, .22);
-            color: #F2EDDB;
+            background: rgba(var(--paper-deep-rgb), .22);
+            color: var(--text-on-brand);
         }
 
         /* ── Admin menu (Billing view, biller-only) — combines the old
@@ -1018,7 +1043,7 @@
             padding: 80px 0;
             flex-direction: column;
             gap: 14px;
-            color: #F2EDDB;
+            color: var(--text-primary);
             font-size: 14px
         }
 
@@ -1378,7 +1403,7 @@
         .pv-th {
             font-size: 10px;
             font-weight: 800;
-            color: rgba(242, 237, 219, .5);
+            color: var(--text-on-brand);
             text-transform: uppercase;
             letter-spacing: .9px
         }
@@ -1407,7 +1432,7 @@
          reads as its own complete bordered chip, still the same Solrei blue. */
             border: 3px solid #1C6FA3;
             border-radius: 0;
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: var(--brand-primary);
             cursor: pointer;
             transition: none;
@@ -1416,7 +1441,7 @@
 
         .pv-tab.on {
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border-color: #1C6FA3;
         }
 
@@ -1505,7 +1530,7 @@
         }
 
         .pv-post-direct:hover {
-            background: #F2EDDB;
+            background: var(--paper-deep);
         }
 
         /* Post-visit banner stat click (Signed / Pending / Paid) — highlights
@@ -1616,7 +1641,7 @@
         }
 
         .pv-notes-box {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             border: 1px solid var(--brand-primary);
         }
 
@@ -1735,18 +1760,18 @@
         }
 
         .pv-sign-btn.unsigned {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: var(--brand-primary)
         }
 
         .pv-sign-btn.unsigned:hover {
             background: var(--brand-primary);
-            color: #F2EDDB
+            color: var(--text-on-brand)
         }
 
         .pv-sign-btn.signed {
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             cursor: default;
         }
 
@@ -1842,7 +1867,7 @@
             display: inline-flex;
             align-items: center;
             background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary) 100%);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border-radius: 10px;
             padding: 8px 22px;
             font-size: 20px;
@@ -1899,7 +1924,7 @@
             position: sticky;
             top: 88px;
             z-index: 15;
-            background: #F2EDDB;
+            background: var(--paper-deep);
             border-bottom: 1px solid var(--brand-primary);
             padding: 8px 14px;
             margin-bottom: 10px
@@ -1912,7 +1937,7 @@
         .summary-date-pill {
             margin-left: auto;
             background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary) 100%);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border-radius: 10px;
             padding: 8px 22px;
             font-size: 20px;
@@ -2015,7 +2040,7 @@
             background: var(--brand-primary);
             font-size: 10px;
             font-weight: 800;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             letter-spacing: .3px;
             font-variant-numeric: tabular-nums
         }
@@ -2224,7 +2249,7 @@
 
         .rx-add-btn {
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border: none;
             padding: 7px 14px;
             border-radius: 6px;
@@ -2297,7 +2322,7 @@
         }
 
         .rx-chip-x {
-            background: rgba(242, 237, 219, .22);
+            background: rgba(var(--paper-deep-rgb), .22);
             border: none;
             color: #FFFFFF;
             width: 20px;
@@ -2315,7 +2340,7 @@
         }
 
         .rx-chip-x:hover {
-            background: rgba(242, 237, 219, .42)
+            background: rgba(var(--paper-deep-rgb), .42)
         }
 
         .rx-empty {
@@ -2474,7 +2499,7 @@
 
         .rx-b-edit-btn:hover {
             border-color: #3D768A;
-            background: #F2EDDB
+            background: var(--paper-deep)
         }
 
         .co-btn {
@@ -2513,7 +2538,7 @@
         }
 
         .wk-col {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             border-radius: 0;
             box-shadow: none;
             overflow: clip;
@@ -2708,7 +2733,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            background: #F2EDDB;
+            background: var(--paper-deep);
             border: 1px solid var(--brand-primary);
             border-radius: 0;
             color: var(--brand-primary);
@@ -2834,7 +2859,7 @@
             padding: 9px 10px 8px;
             cursor: pointer;
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             user-select: none;
             display: flex;
             align-items: center;
@@ -2849,12 +2874,19 @@
             background: #124A2C
         }
 
+        /* Neither .wk-today nor .wk-sel touch background in light mode, so
+           hover (dark green) can apply on top of any of them — the #051F11
+           base fix above fails here (2.45:1, dark-on-dark); needs white. */
+        .wk-col-hd:hover .wk-appt-count {
+            color: var(--text-on-brand)
+        }
+
         .wk-col.wk-today .wk-col-hd {
             border-bottom-color: #7494AA
         }
 
         .wk-col.wk-sel .wk-col-hd {
-            border-bottom-color: #F2EDDB
+            border-bottom-color: var(--border)
         }
 
         .wk-col-hd-left {
@@ -2866,7 +2898,7 @@
         .wk-dayname {
             font-size: 9px;
             font-weight: 800;
-            color: rgba(242, 237, 219, .7);
+            color: var(--text-on-brand);
             text-transform: uppercase;
             letter-spacing: .8px;
             line-height: 1
@@ -2875,7 +2907,7 @@
         .wk-daynum {
             font-size: 22px;
             font-weight: 900;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             line-height: 1.1
         }
 
@@ -2884,14 +2916,16 @@
         }
 
         .wk-col.wk-sel .wk-daynum {
-            color: #F2EDDB
+            color: var(--text-on-brand)
         }
 
+        /* Same paper-deep-over-.wk-col-hd composite issue as .date-input —
+           light needs a dark value (4.74:1), dark keeps white (11.66:1). */
         .wk-appt-count {
             font-size: 9px;
             font-weight: 700;
-            color: rgba(242, 237, 219, .75);
-            background: rgba(242, 237, 219, .15);
+            color: #051F11;
+            background: rgba(var(--paper-deep-rgb), .15);
             border-radius: 0;
             padding: 1px 6px;
             white-space: nowrap;
@@ -2967,8 +3001,8 @@
         }
 
         .wk-ci-total {
-            background: rgba(242, 237, 219, .13);
-            color: rgba(242, 237, 219, .65)
+            background: rgba(var(--paper-deep-rgb), .13);
+            color: var(--text-on-brand)
         }
 
         .wk-ci-unsub {
@@ -3192,7 +3226,7 @@
 
         .csb-amt-input:focus {
             border-color: var(--success);
-            background: #F2EDDB
+            background: var(--paper-deep)
         }
 
         .csb-amt-input::placeholder {
@@ -3214,7 +3248,7 @@
         }
 
         .csb-change-btn:hover {
-            background: #F2EDDB
+            background: var(--paper-deep)
         }
 
         .csb-status-menu {
@@ -3280,7 +3314,7 @@
         }
 
         .csb-sm-cancel:hover {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: var(--brand-primary)
         }
 
@@ -3703,7 +3737,7 @@
         }
 
         .cal-nav-btn {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             border: none;
             width: 28px;
             height: 28px;
@@ -3747,7 +3781,7 @@
         }
 
         .cal-d:hover {
-            background: #F2EDDB
+            background: var(--paper-deep)
         }
 
         .cal-d.cal-other {
@@ -3763,7 +3797,7 @@
 
         .cal-d.cal-sel {
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             font-weight: 800
         }
 
@@ -3808,13 +3842,13 @@
         .tbl-title {
             font-size: 15px;
             font-weight: 800;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             letter-spacing: .1px
         }
 
         .tbl-hint {
             font-size: 11px;
-            color: rgba(242, 237, 219, .55);
+            color: var(--text-on-brand);
             font-weight: 600
         }
 
@@ -3837,7 +3871,7 @@
 
         thead th {
             background: rgba(9, 55, 31, .92);
-            color: rgba(242, 237, 219, .65);
+            color: rgba(var(--text-on-brand-rgb), .65);
             padding: 9px 12px;
             text-align: left;
             font-weight: 900;
@@ -3880,7 +3914,7 @@
         }
 
         tbody tr:hover td {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             cursor: pointer
         }
 
@@ -3913,7 +3947,7 @@
         .uns-tag {
             display: inline-block;
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             padding: 2px 7px;
             border-radius: 0;
             font-size: 11px;
@@ -3933,7 +3967,7 @@
 
         .add-btn {
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border: 1px solid var(--brand-primary);
             padding: 8px 16px;
             border-radius: 0;
@@ -3957,7 +3991,7 @@
             align-items: center;
             gap: 10px;
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             padding: 7px 14px;
             border-radius: 0;
             font-size: 13px;
@@ -3967,14 +4001,14 @@
 
         .bulk-bar-count {
             font-size: 12px;
-            color: rgba(242, 237, 219, .8);
+            color: var(--text-on-brand);
             white-space: nowrap;
         }
 
         .bulk-bar select {
             background: #124A2C;
-            color: #F2EDDB;
-            border: 1px solid rgba(242, 237, 219, .3);
+            color: var(--text-on-brand);
+            border: 1px solid rgba(var(--border-rgb), .3);
             border-radius: 0;
             padding: 5px 10px;
             font-size: 12px;
@@ -3984,9 +4018,9 @@
         }
 
         .bulk-apply {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: var(--brand-primary);
-            border: 1px solid #F2EDDB;
+            border: 1px solid var(--paper-deep);
             padding: 6px 14px;
             border-radius: 0;
             font-size: 12px;
@@ -4011,8 +4045,8 @@
 
         .bulk-clear-btn {
             background: transparent;
-            color: rgba(242, 237, 219, .75);
-            border: 1px solid rgba(242, 237, 219, .3);
+            color: var(--text-on-brand);
+            border: 1px solid rgba(var(--border-rgb), .3);
             padding: 5px 10px;
             border-radius: 0;
             font-size: 12px;
@@ -4020,7 +4054,7 @@
         }
 
         .bulk-clear-btn:hover {
-            background: rgba(242, 237, 219, .12);
+            background: rgba(var(--paper-deep-rgb), .12);
             color: #FFFFFF;
         }
 
@@ -4040,7 +4074,7 @@
         }
 
         tbody tr.row-sel td {
-            background: #F2EDDB !important;
+            background: var(--paper-deep) !important;
         }
 
         tbody tr.row-sel:hover td {
@@ -4086,7 +4120,7 @@
         .void-archive-count {
             font-size: 10px;
             font-weight: 700;
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: #777355;
             border-radius: 0;
             padding: 1px 7px;
@@ -4142,7 +4176,7 @@
         .wk-appt.wk-void-audit {
             opacity: 0.45;
             background: transparent;
-            border: 1px dashed #F2EDDB;
+            border: 1px dashed var(--border);
             cursor: default;
             pointer-events: none;
             /* read-only — clicking navigates to the day anyway */
@@ -4252,7 +4286,7 @@
 
         .sub-btn.ready {
             background: var(--brand-primary);
-            color: #F2EDDB
+            color: var(--text-on-brand)
         }
 
         .sub-btn.ready:hover {
@@ -4267,7 +4301,7 @@
         }
 
         .sub-btn.plain {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: #777355
         }
 
@@ -4307,8 +4341,8 @@
         }
 
         .dp-alert-btn {
-            background: rgba(242, 237, 219, .2);
-            border: 1px solid rgba(242, 237, 219, .4);
+            background: rgba(var(--paper-deep-rgb), .2);
+            border: 1px solid rgba(var(--paper-deep-rgb), .4);
             color: #FFFFFF;
             padding: 5px 12px;
             border-radius: 6px;
@@ -4321,7 +4355,7 @@
         }
 
         .dp-alert-btn:hover {
-            background: rgba(242, 237, 219, .35)
+            background: rgba(var(--paper-deep-rgb), .35)
         }
 
         .dp-row {
@@ -4329,7 +4363,7 @@
             grid-template-columns: 160px minmax(80px, 200px) 140px auto;
             gap: 12px;
             padding: 12px 28px 12px 16px;
-            border-bottom: 1px solid #F2EDDB;
+            border-bottom: 1px solid var(--border);
             align-items: center;
             transition: background .1s
         }
@@ -4681,7 +4715,7 @@
             justify-content: space-between;
             align-items: flex-start;
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border-radius: 12px 12px 0 0;
             position: sticky;
             top: 0;
@@ -4703,7 +4737,7 @@
         .m-close {
             background: none;
             border: none;
-            color: rgba(242, 237, 219, .7);
+            color: var(--text-on-brand);
             font-size: 24px;
             cursor: pointer;
             line-height: 1;
@@ -4725,14 +4759,14 @@
             display: flex;
             gap: 9px;
             justify-content: flex-end;
-            background: #F2EDDB;
+            background: var(--paper-deep);
             border-radius: 0 0 12px 12px
         }
 
         .step {
             margin-bottom: 18px;
             padding-bottom: 18px;
-            border-bottom: 1px solid #F2EDDB
+            border-bottom: 1px solid var(--border)
         }
 
         .step:last-child {
@@ -4755,7 +4789,7 @@
 
         .step-num {
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             width: 19px;
             height: 19px;
             border-radius: 50%;
@@ -4855,7 +4889,7 @@
             display: flex;
             align-items: center;
             padding: 7px 0;
-            border-bottom: 1px solid #F2EDDB;
+            border-bottom: 1px solid var(--border);
             gap: 10px
         }
 
@@ -5035,7 +5069,7 @@
 
         .pim-hdr {
             background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary));
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             padding: 18px 20px 14px;
             border-radius: 16px 16px 0 0;
             display: flex;
@@ -5056,9 +5090,9 @@
         }
 
         .pim-close {
-            background: rgba(242, 237, 219, .15);
+            background: rgba(var(--paper-deep-rgb), .15);
             border: none;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             width: 32px;
             height: 32px;
             border-radius: 8px;
@@ -5071,7 +5105,7 @@
         }
 
         .pim-close:hover {
-            background: rgba(242, 237, 219, .28);
+            background: rgba(var(--paper-deep-rgb), .28);
         }
 
         .pim-body {
@@ -5173,7 +5207,7 @@
 
         .pim-foot {
             padding: 10px 18px 14px;
-            border-top: 1px solid #F2EDDB;
+            border-top: 1px solid var(--border);
             display: flex;
             justify-content: flex-end;
         }
@@ -5261,7 +5295,7 @@
 
         .cpt-sel-chip {
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             padding: 3px 9px;
             border-radius: 4px;
             font-size: 13px;
@@ -5447,7 +5481,7 @@
             border-radius: 8px;
             padding: 8px 11px;
             margin-bottom: 6px;
-            border: 1px solid #F2EDDB;
+            border: 1px solid var(--border);
             border-left: 3px solid #6B9E8A;
         }
 
@@ -5501,7 +5535,7 @@
 
         .btn-p {
             background: var(--brand-primary);
-            color: #F2EDDB
+            color: var(--text-on-brand)
         }
 
         .btn-p:hover {
@@ -5514,7 +5548,7 @@
         }
 
         .btn-s {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: #777355
         }
 
@@ -5591,7 +5625,7 @@
             cursor: pointer;
             font-size: 13px;
             color: var(--text-primary);
-            border-bottom: 1px solid #F2EDDB;
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -5603,7 +5637,7 @@
         }
 
         .ac-item:hover {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: var(--brand-primary)
         }
 
@@ -5623,7 +5657,7 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #F2EDDB
+            background: var(--paper-deep)
         }
 
         ::-webkit-scrollbar-thumb {
@@ -5752,7 +5786,7 @@
        find when needed. */
         .theme-toggle {
             background: transparent;
-            border: 1px solid rgba(242, 237, 219, .2);
+            border: 1px solid rgba(var(--border-rgb), .2);
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -5767,7 +5801,7 @@
         }
 
         .theme-toggle:hover {
-            background: rgba(242, 237, 219, .2);
+            background: rgba(var(--paper-deep-rgb), .2);
             opacity: 1
         }
 
@@ -5794,9 +5828,16 @@
             background: #051F11
         }
 
+        /* See the light-mode .date-input comment — dark's composite goes
+           near-black, so white (already the case here) is correct. */
+        body.dark .date-input,
+        body.dark .date-input::placeholder {
+            color: var(--text-on-brand)
+        }
+
         body.dark .hdr select {
-            background: rgba(242, 237, 219, .08);
-            border-color: rgba(242, 237, 219, .18);
+            background: rgba(var(--paper-deep-rgb), .08);
+            border-color: rgba(var(--paper-deep-rgb), .18);
             color: #D8D3BF
         }
 
@@ -5806,11 +5847,23 @@
 
         body.dark .psearch-row {
             background: rgba(9, 55, 31, .3);
-            border-color: rgba(242, 237, 219, .15)
+            border-color: rgba(var(--border-rgb), .15)
         }
 
         body.dark .psearch-input {
             color: #D8D3BF
+        }
+
+        /* .psearch-row's dark background (rgba(9,55,31,.3) over the unthemed
+           #FBFBF3 modal) composites to a light sage green — the opposite of
+           what the light-mode composite needs, so placeholder/clear require
+           a genuinely dark color here, not a lighter one. Verified 9.18:1. */
+        body.dark .psearch-input::placeholder {
+            color: #051F11
+        }
+
+        body.dark .psearch-clear {
+            color: #051F11
         }
 
         body.dark .psearch-results {
@@ -5832,12 +5885,12 @@
         }
 
         body.dark .period-btn {
-            color: rgba(242, 237, 219, .7)
+            color: var(--text-primary)
         }
 
         body.dark .period-btn.on {
-            background: rgba(242, 237, 219, .25);
-            color: #F2EDDB
+            background: rgba(var(--paper-deep-rgb), .25);
+            color: var(--text-primary)
         }
 
         /* Page / Summary bar */
@@ -6132,6 +6185,10 @@
             background: #051F11
         }
 
+        body.dark .wk-appt-count {
+            color: var(--text-on-brand)
+        }
+
         body.dark .wk-col.wk-today .wk-col-hd,
         body.dark .wk-hdr-row .wk-today {
             background: #1C6FA3
@@ -6142,9 +6199,25 @@
             background: var(--brand-primary)
         }
 
+        /* .wk-appt-count's own paper-deep tint means its real dark-mode
+           background differs by column state, not just theme. Base
+           .wk-col-hd (#051F11) keeps white (11.66:1, set above). Selected
+           composites to the same medium blue as light mode, needing the
+           same dark fix (4.74:1). Today composites to a third, tighter
+           dead zone (luminance ~.196) where nothing in the existing
+           palette clears 4.5:1 — verified pure black is the only value
+           that does (4.93:1), so it's used here as a one-off. */
+        body.dark .wk-col.wk-sel .wk-appt-count {
+            color: #051F11
+        }
+
+        body.dark .wk-col.wk-today .wk-appt-count {
+            color: #000000
+        }
+
         body.dark .wk-col {
             background: #051F11;
-            border-color: rgba(242, 237, 219, .05)
+            border-color: rgba(var(--border-rgb), .05)
         }
 
         body.dark .wk-col.wk-today {
@@ -6245,7 +6318,7 @@
         }
 
         body.dark .wk-empty {
-            color: rgba(242, 237, 219, .12)
+            color: rgba(var(--text-primary-rgb), .12)
         }
 
         body.dark .wk-copay.pay-coll {
@@ -6841,7 +6914,7 @@
         }
 
         .csm-edit-btn {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             border: 1.5px solid #FBFBF3;
             border-radius: 5px;
             padding: 3px 9px;
@@ -6909,7 +6982,7 @@
             display: flex;
             gap: 10px;
             justify-content: space-between;
-            background: #F2EDDB;
+            background: var(--paper-deep);
             border-radius: 0 0 12px 12px
         }
 
@@ -7011,7 +7084,7 @@
         }
 
         .b-card.b-card-baseline.b-card-direct:hover {
-            background: #F2EDDB;
+            background: var(--paper-deep);
         }
 
         .b-card.b-card-unsubmitted {
@@ -7147,7 +7220,7 @@
             align-items: center;
             gap: 5px;
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border-radius: 0;
             padding: 5px 11px;
             font-size: 11px;
@@ -7282,14 +7355,14 @@
 
         body.dark .b-card-open-hint {
             background: #3D768A;
-            color: #F2EDDB
+            color: var(--text-on-brand)
         }
 
         /* ── Claim Tracking & Payout section ─────────────────────────────────── */
         .csm-claim-wrap {
             border-radius: 10px;
             border: 1.5px solid #FBFBF3;
-            background: linear-gradient(135deg, #F2EDDB 0%, #FBFBF3 100%);
+            background: linear-gradient(135deg, var(--paper-deep) 0%, #FBFBF3 100%);
             padding: 14px 16px 16px;
             margin-top: 12px;
         }
@@ -7326,7 +7399,7 @@
         }
 
         .csm-claim-status-pill.st-none {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: #3D768A;
             border: 1px solid #FBFBF3
         }
@@ -7426,7 +7499,7 @@
         body.dark .csm-claim-notes {
             background: #051F11;
             border-color: #3D768A;
-            color: #F2EDDB
+            color: var(--text-primary)
         }
 
         body.dark .csm-claim-notes:focus {
@@ -7520,6 +7593,9 @@
             border-bottom-color: #2B2716
         }
 
+        /* Confirmed dead -- no JSX anywhere applies this class (checked
+           exhaustively; the only other reference is a code comment).
+           Left as literal #F2EDDB / rgba, both base and hover. */
         body.dark .modal-close {
             color: rgba(242, 237, 219, .55)
         }
@@ -7709,7 +7785,7 @@
 
         .cp-hdr {
             background: linear-gradient(135deg, #065F46, #065F46);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border-radius: 14px 14px 0 0;
             padding: 14px 18px;
             display: flex;
@@ -7729,9 +7805,9 @@
         }
 
         .cp-close {
-            background: rgba(242, 237, 219, .15);
+            background: rgba(var(--paper-deep-rgb), .15);
             border: none;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             font-size: 20px;
             cursor: pointer;
             border-radius: 8px;
@@ -7780,7 +7856,7 @@
 
         .cp-send-btn {
             background: linear-gradient(135deg, #065F46, #065F46);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border: none;
             border-radius: 8px;
             padding: 7px 14px;
@@ -7971,7 +8047,7 @@
             background: var(--ink-fill);
             border-radius: 10px 10px 0 0;
             padding: 0 20px;
-            border-bottom: 1px solid rgba(242, 237, 219, .08);
+            border-bottom: 1px solid rgba(var(--border-rgb), .08);
             overflow: hidden;
         }
 
@@ -8065,7 +8141,7 @@
 
         .pam-hdr {
             background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary));
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border-radius: 16px 16px 0 0;
             padding: 16px 20px 14px;
             display: flex;
@@ -8094,9 +8170,9 @@
         }
 
         .pam-close {
-            background: rgba(242, 237, 219, .15);
+            background: rgba(var(--paper-deep-rgb), .15);
             border: none;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             font-size: 20px;
             cursor: pointer;
             border-radius: 8px;
@@ -8141,13 +8217,13 @@
         }
 
         .pam-sec-hdr.rx-hdr {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: var(--brand-primary);
             border-bottom: 1.5px solid #FBFBF3;
         }
 
         .pam-sec-hdr.cpt-hdr {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: #1C6FA3;
             border-bottom: 1.5px solid #FBFBF3;
         }
@@ -8200,7 +8276,7 @@
             background: #FBFBF3;
             border-radius: 8px;
             padding: 8px 12px;
-            border-left: 3px solid #F2EDDB;
+            border-left: 3px solid var(--border);
             flex-shrink: 0;
         }
 
@@ -8238,7 +8314,7 @@
 
         .pam-send-btn {
             background: linear-gradient(135deg, #065F46, #065F46);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border: none;
             border-radius: 8px;
             padding: 7px 14px;
@@ -8316,7 +8392,7 @@
         /* 💬 button in Provider Day View */
         .pam-day-btn {
             background: transparent;
-            border: 1.5px solid #F2EDDB;
+            border: 1.5px solid var(--border);
             border-radius: 8px;
             cursor: pointer;
             color: var(--text-primary);
@@ -8363,7 +8439,7 @@
          ProviderView) since each view has a different number of FAB buttons */
             z-index: 140;
             background: #065F46;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border: none;
             border-radius: 0;
             padding: 10px 20px;
@@ -8425,7 +8501,7 @@
 
         .pt-fab.open {
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
         }
 
         .pt-fab.open:hover {
@@ -8526,7 +8602,7 @@
         }
 
         .nb-close-btn {
-            background: rgba(242, 237, 219, .18);
+            background: rgba(var(--paper-deep-rgb), .18);
             border: none;
             border-radius: 7px;
             padding: 7px 14px;
@@ -8538,7 +8614,7 @@
         }
 
         .nb-close-btn:hover {
-            background: rgba(242, 237, 219, .28);
+            background: rgba(var(--paper-deep-rgb), .28);
         }
 
         .nb-filter-bar {
@@ -8743,7 +8819,7 @@
             right: 442px;
             z-index: 140;
             background: #065F46;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border: none;
             border-radius: 0;
             padding: 10px 20px;
@@ -8807,7 +8883,7 @@
             letter-spacing: .4px;
         }
         .af-close-btn {
-            background: rgba(242, 237, 219, .18);
+            background: rgba(var(--paper-deep-rgb), .18);
             border: none;
             border-radius: 7px;
             padding: 7px 14px;
@@ -8823,7 +8899,7 @@
             gap: 8px;
         }
         .af-refresh-btn {
-            background: rgba(242, 237, 219, .18);
+            background: rgba(var(--paper-deep-rgb), .18);
             border: none;
             border-radius: 7px;
             padding: 7px 14px;
@@ -8844,7 +8920,7 @@
             align-items: flex-end;
             gap: 24px;
             flex-wrap: wrap;
-            border-bottom: 1px solid rgba(242, 237, 219, .15);
+            border-bottom: 1px solid rgba(var(--border-rgb), .15);
         }
         .af-toolbar-zone {
             display: flex;
@@ -8856,7 +8932,7 @@
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: .4px;
-            color: rgba(242, 237, 219, .55);
+            color: var(--text-on-brand);
         }
         .af-toolbar-fields {
             display: flex;
@@ -8874,13 +8950,13 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: .3px;
-            color: rgba(242, 237, 219, .55);
+            color: var(--text-on-brand);
         }
         .af-toolbar-clear-wrap {
             margin-left: auto;
         }
         .af-toolbar-clear-btn {
-            background: rgba(242, 237, 219, .18);
+            background: rgba(var(--paper-deep-rgb), .18);
             border: none;
             border-radius: 7px;
             padding: 6px 12px;
@@ -8902,10 +8978,10 @@
             font-size: 14px;
         }
         .af-row-wrap {
-            border-bottom: 1px solid #F2EDDB;
+            border-bottom: 1px solid var(--border);
         }
         .af-day-section {
-            border-bottom: 8px solid #F2EDDB;
+            border-bottom: 8px solid var(--border);
         }
         .af-day-hdr {
             padding: 14px 18px 8px;
@@ -8919,7 +8995,7 @@
             letter-spacing: .2px;
         }
         .af-list-block {
-            border-bottom: 1px solid #F2EDDB;
+            border-bottom: 1px solid var(--border);
         }
         .af-row {
             display: grid;
@@ -9028,7 +9104,7 @@
             background: var(--brand-primary);
             padding: 6px 12px;
             text-align: left;
-            color: rgba(242, 237, 219, .85);
+            color: var(--text-on-brand);
             font-weight: 700;
             font-size: 10px;
             text-transform: uppercase;
@@ -9045,7 +9121,7 @@
             color: var(--text-primary);
         }
         .af-rate-table tbody tr:nth-child(even) {
-            background: #F2EDDB;
+            background: var(--paper-deep);
         }
         .af-rate-cell {
             text-align: right;
@@ -9195,7 +9271,7 @@
         .af-detail {
             padding: 12px 18px 18px 48px;
             background: #FBFBF3;
-            border-bottom: 1px solid #F2EDDB;
+            border-bottom: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -9224,7 +9300,7 @@
             border-radius: 4px;
         }
         .af-detail-row-nav:hover {
-            background: #F2EDDB;
+            background: var(--paper-deep);
         }
         .af-detail-label {
             font-size: 10px;
@@ -9419,7 +9495,7 @@
             right: 846px;
             z-index: 140;
             background: #3D768A;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border: none;
             border-radius: 0;
             padding: 10px 20px;
@@ -9491,7 +9567,7 @@
 
         .bfab-btn.open {
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
         }
 
         .bfab-btn.open:hover {
@@ -9529,7 +9605,7 @@
         .bc-panel-hdr {
             padding: 12px 16px;
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border-radius: 10px 10px 0 0;
             font-size: 13px;
             font-weight: 800;
@@ -9552,7 +9628,7 @@
         .bc-close-btn {
             background: none;
             border: none;
-            color: rgba(242, 237, 219, .65);
+            color: var(--text-on-brand);
             cursor: pointer;
             font-size: 20px;
             line-height: 1;
@@ -9582,7 +9658,7 @@
             align-items: center;
             gap: 10px;
             padding: 10px 16px;
-            border-bottom: 1px solid #F2EDDB;
+            border-bottom: 1px solid var(--border);
         }
 
         .bc-row:last-child {
@@ -9688,7 +9764,7 @@
         }
 
         body.dark .bc-row-fullname {
-            color: #F2EDDB;
+            color: var(--text-primary);
         }
 
         body.dark .bc-btn {
@@ -9781,8 +9857,8 @@
         }
 
         .cl-filter-select {
-            background: rgba(242, 237, 219, .15);
-            border: 1px solid rgba(242, 237, 219, .3);
+            background: rgba(var(--paper-deep-rgb), .15);
+            border: 1px solid rgba(var(--paper-deep-rgb), .3);
             color: #FFFFFF;
             border-radius: 0;
             padding: 5px 10px;
@@ -9802,8 +9878,8 @@
             display: flex;
             align-items: center;
             gap: 0;
-            background: rgba(242, 237, 219, .15);
-            border: 1px solid rgba(242, 237, 219, .3);
+            background: rgba(var(--paper-deep-rgb), .15);
+            border: 1px solid rgba(var(--paper-deep-rgb), .3);
             border-radius: 0;
             overflow: hidden;
             padding: 0 8px;
@@ -9828,14 +9904,14 @@
         }
 
         .cl-search-input::placeholder {
-            color: rgba(242, 237, 219, .55);
+            color: var(--text-on-brand);
             font-weight: 500
         }
 
         .cl-search-clear {
             background: none;
             border: none;
-            color: rgba(242, 237, 219, .7);
+            color: var(--text-on-brand);
             font-size: 11px;
             cursor: pointer;
             padding: 0 2px;
@@ -9848,8 +9924,8 @@
         }
 
         .cl-close-btn {
-            background: rgba(242, 237, 219, .15);
-            border: 1px solid rgba(242, 237, 219, .3);
+            background: rgba(var(--paper-deep-rgb), .15);
+            border: 1px solid rgba(var(--paper-deep-rgb), .3);
             color: #FFFFFF;
             border-radius: 0;
             padding: 6px 14px;
@@ -9861,7 +9937,7 @@
         }
 
         .cl-close-btn:hover {
-            background: rgba(242, 237, 219, .3)
+            background: rgba(var(--paper-deep-rgb), .3)
         }
 
         .cl-stats {
@@ -9869,7 +9945,7 @@
             align-items: center;
             gap: 16px;
             padding: 10px 20px;
-            background: #F2EDDB;
+            background: var(--paper-deep);
             border-bottom: 1px solid #FBFBF3;
             flex-wrap: wrap;
         }
@@ -9938,7 +10014,7 @@
         }
 
         .cl-carrier-count {
-            background: rgba(242, 237, 219, .18);
+            background: rgba(var(--paper-deep-rgb), .18);
             border-radius: 0;
             padding: 2px 10px;
             font-size: 10px;
@@ -10002,7 +10078,7 @@
             position: sticky;
             top: 0;
             z-index: 3;
-            box-shadow: 0 1.5px 0 #F2EDDB, 0 2px 6px rgba(9, 55, 31, .07);
+            box-shadow: 0 1.5px 0 var(--border), 0 2px 6px rgba(9, 55, 31, .07);
         }
 
         .cl-table thead th:last-child {
@@ -10028,7 +10104,7 @@
         }
 
         .cl-table tbody tr:hover {
-            background: #F2EDDB
+            background: var(--paper-deep)
         }
 
         .cl-table tbody td {
@@ -10111,7 +10187,7 @@
         }
 
         .cl-cpt-chip {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             color: #3D768A;
             border-radius: 0;
             padding: 1px 6px;
@@ -10120,7 +10196,7 @@
         }
 
         .cl-complete .cl-cpt-chip {
-            background: rgba(242, 237, 219, .45);
+            background: rgba(var(--paper-deep-rgb), .45);
             color: var(--brand-primary)
         }
 
@@ -10229,7 +10305,7 @@
         }
 
         .cl-complete .cl-bundle-badge {
-            background: rgba(242, 237, 219, .45);
+            background: rgba(var(--paper-deep-rgb), .45);
             color: var(--brand-primary)
         }
 
@@ -10399,6 +10475,11 @@
             border-color: rgba(99, 102, 241, .30)
         }
 
+        /* Ambient background undeterminable: reused across 5+ different <td>
+           contexts in the claims table (cl-td-sub, cl-td-check, cl-td-dep,
+           status column, copay column), each with its own ancestor chain —
+           beyond reasonable static analysis depth. Left as literal #F2EDDB
+           pending live verification. */
         .cl-none {
             color: #F2EDDB;
             font-size: 11px;
@@ -10469,7 +10550,7 @@
 
 
         .cl-footer {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             border-top: 1px solid #FBFBF3;
             border-radius: 0;
             padding: 10px 20px;
@@ -10535,7 +10616,7 @@
         body.dark .cl-table thead th {
             background: #1C6FA3;
             color: #777355;
-            border-right-color: rgba(242, 237, 219, .07);
+            border-right-color: rgba(var(--border-rgb), .07);
             box-shadow: 0 1.5px 0 #1C6FA3, 0 2px 6px rgba(9, 55, 31, .25)
         }
 
@@ -10565,7 +10646,7 @@
 
         body.dark .cl-table td {
             color: #D8D3BF;
-            border-right-color: rgba(242, 237, 219, .06)
+            border-right-color: rgba(var(--border-rgb), .06)
         }
 
         body.dark .cl-table td:last-child {
@@ -10593,6 +10674,11 @@
             color: #FBFBF3
         }
 
+        /* Ambient background undeterminable: same .cl-td-sub parent as
+           .cl-none below (no background of its own); resolving further
+           requires tracing the enclosing claims table/row, beyond
+           reasonable static analysis depth. Left as literal #F2EDDB
+           pending live verification. */
         body.dark .cl-sub-main {
             color: #F2EDDB
         }
@@ -10601,6 +10687,9 @@
             color: #777355
         }
 
+        /* Ambient background undeterminable: same .cl-td-check/.cl-td-dep
+           pattern as .cl-sub-main above. Left as literal #F2EDDB pending
+           live verification. */
         body.dark .cl-check-main {
             color: #F2EDDB
         }
@@ -10691,7 +10780,7 @@
 
         .mtm-btn {
             background: var(--brand-primary);
-            color: #F2EDDB;
+            color: var(--text-on-brand);
             border: none;
             border-radius: 0;
             padding: 13px 20px;
@@ -10734,7 +10823,7 @@
         }
 
         .mtm-item.on {
-            background: #F2EDDB;
+            background: var(--paper-deep);
         }
 
         /* ══════════════════════════════════════════════════════════════
@@ -10913,10 +11002,10 @@
             .hdr-mobile-role-pill {
                 font-size: 8px;
                 font-weight: 800;
-                background: rgba(242, 237, 219, .15);
+                background: rgba(var(--paper-deep-rgb), .15);
                 padding: 1px 6px;
                 border-radius: 10px;
-                color: #F2EDDB;
+                color: var(--text-on-brand);
                 letter-spacing: .5px;
                 text-transform: uppercase;
             }
@@ -10924,7 +11013,7 @@
             .hdr-mobile-subline {
                 font-size: 8px;
                 font-weight: 700;
-                color: rgba(242, 237, 219, .7);
+                color: var(--text-on-brand);
                 white-space: nowrap;
             }
 
@@ -10936,7 +11025,7 @@
             }
 
             .vtab-mobile {
-                border: 1px solid rgba(242, 237, 219, .4);
+                border: 1px solid rgba(var(--border-rgb), .4);
                 border-radius: 0;
                 padding: 4px 6px;
                 font-size: 9px;
@@ -10954,9 +11043,9 @@
                 width: 24px;
                 height: 24px;
                 border-radius: 0;
-                border: 1px solid rgba(242, 237, 219, .4);
-                background: rgba(242, 237, 219, .08);
-                color: #F2EDDB;
+                border: 1px solid rgba(var(--paper-deep-rgb), .4);
+                background: rgba(var(--paper-deep-rgb), .08);
+                color: var(--text-on-brand);
                 font-size: 13px;
                 font-weight: 800;
                 line-height: 1;
@@ -10991,7 +11080,7 @@
                 font-weight: 800;
                 text-transform: uppercase;
                 letter-spacing: .5px;
-                color: rgba(242, 237, 219, .6);
+                color: var(--text-on-brand);
                 flex: 0 0 100%;
             }
 
@@ -11277,8 +11366,8 @@
        source tags, and status badges.
        ══════════════════════════════════════════════════════════════ */
         .pt-filters-btn {
-            background: rgba(242, 237, 219, .15);
-            border: 1px solid rgba(242, 237, 219, .3);
+            background: rgba(var(--paper-deep-rgb), .15);
+            border: 1px solid rgba(var(--paper-deep-rgb), .3);
             color: #FFFFFF;
             border-radius: 0;
             padding: 6px 14px;
@@ -11290,7 +11379,7 @@
         }
 
         .pt-filters-btn:hover {
-            background: rgba(242, 237, 219, .3)
+            background: rgba(var(--paper-deep-rgb), .3)
         }
 
         .pt-filters-btn.active {
@@ -11300,7 +11389,7 @@
         }
 
         .pt-filters-row {
-            background: #F2EDDB;
+            background: var(--paper-deep);
             border-bottom: 1px solid #FBFBF3;
             padding: 12px 20px;
             display: grid;
@@ -11373,7 +11462,7 @@
             position: sticky;
             top: 0;
             z-index: 3;
-            box-shadow: 0 1.5px 0 #F2EDDB, 0 2px 6px rgba(9, 55, 31, .07);
+            box-shadow: 0 1.5px 0 var(--border), 0 2px 6px rgba(9, 55, 31, .07);
         }
 
         .pt-table thead th:last-child {
@@ -11410,7 +11499,7 @@
         }
 
         .pt-table tbody tr:hover {
-            background: #F2EDDB
+            background: var(--paper-deep)
         }
 
         /* Future-dated appointments (within the 5-day forward window) — a
@@ -11501,7 +11590,7 @@
         }
 
         body.dark .pt-field label {
-            color: #F2EDDB;
+            color: var(--text-primary);
             opacity: .65
         }
 
@@ -11509,12 +11598,12 @@
         body.dark .pt-field select {
             background: var(--brand-primary);
             border-color: #3D768A;
-            color: #F2EDDB;
+            color: var(--text-on-brand);
         }
 
         body.dark .pt-table thead th {
             background: #051F11;
-            color: #F2EDDB;
+            color: var(--text-primary);
             opacity: .85;
             box-shadow: 0 1.5px 0 #051F11, 0 2px 6px rgba(0, 0, 0, .25)
         }
@@ -11533,11 +11622,11 @@
 
         body.dark .pt-table tbody td {
             border-bottom-color: var(--brand-primary);
-            color: #F2EDDB
+            color: var(--text-primary)
         }
 
         body.dark .pt-patient {
-            color: #F2EDDB
+            color: var(--text-primary)
         }
 
         /* .pt-tag.auto (Teal) and .pt-tag.legacy (Gold) stay legible against a
@@ -11545,7 +11634,7 @@
        a lighter dark-mode color the same way every other Forest-on-light
        pairing in this file gets one. */
         body.dark .pt-tag.manual {
-            color: #F2EDDB
+            color: var(--text-primary)
         }
     </style>
 </head>
@@ -13411,12 +13500,12 @@
                             {/* ── SECTION 2: INTAKE CHECKLIST ── */}
                             <div className="step">
                                 <div className="step-hd"><span className="step-num">2</span> Intake Checklist</div>
-                                <div style={{ background: '#FBFBF3', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid #F2EDDB' }}>
+                                <div style={{ background: '#FBFBF3', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid var(--border)' }}>
                                     <div style={{ fontSize: 11, fontWeight: 800, color: '#777355', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 4 }}>Required Items</div>
                                     <RadioRow label="Intake Paperwork Complete" field="intake" req onChange={v => updRequired('intake', v)} />
                                     <RadioRow label="Insurance Verified &amp; Valid" field="ins" req onChange={v => updRequired('ins', v)} />
                                     <RadioRow label="Autopay / Credit Card on File" field="autopay" req onChange={v => updRequired('autopay', v)} />
-                                    <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #F2EDDB' }}>
+                                    <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
                                         <div style={{ fontSize: 11, fontWeight: 800, color: '#777355', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
                                             ⚠️ Issue Notes
                                             <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--warning)', textTransform: 'none', letterSpacing: 0 }}>— reason for any Issue designation</span>
@@ -13430,7 +13519,7 @@
                                         />
                                     </div>
                                 </div>
-                                <div style={{ background: '#FBFBF3', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid #F2EDDB' }}>
+                                <div style={{ background: '#FBFBF3', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid var(--border)' }}>
                                     <div style={{ fontSize: 11, fontWeight: 800, color: '#777355', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 4 }}>Screeners</div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                                         <label className="fl" style={{ margin: 0 }}>Date Administered</label>
@@ -13490,7 +13579,7 @@
                                             </div>
                                         );
                                     })}
-                                    <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #F2EDDB' }}>
+                                    <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
                                         <div style={{ fontSize: 11, fontWeight: 800, color: '#777355', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
                                             📝 Provider Notes
                                         </div>
@@ -13503,7 +13592,7 @@
                                         />
                                     </div>
                                 </div>
-                                <div style={{ background: '#FBFBF3', borderRadius: 8, padding: '8px 12px', border: '1px solid #F2EDDB' }}>
+                                <div style={{ background: '#FBFBF3', borderRadius: 8, padding: '8px 12px', border: '1px solid var(--border)' }}>
                                     <div style={{ fontSize: 11, fontWeight: 800, color: '#777355', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 6 }}>Credit Card on File in Tebra</div>
                                     <div className="ropt" style={{ gap: 16, fontSize: 14 }}>
                                         {[['Y', 'Yes ✓'], ['N', 'No ✗'], ['', 'Not Checked ?']].map(([v, l]) => (
@@ -13936,7 +14025,7 @@
                             <div className="pam-section">
                                 <div className="pam-sec-hdr rx-hdr">
                                     💊 Controlled Substances Prescribed
-                                    {rxMeds.length > 0 && <span style={{ background: '#F2EDDB', color: 'var(--brand-primary)', borderRadius: 20, padding: '1px 8px', fontSize: 10, fontWeight: 900 }}>{rxMeds.length}</span>}
+                                    {rxMeds.length > 0 && <span style={{ background: 'var(--paper-deep)', color: 'var(--brand-primary)', borderRadius: 20, padding: '1px 8px', fontSize: 10, fontWeight: 900 }}>{rxMeds.length}</span>}
                                 </div>
                                 <div className="pam-sec-body">
                                     <div className="pam-rx-list">
@@ -13983,7 +14072,7 @@
                                         ) : (
                                             <button
                                                 className="btn btn-sm"
-                                                style={{ background: 'var(--brand-primary)', color: '#F2EDDB', padding: '8px 22px', fontSize: 14, fontWeight: 800, border: 'none', borderRadius: 0, cursor: 'pointer' }}
+                                                style={{ background: 'var(--brand-primary)', color: 'var(--text-on-brand)', padding: '8px 22px', fontSize: 14, fontWeight: 800, border: 'none', borderRadius: 0, cursor: 'pointer' }}
                                                 onClick={() => setOut(true)}>
                                                 ✍ Mark Note Signed
                                             </button>
@@ -13997,7 +14086,7 @@
                             <button className="btn btn-s" onClick={onClose}>Cancel</button>
                             <button
                                 className="btn"
-                                style={{ background: 'linear-gradient(135deg,var(--brand-primary),var(--brand-primary))', color: '#F2EDDB', border: 'none', borderRadius: 8, padding: '8px 20px', fontWeight: 800, cursor: 'pointer' }}
+                                style={{ background: 'linear-gradient(135deg,var(--brand-primary),var(--brand-primary))', color: 'var(--text-on-brand)', border: 'none', borderRadius: 8, padding: '8px 20px', fontWeight: 800, cursor: 'pointer' }}
                                 onClick={handleSave}>
                                 Save
                             </button>
@@ -14184,7 +14273,7 @@
                             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
                                 {canEdit
                                     ? <span className="nb-role-tag">✏ Assistant — can update</span>
-                                    : <span className="nb-role-tag" style={{ background: '#F2EDDB', color: '#3D768A' }}>👁 Read-only</span>}
+                                    : <span className="nb-role-tag" style={{ background: 'var(--paper-deep)', color: '#3D768A' }}>👁 Read-only</span>}
                             </div>
                         </div>
 
@@ -16501,7 +16590,7 @@
                         <div className="pim-foot">
                             <button
                                 className="btn"
-                                style={{ background: 'linear-gradient(135deg,var(--brand-primary),var(--brand-primary))', color: '#F2EDDB', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 800, cursor: 'pointer', fontSize: 14 }}
+                                style={{ background: 'linear-gradient(135deg,var(--brand-primary),var(--brand-primary))', color: 'var(--text-on-brand)', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 800, cursor: 'pointer', fontSize: 14 }}
                                 onClick={onClose}>
                                 Close
                             </button>
@@ -17242,7 +17331,7 @@
                 <div style={{ margin: '6px 0', padding: '8px 12px', background: '#FBFBF3', border: '1px solid #FBFBF3', borderRadius: '7px', fontSize: '.75rem' }}>
                     {loading && <span style={{ color: '#777355' }}>Checking best channel…</span>}
                     {data && data.mapped && data.overall_best_channel && (() => {
-                        const c = C[data.overall_best_channel] || { bg: '#FBFBF3', bd: '#F2EDDB', tx: 'var(--ink-fill)', lb: data.overall_best_channel };
+                        const c = C[data.overall_best_channel] || { bg: '#FBFBF3', bd: 'var(--border)', tx: 'var(--ink-fill)', lb: data.overall_best_channel };
                         const total = (data.channel_totals || {})[data.overall_best_channel];
                         return <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#777355', textTransform: 'uppercase', letterSpacing: '.5px' }}>💰 Best rate:</span>
@@ -18707,7 +18796,7 @@
                                                     'Alma': { bg: '#0C4A34', bd: '#0C4A34', tx: '#FFFFFF', lb: 'ALMA' },
                                                     'Grow Therapy': { bg: '#B06D12', bd: '#B06D12', tx: '#FFFFFF', lb: 'GROW' },
                                                 };
-                                                const c = C[ch] || { bg: '#FBFBF3', bd: '#F2EDDB', tx: 'var(--ink-fill)', lb: ch };
+                                                const c = C[ch] || { bg: '#FBFBF3', bd: 'var(--border)', tx: 'var(--ink-fill)', lb: ch };
                                                 const r99 = (bestChannel.cpt_results || []).find(r => r.cpt_code === '99214');
                                                 return (
                                                     <div>
@@ -19332,7 +19421,7 @@
                                         </div>
                                         <div>
                                             {info.paymentType
-                                                ? <span style={{ background: fromRec ? '#E9F1F4' : '#F2EDDB', color: fromRec ? '#3D768A' : 'var(--text-primary)', padding: '2px 8px', borderRadius: 5, fontWeight: 700, fontSize: 12 }}>
+                                                ? <span style={{ background: fromRec ? '#E9F1F4' : 'var(--paper-deep)', color: fromRec ? '#3D768A' : 'var(--text-primary)', padding: '2px 8px', borderRadius: 5, fontWeight: 700, fontSize: 12 }}>
                                                     {info.paymentType}{fromRec && <span style={{ fontSize: 9, marginLeft: 4, opacity: .7 }}>↑ record</span>}
                                                 </span>
                                                 : <span style={{ fontSize: 11, color: '#FBFBF3', fontStyle: 'italic' }}>No type set</span>}
@@ -19793,7 +19882,7 @@
             }
 
             const IND = 'var(--brand-primary)'; // indigo
-            const IND_LT = '#F2EDDB';
+            const IND_LT = 'var(--paper-deep)';
 
             return (
                 <div style={{
@@ -19830,7 +19919,7 @@
                                     style={{
                                         border: `2.5px dashed ${dragOver ? IND : '#FBFBF3'}`, borderRadius: 10,
                                         padding: '38px 20px', textAlign: 'center', cursor: 'pointer',
-                                        background: dragOver ? IND_LT : '#F2EDDB', transition: 'all .15s'
+                                        background: dragOver ? IND_LT : 'var(--paper-deep)', transition: 'all .15s'
                                     }}>
                                     <div style={{ fontSize: 40, marginBottom: 8 }}>📂</div>
                                     <div style={{ fontWeight: 800, color: IND, fontSize: 15 }}>Drag & Drop your import file here</div>
@@ -20326,13 +20415,13 @@
                                         display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                                     }}>
                                         <div>
-                                            <div style={{ color: '#F2EDDB', fontWeight: 800, fontSize: 15 }}>💰 Best Billing Channel</div>
-                                            <div style={{ color: 'rgba(242,237,219,.7)', fontSize: 11, marginTop: 2 }}>
+                                            <div style={{ color: 'var(--text-on-brand)', fontWeight: 800, fontSize: 15 }}>💰 Best Billing Channel</div>
+                                            <div style={{ color: 'var(--text-on-brand)', fontSize: 11, marginTop: 2 }}>
                                                 <PatientName name={a.patient} state={a.patientState} /> · {info.insurance || 'No carrier'}
                                             </div>
                                         </div>
                                         <button onClick={e => { e.stopPropagation(); setBestRateOpen(false); }}
-                                            style={{ background: 'none', border: 'none', color: 'rgba(242,237,219,.7)', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>×</button>
+                                            style={{ background: 'none', border: 'none', color: 'var(--text-on-brand)', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>×</button>
                                     </div>
                                     <div style={{ padding: '16px 18px' }}>
                                         {bestRateLoading && <div style={{ textAlign: 'center', color: '#777355', padding: '24px 0' }}>Checking rates…</div>}
@@ -20350,7 +20439,7 @@
                                                 </div>
                                             );
                                             const ch = bestRateData.overall_best_channel;
-                                            const c = C[ch] || { bg: '#F2EDDB', bd: '#FBFBF3', tx: 'var(--ink-fill)', lb: ch };
+                                            const c = C[ch] || { bg: 'var(--paper-deep)', bd: '#FBFBF3', tx: 'var(--ink-fill)', lb: ch };
                                             return (
                                                 <>
                                                     <div style={{
@@ -20363,12 +20452,12 @@
                                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                                         <thead>
                                                             <tr style={{ background: 'var(--brand-primary)' }}>
-                                                                <th style={{ padding: '6px 8px', textAlign: 'left', color: 'rgba(242,237,219,.8)', fontWeight: 700, fontSize: 11 }}>CPT</th>
+                                                                <th style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-on-brand)', fontWeight: 700, fontSize: 11 }}>CPT</th>
                                                                 {['Clinic Submit', 'Headway', 'Alma', 'Grow Therapy'].map(ch2 => {
                                                                     const labels = { 'Clinic Submit': 'CLINIC', 'Headway': 'HEADWAY', 'Alma': 'ALMA', 'Grow Therapy': 'GROW' };
-                                                                    return <th key={ch2} style={{ padding: '6px 8px', textAlign: 'right', color: '#F2EDDB', fontWeight: 700, fontSize: 11 }}>{labels[ch2]}</th>;
+                                                                    return <th key={ch2} style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-on-brand)', fontWeight: 700, fontSize: 11 }}>{labels[ch2]}</th>;
                                                                 })}
-                                                                <th style={{ padding: '6px 8px', textAlign: 'right', color: 'rgba(242,237,219,.55)', fontWeight: 700, fontSize: 11 }}>MED</th>
+                                                                <th style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-on-brand)', fontWeight: 700, fontSize: 11 }}>MED</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -20376,7 +20465,7 @@
                                                                 const rates = { 'Clinic Submit': row.clinic_rate, 'Headway': row.headway_rate, 'Alma': row.alma_rate, 'Grow Therapy': row.grow_rate };
                                                                 const maxRate = Math.max(...Object.values(rates).filter(v => v != null));
                                                                 return (
-                                                                    <tr key={row.cpt_code} style={{ background: i % 2 === 0 ? '#FBFBF3' : '#F2EDDB', borderBottom: '1px solid #FBFBF3' }}>
+                                                                    <tr key={row.cpt_code} style={{ background: i % 2 === 0 ? '#FBFBF3' : 'var(--paper-deep)', borderBottom: '1px solid #FBFBF3' }}>
                                                                         <td style={{ padding: '7px 8px', fontWeight: 800, color: 'var(--text-primary)' }}>{row.cpt_code}</td>
                                                                         {['Clinic Submit', 'Headway', 'Alma', 'Grow Therapy'].map(ch2 => {
                                                                             const rate = rates[ch2];
@@ -20401,7 +20490,7 @@
                                                             })}
                                                         </tbody>
                                                         <tfoot>
-                                                            <tr style={{ borderTop: '2px solid var(--brand-primary)', background: '#F2EDDB' }}>
+                                                            <tr style={{ borderTop: '2px solid var(--brand-primary)', background: 'var(--paper-deep)' }}>
                                                                 <td style={{
                                                                     padding: '8px 8px', fontWeight: 800, color: 'var(--text-primary)', fontSize: 11,
                                                                     textTransform: 'uppercase', letterSpacing: '.5px'
@@ -20425,7 +20514,7 @@
                                                         </tfoot>
                                                     </table>
                                                     <div style={{
-                                                        marginTop: 12, padding: '8px 12px', background: '#F2EDDB', borderRadius: 0,
+                                                        marginTop: 12, padding: '8px 12px', background: 'var(--paper-deep)', borderRadius: 0,
                                                         fontSize: 11, color: '#777355', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap'
                                                     }}>
                                                         <span>Current method:</span>
@@ -20486,7 +20575,7 @@
                                         'Alma': { bg: '#0C4A34', bd: '#0C4A34', tx: '#FFFFFF', lb: 'ALMA' },
                                         'Grow Therapy': { bg: '#B06D12', bd: '#B06D12', tx: '#FFFFFF', lb: 'GROW' },
                                     };
-                                    const bc = BC[savedChannel.channel] || { bg: '#FBFBF3', bd: '#F2EDDB', tx: 'var(--ink-fill)', lb: savedChannel.channel };
+                                    const bc = BC[savedChannel.channel] || { bg: '#FBFBF3', bd: 'var(--border)', tx: 'var(--ink-fill)', lb: savedChannel.channel };
                                     const rate = savedChannel.rate ? parseFloat(savedChannel.rate) : null;
                                     return (
                                         <div style={{ marginTop: 4 }}>
@@ -20500,7 +20589,7 @@
                                     ? <div className="b-zero-copay-badge">💚 $0 Copay</div>
                                     : (info.portion || info.rate) && (
                                         <div style={{ fontSize: 12, color: isSubmitted ? (isPaid ? 'var(--success)' : '#EAF1F1') : '#777355', marginTop: 2 }}>
-                                            {info.portion && <span style={{ background: isSubmitted ? '#FBFBF3' : '#F2EDDB', border: isSubmitted ? '1px solid var(--brand-primary)' : 'none', color: isSubmitted ? 'var(--brand-primary)' : '#7A5A00', padding: '1px 6px', borderRadius: 0, fontWeight: 700, fontSize: 11, marginRight: 5 }}>{info.portion}</span>}
+                                            {info.portion && <span style={{ background: isSubmitted ? '#FBFBF3' : 'var(--paper-deep)', border: isSubmitted ? '1px solid var(--brand-primary)' : 'none', color: isSubmitted ? 'var(--brand-primary)' : '#7A5A00', padding: '1px 6px', borderRadius: 0, fontWeight: 700, fontSize: 11, marginRight: 5 }}>{info.portion}</span>}
                                             {info.rate && <span>Rate: <strong>{info.rate}</strong></span>}
                                         </div>
                                     )
@@ -20519,7 +20608,7 @@
                                     <button
                                         onClick={openBestRate}
                                         style={{
-                                            marginTop: 6, background: 'var(--brand-primary)', border: 'none', color: '#F2EDDB',
+                                            marginTop: 6, background: 'var(--brand-primary)', border: 'none', color: 'var(--text-on-brand)',
                                             padding: '3px 10px', borderRadius: 0, fontSize: 10, fontWeight: 800,
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit'
                                         }}>
@@ -20535,7 +20624,7 @@
                                     return (
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                                             {cptArr.map(c => (
-                                                <span key={c} style={{ background: 'var(--brand-primary)', color: '#F2EDDB', borderRadius: 0, padding: '5px 14px', fontSize: 15, fontWeight: 900, letterSpacing: .3 }}>{String(c).trim()}</span>
+                                                <span key={c} style={{ background: 'var(--brand-primary)', color: 'var(--text-on-brand)', borderRadius: 0, padding: '5px 14px', fontSize: 15, fontWeight: 900, letterSpacing: .3 }}>{String(c).trim()}</span>
                                             ))}
                                             <button className="sub-btn plain"
                                                 style={{ fontSize: 13, padding: '5px 12px' }}
@@ -20563,7 +20652,7 @@
                             </div>
                             {/* ── RIGHT: CS Prescribed (compact) + Action ── */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, alignItems: 'flex-end', minWidth: 140 }}>
-                                <div style={{ background: '#F2EDDB', border: '1px solid var(--brand-primary)', borderRadius: 0, padding: '5px 10px', fontSize: 11 }}>
+                                <div style={{ background: 'var(--paper-deep)', border: '1px solid var(--brand-primary)', borderRadius: 0, padding: '5px 10px', fontSize: 11 }}>
                                     <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 3 }}>CS Prescribed</div>
                                     {(a.rxMeds || []).length === 0
                                         ? <span style={{ color: '#777355', fontStyle: 'italic' }}>None</span>
@@ -22062,7 +22151,7 @@
                                 olBoard
                             </span>
                             {userRole && (
-                                <div style={{ fontSize: 10, fontWeight: 800, background: 'rgba(242, 237, 219, .15)', padding: '3px 9px', borderRadius: 12, color: '#F2EDDB', letterSpacing: '.6px', textTransform: 'uppercase', flexShrink: 0 }}>
+                                <div style={{ fontSize: 10, fontWeight: 800, background: 'rgba(var(--paper-deep-rgb), .15)', padding: '3px 9px', borderRadius: 12, color: 'var(--text-on-brand)', letterSpacing: '.6px', textTransform: 'uppercase', flexShrink: 0 }}>
                                     {userRole}
                                 </div>
                             )}
@@ -22149,8 +22238,8 @@
                             </button>
                             {currentUser && (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
-                                    {userDisplay && <div style={{ fontSize: 12, fontWeight: 700, color: '#F2EDDB', lineHeight: 1.2 }}>{userDisplay}</div>}
-                                    <div className="hdr-user" style={{ color: 'rgba(242,237,219,.65)' }}>Today, {TODAY_DISPLAY}</div>
+                                    {userDisplay && <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-on-brand)', lineHeight: 1.2 }}>{userDisplay}</div>}
+                                    <div className="hdr-user" style={{ color: 'var(--text-on-brand)' }}>Today, {TODAY_DISPLAY}</div>
                                 </div>
                             )}
                             <button
