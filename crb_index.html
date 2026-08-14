@@ -1038,8 +1038,20 @@
         }
 
         /* ── Page ───────────────────────────────────────────────── */
+        /* Bottom padding reserves room for the fixed tool bars that float
+           over this container's own content (.day-fab-bar/.billing-fab-bar
+           for Day View, .wk-tool-bar for Week View once wired) — vertical
+           scroll is always the page/window (see .tbl-scroll's comment), so
+           without this the last row of content sits directly behind
+           whichever bar is showing. 180px covers the real measured worst
+           case (Billing's 6 buttons wrapped to 2 rows, 142px, at the
+           769-1130px range where that wrap happens) plus genuine breathing
+           room above it — not sized to the common 1-row case (93px). Left
+           at the default 14px on the <=768px media query below, since
+           those bars are hidden there in favor of MobileToolsMenu's much
+           smaller single-button footprint. */
         .page {
-            padding: 14px 16px;
+            padding: 14px 16px 180px;
             max-width: 1800px;
             margin: 0 auto
         }
@@ -9521,14 +9533,15 @@
         /* per-button "bottom"/"right" pixel offsets could cause buttons to overlap/hide. */
         .billing-fab-bar {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 10px;
+            left: 0;
+            right: 0;
             z-index: 140;
             display: flex;
             flex-wrap: wrap-reverse;
-            justify-content: flex-end;
+            justify-content: center;
             gap: 10px;
-            max-width: calc(100vw - 40px);
+            padding: 0 20px;
         }
 
         /* ── Provider/Assistant bottom action bar — same fix as .billing-fab-bar
@@ -9542,13 +9555,76 @@
         .day-fab-bar {
             position: fixed;
             bottom: 10px;
-            right: 24px;
+            left: 0;
+            right: 0;
             z-index: 140;
             display: flex;
             flex-wrap: wrap-reverse;
-            justify-content: flex-end;
+            justify-content: center;
             gap: 10px;
-            max-width: calc(100vw - 40px);
+            padding: 0 20px;
+        }
+
+        /* ── Week Tool Button — shared shape for the future Week View tool
+           bar (Stage C part 1 built + verified this component in isolation;
+           not wired into any real view yet — see WeekToolButton in the JS
+           below). Part A: now position:fixed, same family as .day-fab-bar/
+           .billing-fab-bar, all three centered via left:0/right:0 +
+           justify-content:center rather than right:Xpx + flex-end — a
+           shrink-to-fit box anchored by "right" alone has no extra space
+           for justify-content to distribute, so true viewport centering
+           needs the full-width span. Overlap with the last row of content
+           is prevented by .page's own reserved bottom padding (see there),
+           not by anything in this bar's own sizing. Two color variants per
+           Dean's spec: blue (default) for Assign Channel/Claims Ledger/
+           Import Payments/Payment Tracker, green (.wk-tool-green) for Note
+           Board/Appointment Flow. No hover/open background swap — that
+           would need a third verified color per state, which Stage B
+           didn't add; .open instead gets a neutral inset shadow that reads
+           as "pressed" against either fill without needing a new token. */
+        .wk-tool-bar {
+            position: fixed;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            z-index: 140;
+            display: flex;
+            flex-wrap: wrap-reverse;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            padding: 0 20px;
+        }
+
+        .wk-tool-btn {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--tool-button-blue);
+            color: var(--button-text);
+            border: none;
+            border-radius: 0;
+            padding: 10px 20px;
+            font-family: var(--font-display), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(9, 55, 31, .25);
+            transition: transform .15s, box-shadow .15s;
+            letter-spacing: .2px;
+            white-space: nowrap;
+        }
+
+        .wk-tool-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .wk-tool-btn.wk-tool-green {
+            background: var(--tool-button-green);
+        }
+
+        .wk-tool-btn.open {
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, .25);
         }
 
         .bfab-btn {
@@ -11181,18 +11257,21 @@
             }
 
             /* ── Bottom action buttons (Billing's 6, Provider's 2-4, Assistant's 3) ──
-         On desktop these are flex bars (.billing-fab-bar, .day-fab-bar).
-         Stacked/spread out like that on a narrow phone, they end up covering
-         appointment rows. Hide both bars here and show the single
-         MobileToolsMenu button (.mtm-wrap) instead — same actions, one
-         button + a drop-up list. Hiding .day-fab-bar itself (rather than
-         each button class individually, as before) is what actually hides
-         .af-fab now too — it had no entry in this list previously and was
-         only invisible by accident, pushed off-screen by its old
-         right:442px; that accident stops working once these buttons no
-         longer carry their own fixed position. */
+         On desktop these are flex bars (.billing-fab-bar, .day-fab-bar, and
+         eventually .wk-tool-bar once Week View wires it in — added here now,
+         pre-emptively, since it's already position:fixed as of Part A even
+         though nothing renders it yet). Stacked/spread out like that on a
+         narrow phone, they end up covering appointment rows. Hide them here
+         and show the single MobileToolsMenu button (.mtm-wrap) instead —
+         same actions, one button + a drop-up list. Hiding .day-fab-bar
+         itself (rather than each button class individually, as before) is
+         what actually hides .af-fab now too — it had no entry in this list
+         previously and was only invisible by accident, pushed off-screen by
+         its old right:442px; that accident stops working once these
+         buttons no longer carry their own fixed position. */
             .billing-fab-bar,
-            .day-fab-bar {
+            .day-fab-bar,
+            .wk-tool-bar {
                 display: none;
             }
 
@@ -12534,6 +12613,27 @@
                         🧰 {activeItem ? activeItem.label : 'Tools'} {open ? '▾' : '▴'}
                     </button>
                 </div>
+            );
+        }
+
+        // ── Week Tool Button — Stage C part 1, Part A. Reusable shape for the
+        // future Week View tool bar; see .wk-tool-btn in <style> for the full
+        // rationale (position:fixed + centered like .day-fab-bar/
+        // .billing-fab-bar, two color variants, no new tokens for
+        // hover/open). `name` doubles as the label (open) and feeds
+        // `Close ${name}` (closed) — same derivation MobileToolsMenu already
+        // uses above, not a new pattern. `color` is 'blue' | 'green'; call
+        // sites own which tool gets which, matching every other button
+        // family in this file (the component itself has no per-tool
+        // knowledge).
+        function WeekToolButton({ icon, name, color, open, onClick }) {
+            return (
+                <button
+                    className={`wk-tool-btn${color === 'green' ? ' wk-tool-green' : ''}${open ? ' open' : ''}`}
+                    onClick={onClick}
+                    title={name}>
+                    {icon} {open ? `Close ${name}` : name}
+                </button>
             );
         }
 
@@ -17424,7 +17524,7 @@
             );
         }
 
-        function WeekView({ prov, date, data, onUpdateForDate, onSwitchToDay, onDeleteForDate, totalUnsigned }) {
+        function WeekView({ prov, date, data, onUpdateForDate, onSwitchToDay, onDeleteForDate, totalUnsigned, userRole, userProvID, navigateAndOpenModal, showLedger, setShowLedger, showNoteBoard, setShowNoteBoard, showPaymentTracker, setShowPaymentTracker, showAppointmentFlow, setShowAppointmentFlow }) {
             const [modal, setModal] = useState(null);
             const ws = weekStart(date);
             const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
@@ -17638,6 +17738,44 @@
                             onClose={() => setModal(null)}
                         />
                     )}
+
+                    {/* ── Claims Ledger — Jodene only ── */}
+                    {userProvID === 'jodene' && showLedger && <ClaimsLedger onClose={() => setShowLedger(false)} provFilter={prov} />}
+
+                    {/* ── Note Board panel ── */}
+                    {showNoteBoard && <NoteBoardPanel onClose={() => setShowNoteBoard(false)} role={userRole || 'provider'} provFilter={prov} />}
+
+                    {/* ── Payment Tracker — Jodene only, per Dean's instruction ── */}
+                    {userProvID === 'jodene' && showPaymentTracker && <PaymentTracker onClose={() => setShowPaymentTracker(false)} provFilter={prov} />}
+
+                    {/* ── Appointment Flow panel ── */}
+                    {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={userProvID === 'jodene'} initialProv={userProvID} loggedInProv={userProvID} navigateAndOpenModal={navigateAndOpenModal} />}
+
+                    {/* Part B1 — Provider Week's first wiring of .wk-tool-bar (Stage
+                       C/Part A's component, previously unused). Same order and
+                       same Jodene-only gating as ProviderView's .day-fab-bar. */}
+                    <div className="wk-tool-bar">
+                        <WeekToolButton icon="🗓️" name="Appointment Flow" color="green"
+                            open={showAppointmentFlow} onClick={() => setShowAppointmentFlow(o => !o)} />
+                        {userProvID === 'jodene' && (
+                            <WeekToolButton icon="📋" name="Claims Ledger" color="blue"
+                                open={showLedger} onClick={() => setShowLedger(o => !o)} />
+                        )}
+                        {userProvID === 'jodene' && (
+                            <WeekToolButton icon="💳" name="Payment Tracker" color="blue"
+                                open={showPaymentTracker} onClick={() => setShowPaymentTracker(o => !o)} />
+                        )}
+                        <WeekToolButton icon="📝" name="Note Board" color="green"
+                            open={showNoteBoard} onClick={() => setShowNoteBoard(o => !o)} />
+                    </div>
+
+                    {/* Phone-only equivalent of the buttons above (see MobileToolsMenu) */}
+                    <MobileToolsMenu items={[
+                        { key: 'apptflow', label: 'Appointment Flow', icon: '🗓️', active: showAppointmentFlow, onClick: () => setShowAppointmentFlow(o => !o) },
+                        ...(userProvID === 'jodene' ? [{ key: 'ledger', label: 'Claims Ledger', icon: '📋', active: showLedger, onClick: () => setShowLedger(o => !o) }] : []),
+                        ...(userProvID === 'jodene' ? [{ key: 'payment', label: 'Payment Tracker', icon: '💳', active: showPaymentTracker, onClick: () => setShowPaymentTracker(o => !o) }] : []),
+                        { key: 'notes', label: 'Note Board', icon: '📝', active: showNoteBoard, onClick: () => setShowNoteBoard(o => !o) },
+                    ]} />
                 </div>
             );
         }
@@ -22302,7 +22440,7 @@
                         ) : (
                             <>
                                 {view === 'provider' && period === 'day' && <ProviderView appts={appts} date={date} prov={prov} onUpdate={updateAppt} onSignNote={signNote} totalUnsigned={totalUnsigned} onClearPhantom={clearPhantom} userRole={userRole} userProvID={userProvID} onForceRefresh={forceRefreshDay} patientDb={patientDb} dayMode={providerDayMode} setDayMode={setProviderDayMode} pendingModalRequest={pendingModalRequest} onConsumePendingModalRequest={clearPendingModalRequest} navigateAndOpenModal={navigateAndOpenModal} returnToAppointmentFlow={returnToAppointmentFlow} onConsumeReturnToAppointmentFlow={clearReturnToAppointmentFlow} showLedger={showLedger} setShowLedger={setShowLedger} showNoteBoard={showNoteBoard} setShowNoteBoard={setShowNoteBoard} showPaymentTracker={showPaymentTracker} setShowPaymentTracker={setShowPaymentTracker} showAppointmentFlow={showAppointmentFlow} setShowAppointmentFlow={setShowAppointmentFlow} />}
-                                {view === 'provider' && period === 'week' && <WeekView prov={prov} date={date} data={data} onUpdateForDate={updateApptForDate} onSwitchToDay={switchToDay} onDeleteForDate={deleteApptForDate} totalUnsigned={totalUnsigned} />}
+                                {view === 'provider' && period === 'week' && <WeekView prov={prov} date={date} data={data} onUpdateForDate={updateApptForDate} onSwitchToDay={switchToDay} onDeleteForDate={deleteApptForDate} totalUnsigned={totalUnsigned} userRole={userRole} userProvID={userProvID} navigateAndOpenModal={navigateAndOpenModal} showLedger={showLedger} setShowLedger={setShowLedger} showNoteBoard={showNoteBoard} setShowNoteBoard={setShowNoteBoard} showPaymentTracker={showPaymentTracker} setShowPaymentTracker={setShowPaymentTracker} showAppointmentFlow={showAppointmentFlow} setShowAppointmentFlow={setShowAppointmentFlow} />}
                                 {view === 'assistant' && period === 'day' && <AssistantView appts={appts} date={date} onUpdate={updateAppt} onAdd={addAppt} onDelete={deleteAppt} patientDb={patientDb} onForceRefresh={forceRefreshDay} navigateAndOpenModal={navigateAndOpenModal} showNoteBoard={showNoteBoard} setShowNoteBoard={setShowNoteBoard} showPaymentTracker={showPaymentTracker} setShowPaymentTracker={setShowPaymentTracker} showAppointmentFlow={showAppointmentFlow} setShowAppointmentFlow={setShowAppointmentFlow} />}
                                 {view === 'assistant' && period === 'week' && <AllProviderWeekView date={date} allWeekData={allWeekData} onSwitchToDay={switchToDay} prov={prov} onUpdateForDate={updateApptForDate} />}
                                 {view === 'billing' && period === 'day' && <BillingView appts={appts} date={date} onUpdate={updateAppt} patientDb={patientDb} onRefreshPatients={refreshPatientDb} pendingModalRequest={pendingModalRequest} onConsumePendingModalRequest={clearPendingModalRequest} navigateAndOpenModal={navigateAndOpenModal} returnToAppointmentFlow={returnToAppointmentFlow} onConsumeReturnToAppointmentFlow={clearReturnToAppointmentFlow} showLedger={showLedger} setShowLedger={setShowLedger} showNoteBoard={showNoteBoard} setShowNoteBoard={setShowNoteBoard} showPaymentTracker={showPaymentTracker} setShowPaymentTracker={setShowPaymentTracker} showAppointmentFlow={showAppointmentFlow} setShowAppointmentFlow={setShowAppointmentFlow} showBillingChannels={showBillingChannels} setShowBillingChannels={setShowBillingChannels} showImportPanel={showImportPanel} setShowImportPanel={setShowImportPanel} />}
