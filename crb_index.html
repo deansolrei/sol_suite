@@ -8448,76 +8448,6 @@
             color: #6B9E8A;
         }
 
-        /* ══════════════════════════════════════════════════════════════
-       NOTE BOARD PANEL
-    ══════════════════════════════════════════════════════════════ */
-        .nb-fab {
-            background: #065F46;
-            color: var(--text-on-brand);
-            border: none;
-            border-radius: 0;
-            padding: 10px 20px;
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(9, 55, 31, .25);
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            transition: background .15s, transform .15s, box-shadow .15s;
-            font-family: inherit;
-            letter-spacing: .2px;
-        }
-
-        .nb-fab:hover {
-            background: #065F46;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 28px rgba(6, 95, 70, .42);
-        }
-
-        .nb-fab.open {
-            background: #3D768A;
-        }
-
-        .nb-fab.open:hover {
-            background: #065F46;
-        }
-
-        /* ── Payment Tracker FAB (Provider [Jodene only]/Assistant Views) ──
-       Order/position comes from .day-fab-bar's flex layout — see there. */
-        .pt-fab {
-            background: var(--warning);
-            color: var(--brand-primary);
-            border: none;
-            border-radius: 0;
-            padding: 10px 20px;
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(9, 55, 31, .25);
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            transition: background .15s, transform .15s, box-shadow .15s;
-            font-family: inherit;
-            letter-spacing: .2px;
-        }
-
-        .pt-fab:hover {
-            background: var(--warning);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 28px rgba(190, 153, 42, .42);
-        }
-
-        .pt-fab.open {
-            background: var(--brand-primary);
-            color: var(--text-on-brand);
-        }
-
-        .pt-fab.open:hover {
-            background: var(--brand-primary);
-        }
-
         /* ── Import Payments FAB (Billing View only) ─────────────────────────── */
         .imp-fab {
             position: fixed;
@@ -8823,26 +8753,6 @@
         /* ══════════════════════════════════════════════════════════════
        APPOINTMENT FLOW — shell mirrors .nb-* exactly (Stage 2)
     ══════════════════════════════════════════════════════════════ */
-        .af-fab {
-            background: #065F46;
-            color: var(--text-on-brand);
-            border: none;
-            border-radius: 0;
-            padding: 10px 20px;
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(9, 55, 31, .25);
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            transition: background .15s, transform .15s, box-shadow .15s;
-            font-family: inherit;
-            letter-spacing: .2px;
-        }
-        .af-fab.open {
-            background: #3D768A;
-        }
         .af-overlay {
             position: fixed;
             inset: 0;
@@ -9455,41 +9365,6 @@
         body.dark .af-rate-table tbody tr:nth-child(even) {
             background: #051F11;
         }
-        /* ══════════════════════════════════════════════════════════════
-       CLAIMS LEDGER
-    ══════════════════════════════════════════════════════════════ */
-        .cl-fab {
-            background: #3D768A;
-            color: #FFFFFF;
-            border: none;
-            border-radius: 0;
-            padding: 10px 20px;
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(9, 55, 31, .25);
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            transition: background .15s, transform .15s, box-shadow .15s;
-            font-family: inherit;
-            letter-spacing: .2px;
-        }
-
-        .cl-fab:hover {
-            background: #3D768A;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 28px rgba(67, 56, 202, .42)
-        }
-
-        .cl-fab.open {
-            background: #7494AA
-        }
-
-        .cl-fab.open:hover {
-            background: #3D768A
-        }
-
         /* ── Billing Channels FAB — Biller View only, leftmost of the 6 FABs ── */
         .bc-fab {
             position: fixed;
@@ -9545,12 +9420,13 @@
         }
 
         /* ── Provider/Assistant bottom action bar — same fix as .billing-fab-bar
-           above, applied to the 2-4 individually-colored FABs (.cl-fab/.nb-fab/
-           .pt-fab/.af-fab) those two views use. Each button keeps its own
-           color/icon; this just replaces their old per-button fixed position
-           with one shared flex row, so a conditionally-hidden button (e.g.
-           Claims Ledger/Payment Tracker for non-Jodene providers) closes the
-           gap instead of leaving dead space. bottom:10px/right:24px matches
+           above, applied to the 2-4 buttons those two views use. Originally
+           built for the old individually-colored .cl-fab/.nb-fab/.pt-fab/
+           .af-fab classes, since replaced by WeekToolButton instances
+           (Day View button unification) — the container itself needed no
+           change for that swap. A conditionally-hidden button (e.g. Claims
+           Ledger/Payment Tracker for non-Jodene providers) closes the gap
+           instead of leaving dead space. bottom:10px/right:24px matches
            where these buttons already sat. */
         .day-fab-bar {
             position: fixed;
@@ -9625,39 +9501,6 @@
 
         .wk-tool-btn.open {
             box-shadow: inset 0 2px 6px rgba(0, 0, 0, .25);
-        }
-
-        .bfab-btn {
-            background: #6B9E8A;
-            color: var(--brand-primary);
-            border: none;
-            border-radius: 0;
-            padding: 10px 18px;
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(9, 55, 31, .25);
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            transition: background .15s, transform .15s, box-shadow .15s;
-            font-family: inherit;
-            letter-spacing: .2px;
-            white-space: nowrap;
-        }
-
-        .bfab-btn:hover {
-            background: var(--success);
-            transform: translateY(-2px);
-        }
-
-        .bfab-btn.open {
-            background: var(--brand-primary);
-            color: var(--text-on-brand);
-        }
-
-        .bfab-btn.open:hover {
-            background: var(--brand-primary);
         }
 
         .bc-panel {
@@ -11256,19 +11099,17 @@
                 padding: 7px 8px
             }
 
-            /* ── Bottom action buttons (Billing's 6, Provider's 2-4, Assistant's 3) ──
-         On desktop these are flex bars (.billing-fab-bar, .day-fab-bar, and
-         eventually .wk-tool-bar once Week View wires it in — added here now,
-         pre-emptively, since it's already position:fixed as of Part A even
-         though nothing renders it yet). Stacked/spread out like that on a
-         narrow phone, they end up covering appointment rows. Hide them here
-         and show the single MobileToolsMenu button (.mtm-wrap) instead —
-         same actions, one button + a drop-up list. Hiding .day-fab-bar
-         itself (rather than each button class individually, as before) is
-         what actually hides .af-fab now too — it had no entry in this list
-         previously and was only invisible by accident, pushed off-screen by
-         its old right:442px; that accident stops working once these
-         buttons no longer carry their own fixed position. */
+            /* ── Bottom action buttons (Billing's 6, Provider's 2-4, Assistant's 3,
+         same on both Day and Week View since the Day View button
+         unification) ── On desktop these are flex bars: .billing-fab-bar,
+         .day-fab-bar, .wk-tool-bar. Stacked/spread out like that on a
+         narrow phone, they end up covering appointment rows. Hide all
+         three wrapper classes here and show the single MobileToolsMenu
+         button (.mtm-wrap) instead — same actions, one button + a drop-up
+         list. Hiding the wrapper itself, rather than each button
+         individually, is deliberate: it's what catches every button
+         inside regardless of which component renders it, with no risk of
+         a newly-added button being missed. */
             .billing-fab-bar,
             .day-fab-bar,
             .wk-tool-bar {
@@ -17374,34 +17215,18 @@
                        Appointment Flow and Note Board — they sit directly adjacent,
                        no gap, since the flex row closes around whatever's missing. */}
                     <div className="day-fab-bar">
-                        <button
-                            className={`af-fab${showAppointmentFlow ? ' open' : ''}`}
-                            onClick={e => { e.stopPropagation(); setShowAppointmentFlow(o => !o); }}
-                            title="Appointment Flow — live window">
-                            🗓️ {showAppointmentFlow ? 'Close Flow' : 'Appointment Flow'}
-                        </button>
+                        <WeekToolButton icon="🗓️" name="Appointment Flow" color="green"
+                            open={showAppointmentFlow} onClick={() => setShowAppointmentFlow(o => !o)} />
                         {userProvID === 'jodene' && (
-                            <button
-                                className={`cl-fab${showLedger ? ' open' : ''}`}
-                                onClick={e => { e.stopPropagation(); setShowLedger(o => !o); }}
-                                title="Claims Ledger">
-                                📋 {showLedger ? 'Close Ledger' : 'Claims Ledger'}
-                            </button>
+                            <WeekToolButton icon="📋" name="Claims Ledger" color="blue"
+                                open={showLedger} onClick={() => setShowLedger(o => !o)} />
                         )}
                         {userProvID === 'jodene' && (
-                            <button
-                                className={`pt-fab${showPaymentTracker ? ' open' : ''}`}
-                                onClick={e => { e.stopPropagation(); setShowPaymentTracker(o => !o); }}
-                                title="Payment Tracker — Cost-Share Collections">
-                                💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
-                            </button>
+                            <WeekToolButton icon="💳" name="Payment Tracker" color="blue"
+                                open={showPaymentTracker} onClick={() => setShowPaymentTracker(o => !o)} />
                         )}
-                        <button
-                            className={`nb-fab${showNoteBoard ? ' open' : ''}`}
-                            onClick={e => { e.stopPropagation(); setShowNoteBoard(o => !o); }}
-                            title="Note Board — clinic note formatting status">
-                            📝 {showNoteBoard ? 'Close Notes' : 'Note Board'}
-                        </button>
+                        <WeekToolButton icon="📝" name="Note Board" color="green"
+                            open={showNoteBoard} onClick={() => setShowNoteBoard(o => !o)} />
                     </div>
 
                     {/* Phone-only equivalent of the buttons above (see MobileToolsMenu) */}
@@ -18586,24 +18411,12 @@
                     {/* Left-to-right = JSX order now (day-fab-bar is a flex row):
                        Appointment Flow, Note Board, Payment Tracker. */}
                     <div className="day-fab-bar">
-                        <button
-                            className={`af-fab${showAppointmentFlow ? ' open' : ''}`}
-                            onClick={e => { e.stopPropagation(); setShowAppointmentFlow(o => !o); }}
-                            title="Appointment Flow — live window">
-                            🗓️ {showAppointmentFlow ? 'Close Flow' : 'Appointment Flow'}
-                        </button>
-                        <button
-                            className={`nb-fab${showNoteBoard ? ' open' : ''}`}
-                            onClick={e => { e.stopPropagation(); setShowNoteBoard(o => !o); }}
-                            title="Note Board — clinic note formatting status">
-                            📝 {showNoteBoard ? 'Close Notes' : 'Note Board'}
-                        </button>
-                        <button
-                            className={`pt-fab${showPaymentTracker ? ' open' : ''}`}
-                            onClick={e => { e.stopPropagation(); setShowPaymentTracker(o => !o); }}
-                            title="Payment Tracker — Cost-Share Collections">
-                            💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
-                        </button>
+                        <WeekToolButton icon="🗓️" name="Appointment Flow" color="green"
+                            open={showAppointmentFlow} onClick={() => setShowAppointmentFlow(o => !o)} />
+                        <WeekToolButton icon="📝" name="Note Board" color="green"
+                            open={showNoteBoard} onClick={() => setShowNoteBoard(o => !o)} />
+                        <WeekToolButton icon="💳" name="Payment Tracker" color="blue"
+                            open={showPaymentTracker} onClick={() => setShowPaymentTracker(o => !o)} />
                     </div>
 
                     {/* Phone-only equivalent of the buttons above (see MobileToolsMenu) */}
@@ -21010,47 +20823,23 @@
                     {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={true} initialProv="jodene" navigateAndOpenModal={navigateAndOpenModal} />}
 
                     <div className="billing-fab-bar">
-                        <button
-                            className={`bfab-btn${showLedger ? ' open' : ''}`}
-                            onClick={e => { e.stopPropagation(); setShowLedger(o => !o); }}
-                            title="Claims Ledger">
-                            📋 {showLedger ? 'Close Ledger' : 'Claims Ledger'}
-                        </button>
+                        <WeekToolButton icon="📋" name="Claims Ledger" color="blue"
+                            open={showLedger} onClick={() => setShowLedger(o => !o)} />
 
-                        <button
-                            className={`bfab-btn${showPaymentTracker ? ' open' : ''}`}
-                            onClick={e => { e.stopPropagation(); setShowPaymentTracker(o => !o); }}
-                            title="Payment Tracker — Cost-Share Collections">
-                            💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
-                        </button>
+                        <WeekToolButton icon="💳" name="Payment Tracker" color="blue"
+                            open={showPaymentTracker} onClick={() => setShowPaymentTracker(o => !o)} />
 
-                        <button
-                            className={`bfab-btn${showAppointmentFlow ? ' open' : ''}`}
-                            onClick={e => { e.stopPropagation(); setShowAppointmentFlow(o => !o); }}
-                            title="Appointment Flow — live window">
-                            🗓️ {showAppointmentFlow ? 'Close Flow' : 'Appointment Flow'}
-                        </button>
+                        <WeekToolButton icon="🗓️" name="Appointment Flow" color="green"
+                            open={showAppointmentFlow} onClick={() => setShowAppointmentFlow(o => !o)} />
 
-                        <button
-                            className={`bfab-btn${showBillingChannels ? ' open' : ''}`}
-                            onClick={e => { e.stopPropagation(); setShowBillingChannels(o => !o); }}
-                            title="Set patients' billing/claim-submission channel going forward">
-                            🔀 {showBillingChannels ? 'Close Channel' : 'Assign Channel'}
-                        </button>
+                        <WeekToolButton icon="🔀" name="Assign Channel" color="blue"
+                            open={showBillingChannels} onClick={() => setShowBillingChannels(o => !o)} />
 
-                        <button
-                            className={`bfab-btn${showImportPanel ? ' open' : ''}`}
-                            onClick={e => { e.stopPropagation(); setShowImportPanel(o => !o); }}
-                            title="Import payment amounts from CRB_Import.csv">
-                            📥 {showImportPanel ? 'Close Import' : 'Import Payments'}
-                        </button>
+                        <WeekToolButton icon="📥" name="Import Payments" color="blue"
+                            open={showImportPanel} onClick={() => setShowImportPanel(o => !o)} />
 
-                        <button
-                            className={`bfab-btn${showNoteBoard ? ' open' : ''}`}
-                            onClick={e => { e.stopPropagation(); setShowNoteBoard(o => !o); }}
-                            title="Note Board — clinic note status (read-only)">
-                            📝 {showNoteBoard ? 'Close Notes' : 'Note Board'}
-                        </button>
+                        <WeekToolButton icon="📝" name="Note Board" color="green"
+                            open={showNoteBoard} onClick={() => setShowNoteBoard(o => !o)} />
                     </div>
 
                     {/* Phone-only equivalent of the 6 buttons above (see MobileToolsMenu) */}
