@@ -8432,12 +8432,6 @@
        NOTE BOARD PANEL
     ══════════════════════════════════════════════════════════════ */
         .nb-fab {
-            position: fixed;
-            bottom: 10px;
-            right: 360px;
-            /* base default — actual position is set inline per-view (AssistantView,
-         ProviderView) since each view has a different number of FAB buttons */
-            z-index: 140;
             background: #065F46;
             color: var(--text-on-brand);
             border: none;
@@ -8470,12 +8464,8 @@
         }
 
         /* ── Payment Tracker FAB (Provider [Jodene only]/Assistant Views) ──
-       Position set inline per-view like .cl-fab/.nb-fab above. */
+       Order/position comes from .day-fab-bar's flex layout — see there. */
         .pt-fab {
-            position: fixed;
-            bottom: 10px;
-            right: 300px;
-            z-index: 140;
             background: var(--warning);
             color: var(--brand-primary);
             border: none;
@@ -8814,10 +8804,6 @@
        APPOINTMENT FLOW — shell mirrors .nb-* exactly (Stage 2)
     ══════════════════════════════════════════════════════════════ */
         .af-fab {
-            position: fixed;
-            bottom: 10px;
-            right: 442px;
-            z-index: 140;
             background: #065F46;
             color: var(--text-on-brand);
             border: none;
@@ -9453,10 +9439,6 @@
        CLAIMS LEDGER
     ══════════════════════════════════════════════════════════════ */
         .cl-fab {
-            position: fixed;
-            bottom: 10px;
-            right: 28px;
-            z-index: 140;
             background: #3D768A;
             color: #FFFFFF;
             border: none;
@@ -9533,6 +9515,26 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
+            z-index: 140;
+            display: flex;
+            flex-wrap: wrap-reverse;
+            justify-content: flex-end;
+            gap: 10px;
+            max-width: calc(100vw - 40px);
+        }
+
+        /* ── Provider/Assistant bottom action bar — same fix as .billing-fab-bar
+           above, applied to the 2-4 individually-colored FABs (.cl-fab/.nb-fab/
+           .pt-fab/.af-fab) those two views use. Each button keeps its own
+           color/icon; this just replaces their old per-button fixed position
+           with one shared flex row, so a conditionally-hidden button (e.g.
+           Claims Ledger/Payment Tracker for non-Jodene providers) closes the
+           gap instead of leaving dead space. bottom:10px/right:24px matches
+           where these buttons already sat. */
+        .day-fab-bar {
+            position: fixed;
+            bottom: 10px;
+            right: 24px;
             z-index: 140;
             display: flex;
             flex-wrap: wrap-reverse;
@@ -11170,16 +11172,19 @@
                 padding: 7px 8px
             }
 
-            /* ── Bottom action buttons (Billing's 5, Provider's 2-3, Assistant's 2) ──
-         On desktop these are individual FABs (Billing's .billing-fab-bar row,
-         plus the legacy per-view .cl-fab/.nb-fab/.pt-fab). Stacked/spread out
-         like that on a narrow phone, they end up covering appointment rows.
-         Hide all of them here and show the single MobileToolsMenu button
-         (.mtm-wrap) instead — same actions, one button + a drop-up list. */
+            /* ── Bottom action buttons (Billing's 6, Provider's 2-4, Assistant's 3) ──
+         On desktop these are flex bars (.billing-fab-bar, .day-fab-bar).
+         Stacked/spread out like that on a narrow phone, they end up covering
+         appointment rows. Hide both bars here and show the single
+         MobileToolsMenu button (.mtm-wrap) instead — same actions, one
+         button + a drop-up list. Hiding .day-fab-bar itself (rather than
+         each button class individually, as before) is what actually hides
+         .af-fab now too — it had no entry in this list previously and was
+         only invisible by accident, pushed off-screen by its old
+         right:442px; that accident stops working once these buttons no
+         longer carry their own fixed position. */
             .billing-fab-bar,
-            .cl-fab,
-            .nb-fab,
-            .pt-fab {
+            .day-fab-bar {
                 display: none;
             }
 
@@ -17255,45 +17260,41 @@
                     {/* ── Appointment Flow panel (Stage 2, read-only) ── */}
                     {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={userProvID === 'jodene'} initialProv={userProvID} loggedInProv={userProvID} navigateAndOpenModal={navigateAndOpenModal} />}
 
-                    {/* Left-to-right on screen: Appointment Flow, Claims Ledger, Payment
-                       Tracker, Note Board — right:Xpx counts from the screen edge, so
-                       leftmost gets the largest value. Appointment Flow — right:442;
-                       Claims Ledger — right:300 (Jodene only); Payment Tracker —
-                       right:158 (Jodene only); Note Board — right:24. Non-Jodene
-                       providers just render Appointment Flow and Note Board, leaving
-                       the 300/158 slots empty rather than closing the gap. */}
-                    <button
-                        className={`af-fab${showAppointmentFlow ? ' open' : ''}`}
-                        style={{ right: 442 }}
-                        onClick={e => { e.stopPropagation(); setShowAppointmentFlow(o => !o); }}
-                        title="Appointment Flow — live window">
-                        🗓️ {showAppointmentFlow ? 'Close Flow' : 'Appointment Flow'}
-                    </button>
-                    {userProvID === 'jodene' && (
+                    {/* Left-to-right = JSX order now (day-fab-bar is a flex row):
+                       Appointment Flow, Claims Ledger (Jodene only), Payment Tracker
+                       (Jodene only), Note Board. Non-Jodene providers just render
+                       Appointment Flow and Note Board — they sit directly adjacent,
+                       no gap, since the flex row closes around whatever's missing. */}
+                    <div className="day-fab-bar">
                         <button
-                            className={`cl-fab${showLedger ? ' open' : ''}`}
-                            style={{ right: 300 }}
-                            onClick={e => { e.stopPropagation(); setShowLedger(o => !o); }}
-                            title="Claims Ledger">
-                            📋 {showLedger ? 'Close Ledger' : 'Claims Ledger'}
+                            className={`af-fab${showAppointmentFlow ? ' open' : ''}`}
+                            onClick={e => { e.stopPropagation(); setShowAppointmentFlow(o => !o); }}
+                            title="Appointment Flow — live window">
+                            🗓️ {showAppointmentFlow ? 'Close Flow' : 'Appointment Flow'}
                         </button>
-                    )}
-                    {userProvID === 'jodene' && (
+                        {userProvID === 'jodene' && (
+                            <button
+                                className={`cl-fab${showLedger ? ' open' : ''}`}
+                                onClick={e => { e.stopPropagation(); setShowLedger(o => !o); }}
+                                title="Claims Ledger">
+                                📋 {showLedger ? 'Close Ledger' : 'Claims Ledger'}
+                            </button>
+                        )}
+                        {userProvID === 'jodene' && (
+                            <button
+                                className={`pt-fab${showPaymentTracker ? ' open' : ''}`}
+                                onClick={e => { e.stopPropagation(); setShowPaymentTracker(o => !o); }}
+                                title="Payment Tracker — Cost-Share Collections">
+                                💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
+                            </button>
+                        )}
                         <button
-                            className={`pt-fab${showPaymentTracker ? ' open' : ''}`}
-                            style={{ right: 158 }}
-                            onClick={e => { e.stopPropagation(); setShowPaymentTracker(o => !o); }}
-                            title="Payment Tracker — Cost-Share Collections">
-                            💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
+                            className={`nb-fab${showNoteBoard ? ' open' : ''}`}
+                            onClick={e => { e.stopPropagation(); setShowNoteBoard(o => !o); }}
+                            title="Note Board — clinic note formatting status">
+                            📝 {showNoteBoard ? 'Close Notes' : 'Note Board'}
                         </button>
-                    )}
-                    <button
-                        className={`nb-fab${showNoteBoard ? ' open' : ''}`}
-                        style={{ right: 24 }}
-                        onClick={e => { e.stopPropagation(); setShowNoteBoard(o => !o); }}
-                        title="Note Board — clinic note formatting status">
-                        📝 {showNoteBoard ? 'Close Notes' : 'Note Board'}
-                    </button>
+                    </div>
 
                     {/* Phone-only equivalent of the buttons above (see MobileToolsMenu) */}
                     <MobileToolsMenu items={[
@@ -18346,31 +18347,28 @@
                        switcher always available to pick any of the 4 providers. ── */}
                     {showAppointmentFlow && <AppointmentFlowPanel onClose={() => setShowAppointmentFlow(false)} allowSwitch={true} initialProv="jodene" navigateAndOpenModal={navigateAndOpenModal} />}
 
-                    {/* Left-to-right on screen: Appointment Flow, Note Board, Payment
-                       Tracker — right:Xpx counts from the screen edge, so leftmost
-                       gets the largest value. Appointment Flow — right:292; Note
-                       Board — right:158; Payment Tracker — right:24. */}
-                    <button
-                        className={`af-fab${showAppointmentFlow ? ' open' : ''}`}
-                        style={{ right: 292 }}
-                        onClick={e => { e.stopPropagation(); setShowAppointmentFlow(o => !o); }}
-                        title="Appointment Flow — live window">
-                        🗓️ {showAppointmentFlow ? 'Close Flow' : 'Appointment Flow'}
-                    </button>
-                    <button
-                        className={`nb-fab${showNoteBoard ? ' open' : ''}`}
-                        style={{ right: 158 }}
-                        onClick={e => { e.stopPropagation(); setShowNoteBoard(o => !o); }}
-                        title="Note Board — clinic note formatting status">
-                        📝 {showNoteBoard ? 'Close Notes' : 'Note Board'}
-                    </button>
-                    <button
-                        className={`pt-fab${showPaymentTracker ? ' open' : ''}`}
-                        style={{ right: 24 }}
-                        onClick={e => { e.stopPropagation(); setShowPaymentTracker(o => !o); }}
-                        title="Payment Tracker — Cost-Share Collections">
-                        💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
-                    </button>
+                    {/* Left-to-right = JSX order now (day-fab-bar is a flex row):
+                       Appointment Flow, Note Board, Payment Tracker. */}
+                    <div className="day-fab-bar">
+                        <button
+                            className={`af-fab${showAppointmentFlow ? ' open' : ''}`}
+                            onClick={e => { e.stopPropagation(); setShowAppointmentFlow(o => !o); }}
+                            title="Appointment Flow — live window">
+                            🗓️ {showAppointmentFlow ? 'Close Flow' : 'Appointment Flow'}
+                        </button>
+                        <button
+                            className={`nb-fab${showNoteBoard ? ' open' : ''}`}
+                            onClick={e => { e.stopPropagation(); setShowNoteBoard(o => !o); }}
+                            title="Note Board — clinic note formatting status">
+                            📝 {showNoteBoard ? 'Close Notes' : 'Note Board'}
+                        </button>
+                        <button
+                            className={`pt-fab${showPaymentTracker ? ' open' : ''}`}
+                            onClick={e => { e.stopPropagation(); setShowPaymentTracker(o => !o); }}
+                            title="Payment Tracker — Cost-Share Collections">
+                            💳 {showPaymentTracker ? 'Close Tracker' : 'Payment Tracker'}
+                        </button>
+                    </div>
 
                     {/* Phone-only equivalent of the buttons above (see MobileToolsMenu) */}
                     <MobileToolsMenu items={[
