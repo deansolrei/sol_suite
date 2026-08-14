@@ -62,6 +62,14 @@
                this role since it inverts to near-white in dark mode. */
             --ink-fill: #2B2716;
 
+            /* Stage B — new tool-button fills, theme-invariant like --ink-fill
+               above (no body.dark override). Not consumed anywhere yet; Stage
+               C wires these up. --button-text verified against both:
+               6.53:1 on --tool-button-blue, 6.49:1 on --tool-button-green. */
+            --tool-button-blue: #294f73;
+            --tool-button-green: #34543A;
+            --button-text: #E1E1E1;
+
             /* Ledger-paper layer — named in the guide's prose (not its own
                CSS block) as a real, distinct layer of the system. */
             --paper: #F5F2EA;
