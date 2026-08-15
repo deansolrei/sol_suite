@@ -33,7 +33,7 @@
             --text-secondary: #677681;
 
             --success: #85A679;
-            --warning: #D9A866;
+            --warning: #E8D49E;
             --error: #B66969;
             --info: #779FCB;
 
@@ -8764,6 +8764,7 @@
             padding: 20px;
             animation: cl-fade-in .18s ease;
         }
+
         .af-panel {
             background: #FBFBF3;
             border-radius: 14px;
@@ -8776,6 +8777,7 @@
             flex-direction: column;
             animation: cl-slide-up .2s ease;
         }
+
         .af-hdr {
             background: linear-gradient(135deg, #065F46, #065F46);
             color: #FFFFFF;
@@ -8786,11 +8788,13 @@
             justify-content: space-between;
             gap: 12px;
         }
+
         .af-hdr-title {
             font-size: 15px;
             font-weight: 900;
             letter-spacing: .3px;
         }
+
         .af-hdr-sub {
             font-size: 10px;
             font-weight: 600;
@@ -8798,6 +8802,7 @@
             margin-top: 2px;
             letter-spacing: .4px;
         }
+
         .af-close-btn {
             background: rgba(var(--paper-deep-rgb), .18);
             border: none;
@@ -8809,11 +8814,13 @@
             cursor: pointer;
             letter-spacing: .2px;
         }
+
         .af-hdr-actions {
             display: flex;
             align-items: center;
             gap: 8px;
         }
+
         .af-refresh-btn {
             background: rgba(var(--paper-deep-rgb), .18);
             border: none;
@@ -8825,10 +8832,12 @@
             cursor: pointer;
             letter-spacing: .2px;
         }
+
         .af-refresh-btn:disabled {
             opacity: .55;
             cursor: default;
         }
+
         .af-toolbar {
             background: #065F46;
             padding: 10px 20px 12px;
@@ -8838,11 +8847,13 @@
             flex-wrap: wrap;
             border-bottom: 1px solid rgba(var(--border-rgb), .15);
         }
+
         .af-toolbar-zone {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
+
         .af-toolbar-zone-label {
             font-size: 9px;
             font-weight: 800;
@@ -8850,17 +8861,20 @@
             letter-spacing: .4px;
             color: var(--text-on-brand);
         }
+
         .af-toolbar-fields {
             display: flex;
             align-items: flex-end;
             gap: 10px;
             flex-wrap: wrap;
         }
+
         .af-toolbar-field {
             display: flex;
             flex-direction: column;
             gap: 3px;
         }
+
         .af-toolbar-field-label {
             font-size: 9px;
             font-weight: 700;
@@ -8868,9 +8882,11 @@
             letter-spacing: .3px;
             color: var(--text-on-brand);
         }
+
         .af-toolbar-clear-wrap {
             margin-left: auto;
         }
+
         .af-toolbar-clear-btn {
             background: rgba(var(--paper-deep-rgb), .18);
             border: none;
@@ -8882,23 +8898,28 @@
             cursor: pointer;
             white-space: nowrap;
         }
+
         .af-body {
             flex: 1;
             overflow-y: auto;
             padding: 0;
         }
+
         .af-empty {
             padding: 48px 24px;
             text-align: center;
             color: #777355;
             font-size: 14px;
         }
+
         .af-row-wrap {
             border-bottom: 1px solid var(--border);
         }
+
         .af-day-section {
             border-bottom: 8px solid var(--border);
         }
+
         .af-day-hdr {
             padding: 14px 18px 8px;
             /* Sizing pass — actual prior value was 14px (not the 10.5
@@ -8910,9 +8931,11 @@
             color: var(--brand-primary);
             letter-spacing: .2px;
         }
+
         .af-list-block {
             border-bottom: 1px solid var(--border);
         }
+
         .af-row {
             display: grid;
             grid-template-columns: 18px 70px 1fr 2fr;
@@ -8922,17 +8945,21 @@
             cursor: pointer;
             transition: background .1s;
         }
+
         .af-row:hover {
             background: #FBFBF3;
         }
+
         .af-chevron {
             font-size: 10px;
             color: #777355;
             transition: transform .15s;
         }
+
         .af-chevron.open {
             transform: rotate(90deg);
         }
+
         .af-cell-time {
             /* Actual prior value was 11px (not the 8.5 estimate); ratio
                11/8.5 applied: 11 × 1.29412 = 14.2px. Not used outside this
@@ -8941,6 +8968,7 @@
             font-size: 21.3px;
             color: #777355;
         }
+
         .af-cell-pat {
             /* Real current value was 13px × 2.0 = 26px. Not used outside
                this row (grep-confirmed). */
@@ -8948,6 +8976,7 @@
             font-weight: 700;
             color: var(--text-primary);
         }
+
         /* Collapsed-row completion indicators (Clinical Note Signed / Claim
            Submitted) — stacked under the patient name, not the otherdates
            column (that column is specifically about OTHER appointments'
@@ -8960,17 +8989,20 @@
             gap: 1px;
             margin-top: 2px;
         }
+
         .af-cell-signal {
             font-size: 11px;
             font-weight: 800;
             color: var(--success);
         }
+
         .af-cell-otherdates {
             display: flex;
             flex-direction: column;
             align-items: flex-start;
             gap: 2px;
         }
+
         .af-other-unsigned {
             /* Actual prior value was 11px (not the 8.5 estimate); ratio
                14/8.5 applied: 11 × 1.64706 = 18.1px. Not used outside this
@@ -8980,17 +9012,20 @@
             color: var(--text-primary);
             white-space: nowrap;
         }
+
         .af-otherdate-row {
             display: flex;
             align-items: baseline;
             flex-wrap: wrap;
             gap: 6px;
         }
+
         .af-cell-cpt {
             display: flex;
             flex-wrap: wrap;
             gap: 4px;
         }
+
         /* ── Pre-visit rate table (Table View) — dark-header/alternating-row
            convention matching BillingView's existing per-channel rate table.
            List View no longer has its own table (that was
@@ -9006,6 +9041,7 @@
             border-spacing: 0;
             font-size: 12px;
         }
+
         .af-rate-table th {
             /* Background lives on <th> itself, not the <tr> — a sticky th
                with an unpositioned parent <tr> wouldn't carry the <tr>'s
@@ -9029,25 +9065,31 @@
             top: 0;
             z-index: 2;
         }
+
         .af-rate-th {
             text-align: right !important;
         }
+
         .af-rate-table td {
             padding: 7px 12px;
             color: var(--text-primary);
         }
+
         .af-rate-table tbody tr:nth-child(even) {
             background: var(--paper-deep);
         }
+
         .af-rate-cell {
             text-align: right;
             color: #777355;
         }
+
         .af-rate-best {
             background: #87D1B033;
             font-weight: 800;
             color: #0C4A34;
         }
+
         .af-rate-reveal-btn {
             background: none;
             border: none;
@@ -9057,15 +9099,18 @@
             cursor: pointer;
             opacity: .75;
         }
+
         .af-rate-reveal-btn:hover {
             opacity: 1;
         }
+
         .af-best-rate-controls {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 4px;
         }
+
         .af-confirm-btn {
             background: none;
             border: 1px solid #777355;
@@ -9077,10 +9122,12 @@
             cursor: pointer;
             font-family: inherit;
         }
+
         .af-confirm-btn:disabled {
             opacity: .4;
             cursor: default;
         }
+
         .af-confirm-btn.af-confirm-done {
             background: var(--success);
             border-color: var(--success);
@@ -9088,6 +9135,7 @@
             opacity: 1;
             cursor: default;
         }
+
         .af-flag-stack {
             text-align: left;
             margin-top: 4px;
@@ -9095,12 +9143,14 @@
             flex-direction: column;
             gap: 3px;
         }
+
         .af-flag-row {
             display: flex;
             align-items: center;
             gap: 4px;
             flex-wrap: wrap;
         }
+
         .af-flag-toggle {
             display: inline-flex;
             align-items: center;
@@ -9115,32 +9165,39 @@
             font-family: inherit;
             white-space: nowrap;
         }
+
         .af-flag-toggle:disabled {
             opacity: .5;
             cursor: default;
         }
+
         .af-flag-toggle.af-flag-unset {
             border-color: #777355;
             color: #777355;
         }
+
         .af-flag-toggle.af-flag-yes {
             border-color: var(--success);
             color: var(--success);
             background: #16A34A1A;
         }
+
         .af-flag-toggle.af-flag-no {
             border-color: var(--error);
             color: var(--error);
             background: #DC26261A;
         }
+
         .af-flag-icon {
             font-weight: 900;
         }
+
         .af-flag-error {
             font-size: 10px;
             font-weight: 700;
             color: var(--error);
         }
+
         .af-cc-toggle {
             background: none;
             border: 1px solid #777355;
@@ -9152,20 +9209,24 @@
             cursor: pointer;
             font-family: inherit;
         }
+
         .af-cc-toggle:disabled {
             opacity: .5;
             cursor: default;
         }
+
         .af-cc-toggle.af-cc-yes {
             border-color: var(--success);
             color: var(--success);
             background: #16A34A1A;
         }
+
         .af-cc-toggle.af-cc-no {
             border-color: var(--error);
             color: var(--error);
             background: #DC26261A;
         }
+
         .af-rate-issues {
             text-align: left;
             margin-top: 3px;
@@ -9173,17 +9234,20 @@
             flex-direction: column;
             gap: 3px;
         }
+
         .af-rate-issue {
             font-size: 10px;
             font-weight: 700;
             color: var(--error);
             white-space: normal;
         }
+
         .af-attrib-line {
             font-size: 10px;
             font-weight: 500;
             color: #777355;
         }
+
         .af-detail {
             padding: 12px 18px 18px 48px;
             background: #FBFBF3;
@@ -9192,11 +9256,13 @@
             flex-direction: column;
             gap: 10px;
         }
+
         .af-detail-row {
             display: flex;
             flex-direction: column;
             gap: 3px;
         }
+
         /* A5 — Provider/CPT/Biller rows navigate away to open a modal in
            another view; whole row is the click target (the label alone is
            small/uppercase, a poor hit target). NOT matching .af-row:hover's
@@ -9215,9 +9281,11 @@
             padding: 4px 8px;
             border-radius: 4px;
         }
+
         .af-detail-row-nav:hover {
             background: var(--paper-deep);
         }
+
         .af-detail-label {
             font-size: 10px;
             font-weight: 800;
@@ -9225,14 +9293,17 @@
             text-transform: uppercase;
             letter-spacing: .4px;
         }
+
         .af-scr-max {
             font-size: 10px;
             font-weight: 600;
             color: #777355;
         }
+
         .af-scr-date-input {
             max-width: 160px;
         }
+
         /* A3b follow-up — compact sizing for List View's always-visible
            screener block, with an actual typographic hierarchy rather than
            one blanket size. Scoped under .af-scr-compact (applied alongside
@@ -9267,14 +9338,17 @@
         .af-scr-compact .af-detail-label {
             font-size: 9.5px;
         }
+
         .af-scr-compact .af-detail-label.af-scr-name-label {
             font-size: 12.2px;
         }
+
         .af-scr-compact .scr-score-input {
             font-size: 11px;
             width: 40px;
             padding: 4px 6px;
         }
+
         .af-scr-compact .af-scr-max {
             /* Small gap from the score input box before it — scoped here,
                not on .scr-score-input itself (PatientModal's own screener
@@ -9282,15 +9356,19 @@
             margin-left: 5px;
             font-size: 12px;
         }
+
         .af-scr-compact .af-attrib-line {
             font-size: 10px;
         }
+
         .af-scr-compact .af-attrib-line.af-scr-interp {
             font-size: 12px;
         }
+
         .af-scr-compact .af-flag-error {
             font-size: 10px;
         }
+
         /* Date input — actual prior font-size was 10px (not the 8.5
            estimate item 5's ratio was stated against); same ratio as the
            Date Administered label (9/8.5) applied to that real 10px:
@@ -9307,6 +9385,7 @@
             font-size: 10.6px;
             padding: 5.3px 6.4px;
         }
+
         /* Compact sizing for UnsignedDateStatusControl (icon + label +
            attribution) — genuinely smaller than the row's own Time/Name
            text (11-13px) but not so small it reads as an afterthought.
@@ -9323,48 +9402,61 @@
             padding: 2px 6px;
             gap: 3px;
         }
+
         .af-uds-status .af-attrib-line {
             font-size: 9px;
         }
+
         .af-uds-status .af-flag-error {
             font-size: 9px;
         }
+
         body.dark .af-panel {
             background: #051F11;
         }
+
         body.dark .af-row-wrap {
             border-color: var(--brand-primary);
         }
+
         body.dark .af-row:hover {
             background: #051F11;
         }
+
         body.dark .af-cell-pat,
         body.dark .af-day-hdr {
             color: #F0FDF4;
         }
+
         body.dark .af-cell-time,
         body.dark .af-attrib-line,
         body.dark .af-detail-label,
         body.dark .af-scr-max {
             color: #6B9E8A;
         }
+
         body.dark .af-detail {
             background: #051F11;
             border-color: var(--brand-primary);
         }
+
         body.dark .af-day-section,
         body.dark .af-list-block {
             border-color: var(--brand-primary);
         }
+
         body.dark .af-rate-table td {
             color: #F0FDF4;
         }
+
         body.dark .af-rate-cell {
             color: #6B9E8A;
         }
+
         body.dark .af-rate-table tbody tr:nth-child(even) {
             background: #051F11;
         }
+
         /* ── Billing Channels FAB — Biller View only, leftmost of the 6 FABs ── */
         .bc-fab {
             position: fixed;
