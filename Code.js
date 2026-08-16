@@ -5790,7 +5790,7 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       var stale = [];
       if (!canReconcile || !dataBlock || !dataBlock.length) return stale;
 
-      var ID_RE = /\(ID:(\d+)\)/;
+      var ID_RE = /\(ID:([^)]+)\)/;
       dataBlock.forEach(function (row, i) {
         var apptId = String(row[COL_APPTID] || '');
         if (apptId.indexOf('TEBRA-API-') !== 0) return;
