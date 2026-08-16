@@ -1537,50 +1537,74 @@
         /* ── Post-visit card color system ──────────────────────────────────
        Two independent axes, both driven by data the Provider can already
        see (read-only here — no actions live in this view):
-         Border (left 6px + thin 1px inner ring) = Assistant's note-prep
+         Left border (6px + thin inner ring) = Assistant's note-prep
            progress: Not Started → In Progress → Ready → Provider signs.
-         Background = Billing's claim status: baseline until the Biller
-           marks the claim submitted, then pending vs paid.
-       Clinic Submit rows also get a constant rollover (not state-based). */
+         Right border (6px + thin inner ring, Stage 2 Part 2) = Billing's
+           claim status: Not Submitted → Pending → Paid.
+         Background (Stage 2 Part 1) = combined derivation, see postBgCls.
+       Clinic Submit rows also get a constant rollover (not state-based).
+
+       The two 6px borders are different CSS properties (border-left vs.
+       border-right) so both classes' solid color renders together with
+       no conflict. Their thin inner rings are NOT — both sets used to
+       write the same `box-shadow` property (`inset 0 0 0 1px <color>`,
+       an all-side ring), so whichever class came later in the cascade
+       silently won the whole box-shadow and the other's ring vanished.
+       Fixed by having each side contribute only a CSS variable
+       (--pv-ring-left / --pv-ring-right) and rendering both as one
+       combined, single-side-each box-shadow on .pv-post-ring below —
+       two independently-set layers in one property, instead of two
+       classes fighting over the same one. */
         .pv-post-not-started {
             border-left: 6px solid #E5292D;
             /* Red border */
-            box-shadow: inset 0 0 0 1px #A31417;
+            --pv-ring-left: #A31417;
         }
 
         .pv-post-in-progress {
             border-left: 6px solid #EACB34;
             /* Yellow border */
-            box-shadow: inset 0 0 0 1px #B99D13;
+            --pv-ring-left: #B99D13;
         }
 
         .pv-post-ready {
             border-left: 6px solid #6EB29F;
-            box-shadow: inset 0 0 0 1px #386B5D;
+            --pv-ring-left: #386B5D;
         }
 
         .pv-post-signed {
             border-left: 6px solid #065F46;
             /* Green border */
-            box-shadow: inset 0 0 0 1px #033A2A;
+            --pv-ring-left: #033A2A;
         }
 
         .pv-post-not-submitted {
             border-right: 6px solid #E5292D;
             /* Red border */
-            box-shadow: inset 0 0 0 1px #A31417;
+            --pv-ring-right: #A31417;
         }
 
         .pv-post-pending {
             border-right: 6px solid #EACB34;
             /* Yellow border */
-            box-shadow: inset 0 0 0 1px #B99D13;
+            --pv-ring-right: #B99D13;
         }
 
         .pv-post-paid {
             border-right: 6px solid #065F46;
             /* Green border */
-            box-shadow: inset 0 0 0 1px #033A2A;
+            --pv-ring-right: #033A2A;
+        }
+
+        /* Always applied alongside the two border classes above (see
+       postBorderCls/postClaimBorderCls in ProviderView) — one ring on
+       the left edge in the note-progress color, one on the right edge
+       in the claim-status color, genuinely simultaneous. Falls back to
+       transparent so nothing renders if a variable is ever unset. */
+        .pv-post-ring {
+            box-shadow:
+                inset 1px 0 0 0 var(--pv-ring-left, transparent),
+                inset -1px 0 0 0 var(--pv-ring-right, transparent);
         }
 
         /* Stage 2, Part 1 — single combined background derivation (see
@@ -17131,6 +17155,14 @@
                             const postBorderCls = a.out
                                 ? 'pv-post-signed'
                                 : (a.noteStatus === 'ready' ? 'pv-post-ready' : (a.noteStatus === 'in_progress' ? 'pv-post-in-progress' : 'pv-post-not-started'));
+                            // Right border — Billing's claim status (Stage 2, Part 2),
+                            // mirrors postBorderCls's shape but reads billing/claimStatus
+                            // instead of noteStatus. Applied alongside postBorderCls, not
+                            // instead of it — see .pv-post-ring in <style> for how both
+                            // sides' rings render together without one clobbering the other.
+                            const postClaimBorderCls = a.billing !== 'submitted' ? 'pv-post-not-submitted'
+                                : a.claimStatus === 'Paid' ? 'pv-post-paid'
+                                    : 'pv-post-pending';
                             // Background — single combined derivation (Stage 2, Part 1), one
                             // class only, in priority order: Not Signed (red) beats
                             // everything, since an unsigned note needs attention regardless
@@ -17175,7 +17207,7 @@
                                 );
                             })();
                             return (
-                                <div key={a.id} id={`pv-row-${a.id}`} className={`pv-row ${dayMode === 'pre' && a.out ? 'dim' : ''} ${dayMode === 'pre' ? `pv-row-pre pv-stile-${sCls}` : ''} ${dayMode === 'post' ? `${postBorderCls} ${postBgCls} ${postDirectCls}` : ''}`}>
+                                <div key={a.id} id={`pv-row-${a.id}`} className={`pv-row ${dayMode === 'pre' && a.out ? 'dim' : ''} ${dayMode === 'pre' ? `pv-row-pre pv-stile-${sCls}` : ''} ${dayMode === 'post' ? `${postBorderCls} ${postClaimBorderCls} pv-post-ring ${postBgCls} ${postDirectCls}` : ''}`}>
                                     {dayMode === 'pre' ? (
                                         <>
                                             {/* ── PRE-VISIT: time / patient / valid-issue status / unsigned-notes badge / details ── */}
