@@ -51,6 +51,31 @@
             --info-tint: #EDF2F8;
             --info-dark: #33669F;
 
+            /* Post-Visit stat-button palette (Provider Day View, SummaryBar).
+               Reuses the .pv-post-* row-border hues (E5292D/EACB34/065F46) —
+               this button row is their second real usage location, the same
+               bar every other token above got promoted on. Text colors
+               verified at 4.5:1 against the new --pv-stat-bg tint, at the
+               buttons' ~12.75px bold size (still "small text" under WCAG's
+               18.66px bold large-text threshold):
+                 red   E5292D on F3FAFF = 4.25:1 (FAILS) → text uses A31417,
+                       the existing .pv-post-not-started ring color = 7.46:1
+                 gold  EACB34 on F3FAFF = 1.52:1 (FAILS); its own .pv-post
+                       ring B99D13 also fails at 2.52:1 → text falls back to
+                       the sitewide --warning-dark (already live, line ~5799)
+                       = 5.60:1
+                 green 065F46 on F3FAFF = 7.29:1 (PASSES) — used as-is.
+               Active/selected fills (white text on the vivid base) were
+               checked too: white/E5292D = 4.48:1 and white/EACB34 = 1.60:1
+               both fail, so active state fills with the dark-text variant
+               instead of the vivid base (white/A31417 = 7.87:1, white/
+               --warning-dark = 5.90:1); white/065F46 = 7.68:1 passes as-is. */
+            --pv-stat-bg: #F3FAFF;
+            --pv-stat-red: #E5292D;
+            --pv-stat-red-text: #A31417;
+            --pv-stat-gold: #EACB34;
+            --pv-stat-green: #065F46;
+
             /* Label color for text sitting on a solid --brand-primary fill
                (e.g. primary button labels). Verified 4.57:1. */
             --text-on-brand: #FFFFFF;
@@ -2002,6 +2027,49 @@
             flex-shrink: 0
         }
 
+        /* ── Post-Visit SummaryBar layout — three independent zones (left
+       button group / centered date banner / right button group) instead
+       of the plain flex row above, so the banner can sit genuinely
+       centered without disturbing the Not Signed/Signed/Not Submitted vs.
+       Pending/Paid split. Scoped to .summary-row-split (applied only in
+       dayMode 'post') so Pre-visit's flex row + margin-left:auto banner
+       above is untouched. ── */
+        .summary-row.summary-row-split {
+            display: grid;
+            /* minmax(0, 1fr), not bare 1fr — bare 1fr carries an implicit
+               minmax(auto, 1fr), so once a side's content can't shrink
+               below its min-content width the two "equal" columns stop
+               being equal and the banner drifts off-center. Found via a
+               620px-wide render test (24.6px drift); minmax(0, 1fr) lets
+               both sides actually shrink to fit, keeping columns 1 and 3
+               equal regardless of content. */
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        }
+
+        .summary-row-split .summary-row-left,
+        .summary-row-split .summary-row-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .summary-row-split .summary-row-left {
+            grid-column: 1;
+            justify-self: start;
+        }
+
+        .summary-row-split .summary-date-pill {
+            grid-column: 2;
+            justify-self: center;
+            margin-left: 0;
+        }
+
+        .summary-row-split .summary-row-right {
+            grid-column: 3;
+            justify-self: end;
+        }
+
         .pv-time {
             font-size: 14px;
             font-weight: 900;
@@ -3220,6 +3288,66 @@
         .cds-signed.cds-active {
             background: #0F766E;
             color: #FFFFFF
+        }
+
+        /* ── Provider Day View, Post-Visit SummaryBar stat buttons — a
+       separate class family from .claim-day-stat/.cds-* on purpose:
+       BillingView's Claims Ledger day banner (lines ~20412-20452) also
+       uses those, so resizing or recoloring here can't bleed into that
+       unrelated view. ~15% smaller than the .claim-day-stat baseline
+       this row used before (padding 8px 16px / font-size 15px / gap 5px
+       → 6.8px 13.6px / 12.75px / 4.25px, each × .85 exactly). ── */
+        .pv-stat {
+            display: inline-flex;
+            align-items: center;
+            gap: 4.25px;
+            padding: 6.8px 13.6px;
+            border-radius: 0;
+            font-size: 12.75px;
+            font-weight: 900;
+            white-space: nowrap;
+            border: 1px solid;
+            background: var(--pv-stat-bg);
+            cursor: pointer;
+        }
+
+        .pv-stat:hover {
+            opacity: .7;
+        }
+
+        .pv-stat-red {
+            color: var(--pv-stat-red-text);
+            border-color: var(--pv-stat-red);
+        }
+
+        .pv-stat-red.pv-stat-active {
+            background: var(--pv-stat-red-text);
+            color: #FFFFFF;
+        }
+
+        .pv-stat-gold {
+            color: var(--warning-dark);
+            border-color: var(--pv-stat-gold);
+        }
+
+        .pv-stat-gold.pv-stat-active {
+            background: var(--warning-dark);
+            color: #FFFFFF;
+        }
+
+        .pv-stat-green {
+            color: var(--pv-stat-green);
+            border-color: var(--pv-stat-green);
+        }
+
+        .pv-stat-green.pv-stat-active {
+            background: var(--pv-stat-green);
+            color: #FFFFFF;
+        }
+
+        .pv-stat-dim {
+            opacity: .4;
+            cursor: default;
         }
 
         /* ── Per-appointment claim status badge (Billing day view) ─────────── */
@@ -12720,19 +12848,23 @@
             const err = appts.filter(a => computeStatus(a) === 'issue').length;
             const pend = appts.filter(a => computeStatus(a) === 'pending').length;
             const out = appts.filter(a => a.out).length;
+            // Not Signed = everything not already counted under Signed — no
+            // separate derivation needed, just the complement of `out`.
+            const notSigned = total - out;
 
             // Post-visit set — mirrors BillingView's ClaimDayBanner logic. Dean's
             // requested list has no separate "Resubmitted" stat, so a resubmitted
             // claim is counted under "Pending" (still awaiting final adjudication)
-            // rather than silently dropped from every count.
+            // rather than silently dropped from every count. Denied dropped from
+            // this row (Stage 1) — .cds-denied itself is untouched since
+            // BillingView's Claims Ledger day banner still uses it.
             const notSub = appts.filter(a => a.method !== 'direct' && a.billing !== 'submitted').length;
             const submittedAppts = appts.filter(a => a.billing === 'submitted');
             const claimPaid = submittedAppts.filter(a => a.claimStatus === 'Paid').length;
-            const claimDenied = submittedAppts.filter(a => a.claimStatus === 'Denied').length;
             const claimPend = submittedAppts.filter(a => !a.claimStatus || a.claimStatus === 'Pending' || a.claimStatus === 'Resubmitted').length;
 
             return (
-                <div className="summary-row">
+                <div className={`summary-row${dayMode === 'post' ? ' summary-row-split' : ''}`}>
                     {dayMode === 'pre' ? (
                         <>
                             {pend > 0 && (
@@ -12755,38 +12887,43 @@
                         </>
                     ) : (
                         <>
-                            <div className="scard s-all"><span className="num">{total}</span> Total</div>
-                            <span
-                                className={`claim-day-stat cds-signed${activeFilter === 'signed' ? ' cds-active' : ''}`}
-                                style={out > 0 ? { cursor: 'pointer' } : { opacity: .4 }}
-                                onClick={out > 0 ? () => onFilterClick('signed') : undefined}
-                                title={out > 0 ? 'Filter to signed appointments' : undefined}>
-                                ✍️ {out} Signed
-                            </span>
-                            {notSub > 0 && (
-                                <span className={`claim-day-stat cds-nosub${activeFilter === 'notSub' ? ' cds-active' : ''}`}
-                                    style={{ cursor: 'pointer' }} onClick={() => onFilterClick('notSub')} title="Filter to not-yet-submitted claims">
-                                    📤 {notSub} Not Submitted
+                            <div className="summary-row-left">
+                                <div className="scard s-all"><span className="num">{total}</span> Total</div>
+                                {notSigned > 0 && (
+                                    <span
+                                        className={`pv-stat pv-stat-red${activeFilter === 'notSigned' ? ' pv-stat-active' : ''}`}
+                                        onClick={() => onFilterClick('notSigned')}
+                                        title="Filter to not-yet-signed appointments">
+                                        ✎ {notSigned} Not Signed
+                                    </span>
+                                )}
+                                <span
+                                    className={`pv-stat pv-stat-green${activeFilter === 'signed' ? ' pv-stat-active' : ''}${out === 0 ? ' pv-stat-dim' : ''}`}
+                                    onClick={out > 0 ? () => onFilterClick('signed') : undefined}
+                                    title={out > 0 ? 'Filter to signed appointments' : undefined}>
+                                    ✍️ {out} Signed
                                 </span>
-                            )}
-                            {claimPend > 0 && (
-                                <span className={`claim-day-stat cds-pend${activeFilter === 'claimPend' ? ' cds-active' : ''}`}
-                                    style={{ cursor: 'pointer' }} onClick={() => onFilterClick('claimPend')} title="Filter to claims still pending">
-                                    ⏳ {claimPend} Pending
-                                </span>
-                            )}
-                            {claimDenied > 0 && (
-                                <span className={`claim-day-stat cds-denied${activeFilter === 'claimDenied' ? ' cds-active' : ''}`}
-                                    style={{ cursor: 'pointer' }} onClick={() => onFilterClick('claimDenied')} title="Filter to denied claims">
-                                    ✗ {claimDenied} Denied
-                                </span>
-                            )}
-                            {claimPaid > 0 && (
-                                <span className={`claim-day-stat cds-paid${activeFilter === 'paid' ? ' cds-active' : ''}`}
-                                    style={{ cursor: 'pointer' }} onClick={() => onFilterClick('paid')} title="Filter to paid claims">
-                                    ✅ {claimPaid} Paid
-                                </span>
-                            )}
+                                {notSub > 0 && (
+                                    <span className={`pv-stat pv-stat-red${activeFilter === 'notSub' ? ' pv-stat-active' : ''}`}
+                                        onClick={() => onFilterClick('notSub')} title="Filter to not-yet-submitted claims">
+                                        📤 {notSub} Not Submitted
+                                    </span>
+                                )}
+                            </div>
+                            <div className="summary-row-right">
+                                {claimPend > 0 && (
+                                    <span className={`pv-stat pv-stat-gold${activeFilter === 'claimPend' ? ' pv-stat-active' : ''}`}
+                                        onClick={() => onFilterClick('claimPend')} title="Filter to claims still pending">
+                                        ⏳ {claimPend} Pending
+                                    </span>
+                                )}
+                                {claimPaid > 0 && (
+                                    <span className={`pv-stat pv-stat-green${activeFilter === 'paid' ? ' pv-stat-active' : ''}`}
+                                        onClick={() => onFilterClick('paid')} title="Filter to paid claims">
+                                        ✅ {claimPaid} Paid
+                                    </span>
+                                )}
+                            </div>
                         </>
                     )}
                     {date && <div className="summary-date-pill">📋 {fmtDate(date)}</div>}
@@ -16916,17 +17053,17 @@
             // highlighting them, mirroring BillingView's claims filter. Only one
             // active at a time; clicking the active one again clears the filter.
             // Resets whenever the viewed date changes, same as BillingView's.
-            const [postFilter, setPostFilter] = useState(null); // 'signed'|'notSub'|'claimPend'|'claimDenied'|'paid'|null
+            const [postFilter, setPostFilter] = useState(null); // 'notSigned'|'signed'|'notSub'|'claimPend'|'paid'|null
             React.useEffect(() => { setPostFilter(null); }, [date]);
             function togglePostFilter(kind) {
                 setPostFilter(p => p === kind ? null : kind);
             }
             function matchesPostFilter(a) {
                 if (!postFilter) return true;
+                if (postFilter === 'notSigned') return !a.out;
                 if (postFilter === 'signed') return !!a.out;
                 if (postFilter === 'notSub') return a.method !== 'direct' && a.billing !== 'submitted';
                 if (postFilter === 'claimPend') return a.billing === 'submitted' && (!a.claimStatus || a.claimStatus === 'Pending' || a.claimStatus === 'Resubmitted');
-                if (postFilter === 'claimDenied') return a.billing === 'submitted' && a.claimStatus === 'Denied';
                 if (postFilter === 'paid') return a.billing === 'submitted' && a.claimStatus === 'Paid';
                 return true;
             }
