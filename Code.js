@@ -114,6 +114,15 @@ const PATIENT_COLS = [
   // depends on but which had gone missing from this file.
 ];
 
+// Billing-channel label (Patients tab, e.g. "Headway") → Appointments-tab
+// short code (e.g. "hw"). Several functions already carry their own
+// function-scoped copy of this exact literal (the Tebra Excel-import
+// parser, _buildPatientLookup()) — those are left alone since touching
+// them is out of scope here. This top-level copy exists so new code
+// (setPatientBillingChannel's appointment-propagation step) has one
+// shared definition to reuse instead of writing a third copy.
+const PLATFORM_TO_METHOD = { 'alma': 'alma', 'headway': 'hw', 'grow': 'grow', 'direct': 'direct' };
+
 const STAFF_COLS = ['Email', 'Role', 'ProvID', 'DisplayName'];
 
 const STAFF_SEED = [
@@ -7472,20 +7481,34 @@ function savePatientBestChannel(patientName, channelJson) {
 /* ════════════════════════════════════════════════════════════════
    SET PATIENT BILLING CHANNEL  — setPatientBillingChannel
    Updates the BillingChannel column (index 2, formerly "Platform")
-   on the Patients tab. This is the "going forward" claim-submission
-   channel for a patient — NOT a retroactive edit of any
-   already-created appointment row.
- 
-   Every night's Tebra Sync reads this value via _buildPatientLookup()
-   / PLATFORM_TO_METHOD (internal helper name unchanged — see note above
-   APPT_COLS on the scope of this terminology pass) and stamps it onto
-   each *newly created* appointment row's BillingChannel column
-   (Appointments tab, col F). Past appointment rows are untouched,
-   matching Dean's "from the date going forward" requirement — the
-   biller edits future routing here, and edits an individual past
-   appointment's channel separately via the per-appointment channel
-   selector in the Provider/Biller window.
- 
+   on the Patients tab — the patient's default claim-submission
+   channel going forward. As of 2026-08-17 this IS also a retroactive
+   edit: any of this patient's already-scheduled future appointments
+   (across all providers) are updated in the same call — see below.
+
+   Every night's Tebra Sync reads this Patients-tab value via
+   _buildPatientLookup() / PLATFORM_TO_METHOD (internal helper name
+   unchanged — see note above APPT_COLS on the scope of this
+   terminology pass) and stamps it onto each *newly created*
+   appointment row's BillingChannel column (Appointments tab, col F).
+
+   PROPAGATION TO EXISTING ROWS (new, 2026-08-17): after writing the
+   Patients-tab value, this function also batch-updates every
+   Appointments-tab row for this patient, across ALL providers, where:
+     - the row's Date is today or later, AND
+     - the row's TebraStatus is not cancelled/canceled/deleted/no show/
+       noshow/no-show (rescheduled and everything else IS included).
+   For each such row whose current BillingChannel differs from the new
+   short code, the channel is updated and that row's OLD channel's
+   verification fields are cleared: AlmaText/AlmaValid (from 'alma'),
+   HWText/HWValid (from 'hw'), GrowText/GrowValid (from 'grow'), or
+   DirectValid only (from 'direct' — DirectIns holds the patient's
+   insurance carrier name, not a verification note, and is always
+   preserved). Rows already on the new channel, and past/cancelled
+   rows, are left untouched. Intake/InsVerified/Autopay are never
+   touched by this propagation. See _propagateBillingChannelToFuture
+   Appointments() for the implementation.
+
    channel must be one of: '', 'Alma', 'Headway', 'Grow', 'Direct',
    'Unknown'. Blank and 'Unknown' are both accepted from the UI as
    "not yet determined" — both are normalized to '' on write, since
@@ -7528,7 +7551,16 @@ function setPatientBillingChannel(patientName, channel) {
       SpreadsheetApp.flush();
       _audit(ss, 'setPatientBillingChannel', patientName + ': "' + (prior || '(blank)') + '" → "' + (norm || '(blank)') + '"');
       Logger.log('setPatientBillingChannel: row ' + rowNum + ' for "' + patientName + '" → "' + norm + '"');
-      return JSON.stringify({ ok: true, row: rowNum, channel: norm });
+
+      var newShortCode = PLATFORM_TO_METHOD[norm.toLowerCase()] || '';
+      var propagation = _propagateBillingChannelToFutureAppointments(ss, patientName, newShortCode);
+      _audit(ss, 'setPatientBillingChannel:propagateAppointments',
+        patientName + ': "' + (prior || '(blank)') + '" → "' + (norm || '(blank)') + '" — ' +
+        (propagation.count > 0
+          ? propagation.count + ' future appointment row(s) updated (' + propagation.dates.join(', ') + ')'
+          : 'no upcoming appointments to update'));
+
+      return JSON.stringify({ ok: true, row: rowNum, channel: norm, updatedAppointments: propagation.count });
     }
 
     Logger.log('setPatientBillingChannel: patient not found — "' + patientName + '"');
@@ -7537,6 +7569,93 @@ function setPatientBillingChannel(patientName, channel) {
     Logger.log('setPatientBillingChannel error: ' + e.message);
     return JSON.stringify({ ok: false, error: e.message });
   }
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   PROPAGATE BILLING CHANNEL TO FUTURE APPOINTMENTS
+   — _propagateBillingChannelToFutureAppointments
+   Called by setPatientBillingChannel() after a successful Patients-tab
+   write. Scans the full Appointments tab (all providers) for rows
+   belonging to this patient, dated today or later, whose TebraStatus
+   is not a cancelled/deleted/no-show terminal status (rescheduled and
+   everything else IS included). For each matching row whose current
+   BillingChannel differs from newShortCode, stamps the new channel
+   and clears that row's OLD channel's verification fields —
+   AlmaText/AlmaValid, HWText/HWValid, GrowText/GrowValid, or
+   DirectValid only (DirectIns is insurance data, not a verification
+   note, and is always preserved). Rows already on the new channel are
+   skipped untouched. Batch read + single batch write — no per-row
+   setValue() calls, mirroring the Tebra sync's write pattern.
+
+   Returns { count, dates } — count of rows changed and their (already
+   _fmtDate-formatted) dates, for the caller's audit-log summary.
+════════════════════════════════════════════════════════════════ */
+function _propagateBillingChannelToFutureAppointments(ss, patientName, newShortCode) {
+  var apptSheet = ss.getSheetByName(TAB_APPT);
+  if (!apptSheet || apptSheet.getLastRow() < 2) return { count: 0, dates: [] };
+
+  var NUM_COLS = APPT_COLS.length;
+  var IDX_DATE = APPT_COLS.indexOf('Date');
+  var IDX_PATIENT = APPT_COLS.indexOf('Patient');
+  var IDX_CHAN = APPT_COLS.indexOf('BillingChannel');
+  var IDX_ALMA_TEXT = APPT_COLS.indexOf('AlmaText');
+  var IDX_ALMA_VALID = APPT_COLS.indexOf('AlmaValid');
+  var IDX_HW_TEXT = APPT_COLS.indexOf('HWText');
+  var IDX_HW_VALID = APPT_COLS.indexOf('HWValid');
+  var IDX_GROW_TEXT = APPT_COLS.indexOf('GrowText');
+  var IDX_GROW_VALID = APPT_COLS.indexOf('GrowValid');
+  var IDX_DIRECT_VALID = APPT_COLS.indexOf('DirectValid');
+  var IDX_TEBRA_STATUS = APPT_COLS.indexOf('TebraStatus');
+
+  // Same terminal-status vocabulary as the Tebra sync's dedup priority
+  // dictionary (_STATUS_PRI) — rescheduled and anything else IS included.
+  var TERMINAL_STATUSES = ['cancelled', 'canceled', 'deleted', 'no show', 'noshow', 'no-show'];
+
+  var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var nameNorm = _normName(patientName);
+
+  var data = apptSheet.getRange(2, 1, apptSheet.getLastRow() - 1, NUM_COLS).getValues();
+
+  var count = 0;
+  var dates = [];
+  var touched = false;
+
+  for (var i = 0; i < data.length; i++) {
+    var row = data[i];
+    if (_normName(row[IDX_PATIENT]) !== nameNorm) continue;
+    if (_fmtDate(row[IDX_DATE]) < todayStr) continue;
+
+    var ts = String(row[IDX_TEBRA_STATUS] || '').trim().toLowerCase();
+    if (TERMINAL_STATUSES.indexOf(ts) !== -1) continue;
+
+    var currentChan = String(row[IDX_CHAN] || '').trim().toLowerCase();
+    if (currentChan === newShortCode) continue;
+
+    if (currentChan === 'alma') {
+      row[IDX_ALMA_TEXT] = '';
+      row[IDX_ALMA_VALID] = '';
+    } else if (currentChan === 'hw') {
+      row[IDX_HW_TEXT] = '';
+      row[IDX_HW_VALID] = '';
+    } else if (currentChan === 'grow') {
+      row[IDX_GROW_TEXT] = '';
+      row[IDX_GROW_VALID] = '';
+    } else if (currentChan === 'direct') {
+      row[IDX_DIRECT_VALID] = '';
+    }
+
+    row[IDX_CHAN] = newShortCode;
+    touched = true;
+    count++;
+    dates.push(_fmtDate(row[IDX_DATE]));
+  }
+
+  if (touched) {
+    apptSheet.getRange(2, 1, data.length, NUM_COLS).setValues(data);
+  }
+
+  return { count: count, dates: dates };
 }
 
 

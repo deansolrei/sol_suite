@@ -9908,6 +9908,15 @@
             text-overflow: ellipsis;
         }
 
+        .bc-row-toast {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--brand-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .bc-row-btns {
             display: flex;
             gap: 5px;
@@ -18751,10 +18760,18 @@
            Headway / Grow / Direct / Unknown) on the Patients tab. This is
            the "going forward" claim-submission channel: every Tebra Sync
            reads this value to stamp Method onto NEWLY CREATED appointment
-           rows. It does not touch any appointment already on the calendar
-           — the biller edits an individual past appointment's channel
-           separately via the per-appointment selector in that appointment's
-           modal.
+           rows. As of 2026-08-17 it ALSO updates that patient's already-
+           scheduled future appointments (today forward, any provider, any
+           non-cancelled/deleted/no-show status) in the same save — see
+           setPatientBillingChannel() / _propagateBillingChannelToFuture
+           Appointments() in Code.js. Switching a row's channel clears that
+           row's OLD channel's verification status (AlmaText/AlmaValid,
+           HWText/HWValid, GrowText/GrowValid, or DirectValid — DirectIns
+           is preserved). Only past appointments and cancelled/deleted/
+           no-show rows are skipped — any other future row for this
+           patient, including one previously set differently via the
+           per-appointment channel selector in that appointment's modal,
+           IS overwritten to match the new default.
            Props:
              patientDb       — full patient list (already loaded in BillingView)
              onClose          — close handler
@@ -18767,6 +18784,7 @@
             const [savingKey, setSavingKey] = useState(null);   // `${nameLower}:${channelId}` currently in flight
             const [localPlatform, setLocalPlatform] = useState({}); // optimistic overrides, keyed by nameLower
             const [errKey, setErrKey] = useState(null);
+            const [toast, setToast] = useState(null);   // { key, text } — auto-dismissing per-row confirmation
 
             const CHANNELS = [
                 { id: 'Alma', cls: 'on-alma' },
@@ -18790,6 +18808,10 @@
                 return key in localPlatform ? localPlatform[key] : (p.platform || '');
             }
 
+            function channelLabel(id) {
+                return id === 'Headway' ? 'HW' : id === 'Direct' ? 'Clinic Submit' : id;
+            }
+
             function setPlatform(p, channelId) {
                 const fullName = `${p.firstName} ${p.lastName}`.trim();
                 const key = fullName.toLowerCase();
@@ -18802,6 +18824,10 @@
                         if (r.ok) {
                             setLocalPlatform(prev => ({ ...prev, [key]: r.channel }));
                             if (onRefreshPatients) onRefreshPatients();
+                            const n = r.updatedAppointments || 0;
+                            const text = `✓ ${channelLabel(channelId)} — ${n > 0 ? `updated ${n} upcoming appointment${n === 1 ? '' : 's'}` : 'no upcoming appointments to update'}`;
+                            setToast({ key, text });
+                            setTimeout(() => setToast(t => (t && t.key === key ? null : t)), 3500);
                         } else {
                             setErrKey(key);
                             alert('Could not update billing channel for ' + fullName + ': ' + (r.error || 'unknown error'));
@@ -18819,7 +18845,7 @@
                     <div className="bc-panel-hdr">
                         <div>
                             <div>🔀 Billing Channels</div>
-                            <div className="bc-panel-sub">Sets each patient's channel going forward — applies to appointments created by future Tebra Syncs</div>
+                            <div className="bc-panel-sub">Sets each patient's channel going forward — applies to future Tebra Syncs AND updates that patient's already-scheduled future appointments now</div>
                         </div>
                         <button className="bc-close-btn" onClick={onClose}>×</button>
                     </div>
@@ -18848,7 +18874,9 @@
                             <div className="bc-row" key={key}>
                                 <div className="bc-row-name">
                                     <div className="bc-row-fullname">{fullName}</div>
-                                    {p.insurance && <div className="bc-row-ins">{p.insurance}</div>}
+                                    {toast && toast.key === key
+                                        ? <div className="bc-row-toast">{toast.text}</div>
+                                        : (p.insurance && <div className="bc-row-ins">{p.insurance}</div>)}
                                 </div>
                                 <div className="bc-row-btns">
                                     {CHANNELS.map(c => {
