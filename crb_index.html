@@ -21584,7 +21584,7 @@
                         : dkey(prov, date);
                     fetchedRef.current.delete(k);
                     setRefreshTick(t => t + 1);
-                }, 900000);   // 15 minutes
+                }, 60000);   // 60 seconds
                 return () => clearInterval(id);
             }, [initLoading, prov, date, period]);
 

@@ -109,6 +109,9 @@ const PATIENT_COLS = [
   'RenderingNPI', 'BillingNPI', 'xCode',
   'PaymentProcessingChannel',  // index 16 — default collection channel (Tebra, Chase, etc.)
   'BestChannel',      // index 17 — JSON: {channel, payer, state, rate, cpts, updatedAt}
+  'PatientID',        // index 18 — NEW (2026-08-17) — real Tebra internal Patient ID.
+  // PHI. Restores capture that patient_id_system's integration
+  // depends on but which had gone missing from this file.
 ];
 
 const STAFF_COLS = ['Email', 'Role', 'ProvID', 'DisplayName'];
@@ -2881,6 +2884,37 @@ var AUTOPAY_AT_COL = 93;               // CO
 var CHECKLIST_NOTE_BY_COL = 94;        // CP
 var CHECKLIST_NOTE_AT_COL = 95;        // CQ
 
+/* ─/* ── TEBRA SOURCE ID (2026-08-16) — standalone column, same reasoning
+   as PAYMENT_COMMENTS_COL / NOTE_PROGRESS_BY_COL etc. above. Holds the
+   raw Tebra appointment ID (e.g. "11022LCS" — NOT the same as ApptID,
+   which is SolBoard's own generated identifier). Previously this ID
+   was only embedded as text inside Notes ("Imported from Tebra API
+   (ID:xxxxx)"), which broke reconciliation any time billing staff
+   overwrote Notes with their own working notes — routine, and the
+   root cause of the 2026-08-16 legacy-orphan investigation (32 rows
+   found unrecoverable from Notes alone). Storing it here decouples
+   sync-integrity tracking from a user-editable field permanently.
+   Column 95 (CQ) is the last currently-used standalone column; this
+   picks up right after it. Written ONLY by the Tebra import's
+   row-creation path and the one-time backfill below — never by any
+   manual save. Confirm empty via verifyTebraSourceIdColEmpty() before
+   first use. ── */
+var TEBRA_SOURCE_ID_COL = 96;  // CR
+
+/* ── TEBRA PATIENT ID (2026-08-17) — standalone column. Repurposes BH
+   (60), one of four columns an earlier comment described as "3 dead
+   duplicate headers + a real PatientID column written by the separate
+   patient-id-system's nightly Tebra sync." Verified against live sheet
+   data before reuse: all four columns (BH-BK / 60-63) were completely
+   empty across all 2,342 rows — patient_id_system's own handoff doc
+   confirms its Google service account is Viewer-only and can never
+   write to this sheet, so that old comment was describing something
+   that was never actually happening. BI/BJ/BK (61-63) remain reserved.
+   Holds the real Tebra internal Patient ID — PHI, same handling
+   discipline as anywhere else patient identifiers appear. Written on
+   row creation for now; backfilling existing rows is a follow-up. ── */
+var TEBRA_PATIENT_ID_COL = 60;  // BH
+
 /* ── Attribution stamp helper — writes the current session's staff
    displayName (or raw email if unrecognized) plus an ISO timestamp
    into a by/at column pair. Shared by every save function below so
@@ -3247,7 +3281,7 @@ function saveChecklistNote(apptId, note) {
    deliberately NOT the new ClaimSubmittedAt attribution stamp, which
    is blank on historical data and would misjudge it. See the comment
    in _isInLiveWindow for the full reasoning.
-
+ 
    getLiveWindowAppointments and searchArchiveAppointments share the
    exact same bounds/exclusion logic (_liveWindowBounds / _isInLiveWindow)
    so the two views can never disagree about which side of the line a
@@ -3982,7 +4016,7 @@ function getPaymentTrackerData(provFilter) {
      8 PaymentCollected  9 PaymentFailed  10 PaymentProcessingChannel
      11 PaymentPlan   12 Status         13 Comments        14 Source
      15 ImportNotes
-
+ 
    Output field names deliberately match getPaymentTrackerData()'s shape
    (patient, cpt, paymentType, paymentRate, paymentAmount, paymentPlatform,
    comments, ...) so the eventual merge is a straight concat, not a
@@ -4157,14 +4191,14 @@ function auditPaymentTrackerDuplicates() {
    row (PaymentTrackerManual, from the pre-Payment-Tracker manual tracking
    sheet) both recording the SAME real payment: same patient+provider+
    appointment-date, same collected amount, Legacy Import's Status='Paid'.
-
+ 
    The other 13 groups are NOT duplicates — declined-then-paid sequences,
    Reversed/refund rows, mismatched amounts, or a row where SolBoard
    Auto's own record is blank and the Legacy Import row is the only real
    record. This function only matches the narrow 92-pattern (exactly 2
    rows: 1 SolBoard Auto + 1 Legacy Import/Paid, amounts equal) — those 13
    are always left alone for manual review.
-
+ 
    Only ever deletes from PaymentTrackerManual — never writes to or
    deletes from the main Appointments tab, which stays the kept "live"
    copy. Grouping is computed fresh in this same run (not from a stale
@@ -4805,13 +4839,13 @@ function importTebraAppointments(sheetId, dryRun) {
 
 /* ── TEBRA API KILL SWITCH ───────────────────────────────────────────────────
    Controls whether any outbound Tebra/Kareo API call is allowed.
-
+ 
    TWO ways to toggle:
      1. UI Toggle  — use the "Tebra API" switch in the Billing Window header.
         State is stored in Script Properties (survives deploys and restarts).
      2. Code default — TEBRA_API_DEFAULT below is the fallback when no Script
         Property has been set yet (e.g. fresh deploy).
-
+ 
    Script Property key: 'TEBRA_API_ENABLED'  (values: 'true' | 'false')
 ────────────────────────────────────────────────────────────────────────────── */
 var TEBRA_API_DEFAULT = true;   // ← code-level fallback; UI toggle takes precedence
@@ -5543,6 +5577,7 @@ function _fetchTebraAppointments(c, startDateStr, endDateStr) {
     '<ns:PatientCaseID>true</ns:PatientCaseID>' +
     '<ns:PatientCaseName>true</ns:PatientCaseName>' +
     '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:PatientID>true</ns:PatientID>' +   // NEW (2026-08-17) — confirmed valid/populated via testTebraAppointmentsWithPatientID()
     '<ns:ResourceID1>true</ns:ResourceID1>' +
     '<ns:ResourceName1>true</ns:ResourceName1>' +
     '<ns:StartDate>true</ns:StartDate>' +
@@ -5600,6 +5635,7 @@ function _fetchTebraAppointments(c, startDateStr, endDateStr) {
     var fullName = _findFirstXml(el, 'PatientFullName');
     var rawStart = _findFirstXml(el, 'StartDate');
     var tebraId = _findFirstXml(el, 'ID');
+    var tebraPatientId = _findFirstXml(el, 'PatientID');   // NEW
     var resourceName1 = _findFirstXml(el, 'ResourceName1');
     var status = _findFirstXml(el, 'ConfirmationStatus');
     var insurance = _findFirstXml(el, 'PatientCaseName');
@@ -5628,6 +5664,7 @@ function _fetchTebraAppointments(c, startDateStr, endDateStr) {
       patient: patientName,
       tebraStatus: status,
       tebraApptId: tebraId,
+      tebraPatientId: tebraPatientId,   // NEW
       insurance: insurance,           // primary insurance carrier from Tebra
       serviceLocation: serviceLocation,     // e.g. "Colorado - Solrei Behavioral Health, Inc."
       serviceLocId: serviceLocId,        // numeric Tebra service location ID (fallback lookup)
@@ -5786,11 +5823,10 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     // truly stale if BOTH its old Tebra ID is gone AND its own slot no longer
     // appears anywhere in the current pull. This is what was silently flagging
     // legitimate Checked-Out appointments as "cancelled in tebra."
-    function _findStaleRows(dataBlock) {
+    function _findStaleRows(dataBlock, tebraSourceIds) {
       var stale = [];
       if (!canReconcile || !dataBlock || !dataBlock.length) return stale;
 
-      var ID_RE = /\(ID:([^)]+)\)/;
       dataBlock.forEach(function (row, i) {
         var apptId = String(row[COL_APPTID] || '');
         if (apptId.indexOf('TEBRA-API-') !== 0) return;
@@ -5798,12 +5834,15 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
         var rowDate = _fmtDate(row[COL_DATE]);
         if (rowDate < startDateStr || rowDate > endDateStr) return;
 
-        var match = String(row[COL_NOTES] || '').match(ID_RE);
-        if (!match) return;
+        // CHANGED (2026-08-16): reads TEBRA_SOURCE_ID_COL directly instead of
+        // regex-parsing Notes. Notes is user-editable (billing staff routinely
+        // overwrite it), which silently broke this check for any row whose
+        // Notes got reused for working notes. See legacy-orphan investigation.
+        var tebraId = String((tebraSourceIds[i] && tebraSourceIds[i][0]) || '').trim();
+        if (!tebraId) return; // not backfilled / never captured — nothing to check
 
-        var tebraId = match[1];
         // Idempotency: skip rows already flagged by a previous sync run —
-        // now checked on Column AI (TebraStatus), not Column Y (Status),
+        // checked on Column AI (TebraStatus), not Column Y (Status),
         // since Column Y is Assistant-owned and no longer touched here.
         var tsExisting = String(row[COL_TS_0BASED] || '').toLowerCase().trim();
         if (tsExisting === 'deleted in tebra') return;
@@ -5838,7 +5877,10 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       var dryRunBlock = (apptSheet && apptSheet.getLastRow() > 1)
         ? apptSheet.getRange(2, 1, apptSheet.getLastRow() - 1, NUM_COLS).getValues()
         : [];
-      var wouldFlag = _findStaleRows(dryRunBlock);
+      var tebraSourceIdsDry = (apptSheet && apptSheet.getLastRow() > 1)   // NEW
+        ? apptSheet.getRange(2, TEBRA_SOURCE_ID_COL, apptSheet.getLastRow() - 1, 1).getValues()
+        : [];
+      var wouldFlag = _findStaleRows(dryRunBlock, tebraSourceIdsDry);
       if (wouldFlag.length) {
         Logger.log('Would flag ' + wouldFlag.length + ' stale appointments as "Deleted in Tebra" (TebraStatus, Column AI):');
         wouldFlag.forEach(function (s) {
@@ -5887,6 +5929,12 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     // rule are unchanged — only how the writes reach the sheet.
     var apptData = (apptSheet.getLastRow() > 1)
       ? apptSheet.getRange(2, 1, apptSheet.getLastRow() - 1, NUM_COLS).getValues()
+      : [];
+
+    // NEW (2026-08-17) — parallel read of TEBRA_PATIENT_ID_COL, same row range
+    // as apptData. Kept separate because it lives outside APPT_COLS width.
+    var existingPatientIds = (apptSheet.getLastRow() > 1)
+      ? apptSheet.getRange(2, TEBRA_PATIENT_ID_COL, apptSheet.getLastRow() - 1, 1).getValues()
       : [];
 
     apptData.forEach(function (r, i) {
@@ -5972,6 +6020,8 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     // ONE batched setValues() call after the loop, instead of one
     // setValues() + one setNumberFormat() call per row as before.
     var newRowsData = [];
+    var newRowsTebraIds = [];      // parallel array, same order as newRowsData
+    var newRowsPatientIds = [];    // NEW — parallel array, same order as newRowsData
     var firstNewRowNum = apptSheet.getLastRow() + 1;
     var nextNewRowNum = firstNewRowNum;
 
@@ -5990,6 +6040,7 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
             firstName: _pts[0] || '',
             lastName: _pts.slice(1).join(' ') || '',
             insurance: appt.insurance || '',
+            patientId: appt.tebraPatientId || '',   // NEW
           };
         } else if (appt.insurance && !newPatientsMap[_ptNameLower].insurance) {
           // Prefer the first insurance value we encounter
@@ -6076,6 +6127,17 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
             }
           }
 
+          // ── TebraPatientID: backfill only if currently blank (2026-08-17).
+          // Lives outside apptData's width, so it's tracked in the parallel
+          // existingPatientIds array and written back separately below.
+          if (appt.tebraPatientId) {
+            var _existingPid = String((existingPatientIds[rowIdx] && existingPatientIds[rowIdx][0]) || '').trim();
+            if (!_existingPid) {
+              existingPatientIds[rowIdx] = [appt.tebraPatientId];
+              touched = true;
+            }
+          }
+
           if (!touched) skipped++;
           return;
         }
@@ -6151,6 +6213,8 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       var newRow = nextNewRowNum;
       nextNewRowNum++;
       newRowsData.push(rowData);
+      newRowsTebraIds.push(appt.tebraApptId || '');
+      newRowsPatientIds.push(appt.tebraPatientId || '');   // NEW
 
       existingRowMap[key] = newRow;
       // Register new patient in tracking maps so any subsequent Tebra records
@@ -6179,7 +6243,10 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     // into _isVoidStatus() and the frontend's tsClass()/isVoidAppt() so it's
     // excluded from appointment + unsigned-note tallies exactly like No Show /
     // Rescheduled / Cancelled.
-    var staleRows = _findStaleRows(apptData);
+    var tebraSourceIds = (apptSheet.getLastRow() > 1)   // NEW
+      ? apptSheet.getRange(2, TEBRA_SOURCE_ID_COL, apptSheet.getLastRow() - 1, 1).getValues()
+      : [];
+    var staleRows = _findStaleRows(apptData, tebraSourceIds);
     var flagged = 0;
     var now = new Date().toISOString();
 
@@ -6203,12 +6270,24 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       apptSheet.getRange(2, 1, apptData.length, NUM_COLS).setValues(apptData);
     }
 
+    // NEW (2026-08-17) — write back any TebraPatientID backfills from above
+    if (existingPatientIds.length) {
+      apptSheet.getRange(2, TEBRA_PATIENT_ID_COL, existingPatientIds.length, 1).setValues(existingPatientIds);
+    }
+
     // ── PERFORMANCE: ONE batched write for every brand-new appointment row,
     // instead of one setValues() + one setNumberFormat() call per row.
     if (newRowsData.length) {
       var rowWidth = newRowsData[0].length;
       apptSheet.getRange(firstNewRowNum, 1, newRowsData.length, rowWidth).setValues(newRowsData);
       apptSheet.getRange(firstNewRowNum, 4, newRowsData.length, 1).setNumberFormat('@');
+
+      apptSheet.getRange(firstNewRowNum, TEBRA_SOURCE_ID_COL, newRowsTebraIds.length, 1)
+        .setValues(newRowsTebraIds.map(function (id) { return [id]; }));
+
+      // NEW — write the real Tebra Patient ID into its own protected column
+      apptSheet.getRange(firstNewRowNum, TEBRA_PATIENT_ID_COL, newRowsPatientIds.length, 1)
+        .setValues(newRowsPatientIds.map(function (id) { return [id]; }));
     }
 
     // ── Add brand-new patients to Patients tab ────────────────────────
@@ -6222,6 +6301,7 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     var newPatientKeys = Object.keys(newPatientsMap);
     if (patSheet && newPatientKeys.length > 0) {
       var newPatientRows = [];
+      var newPatientRowIds = [];   // NEW — parallel array, same order as newPatientRows
       newPatientKeys.forEach(function (nameLower) {
         var pt = newPatientsMap[nameLower];
         // Guard: skip if they were somehow added to patientLookup between passes
@@ -6236,6 +6316,7 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
           '',            // PatientPortion
           '',            // Rate
         ]);
+        newPatientRowIds.push(pt.patientId || '');   // NEW — parallel array, same order
         patientsCreated++;
 
         // Add to in-memory lookup so the insurance-update pass below can find them.
@@ -6256,6 +6337,11 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       if (newPatientRows.length) {
         var patStartRow = patSheet.getLastRow() + 1;
         patSheet.getRange(patStartRow, 1, newPatientRows.length, 6).setValues(newPatientRows);
+
+        // NEW — write PatientID into its own column (index 18 → 1-based col 19)
+        var PT_ID_COL = PATIENT_COLS.indexOf('PatientID') + 1;
+        patSheet.getRange(patStartRow, PT_ID_COL, newPatientRowIds.length, 1)
+          .setValues(newPatientRowIds.map(function (id) { return [id]; }));
       }
     }
     // ─────────────────────────────────────────────────────────────────
@@ -6367,13 +6453,27 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
   }
 }
 
+function verifyTebraSourceIdColEmpty() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var apptSheet = ss.getSheetByName(TAB_APPT);
+  var lastRow = apptSheet.getLastRow();
+  if (lastRow < 2) { Logger.log('No data rows.'); return; }
+  var vals = apptSheet.getRange(2, TEBRA_SOURCE_ID_COL, lastRow - 1, 1).getValues();
+  var nonBlank = vals.filter(function (r) { return String(r[0] || '').trim() !== ''; });
+  Logger.log('Column 96 (CR): ' + nonBlank.length + ' non-blank cells out of ' + vals.length + '.');
+  Logger.log(nonBlank.length ? '⚠️  NOT EMPTY — investigate before proceeding.' : '✅  Confirmed empty — safe to use.');
+}
+
+
+
+
 /* ── backfillPatientStatesFromTab ────────────────────────────────────────────
    One-time (or repeated) backfill: reads PatientState from the Patients tab and
    stamps it on every blank PatientState cell in the Appointments tab.
-
+ 
    Call manually:  backfillPatientStatesFromTab()
    Safe to re-run: only fills BLANK cells; never overwrites existing values.
-
+ 
    Reads the Patients tab HEADER ROW to locate PatientState dynamically, so
    it is robust even when the sheet layout differs from PATIENT_COLS constants.
    Only valid 2-letter US state codes are written — guards against accidental
@@ -6449,7 +6549,7 @@ function backfillPatientStatesFromTab() {
    accidentally written there by a previous backfill run).
    After running this, call backfillPatientStatesFromTab() to re-populate with
    correct state values.
-
+ 
    Run manually:  cleanBadPatientStates()
 ────────────────────────────────────────────────────────────────────────────── */
 function cleanBadPatientStates() {
@@ -7375,7 +7475,7 @@ function savePatientBestChannel(patientName, channelJson) {
    on the Patients tab. This is the "going forward" claim-submission
    channel for a patient — NOT a retroactive edit of any
    already-created appointment row.
-
+ 
    Every night's Tebra Sync reads this value via _buildPatientLookup()
    / PLATFORM_TO_METHOD (internal helper name unchanged — see note above
    APPT_COLS on the scope of this terminology pass) and stamps it onto
@@ -7385,7 +7485,7 @@ function savePatientBestChannel(patientName, channelJson) {
    biller edits future routing here, and edits an individual past
    appointment's channel separately via the per-appointment channel
    selector in the Provider/Biller window.
-
+ 
    channel must be one of: '', 'Alma', 'Headway', 'Grow', 'Direct',
    'Unknown'. Blank and 'Unknown' are both accepted from the UI as
    "not yet determined" — both are normalized to '' on write, since
@@ -7488,7 +7588,7 @@ function migrateAddPatientClaimCols() {
    Column POSITIONS never move — only the row-1 label text changes —
    so this has zero effect on numeric-index-based row access anywhere
    else in this file or in Tebra Sync.
-
+ 
    ⚠️  RUN THIS ONCE, MANUALLY, FROM THE APPS SCRIPT EDITOR — BEFORE
    deploying this version of Code.gs as a new web app version.
    If the new code deploys FIRST (with the new column-name constants)
@@ -7498,13 +7598,13 @@ function migrateAddPatientClaimCols() {
    and APPEND a brand-new duplicate column instead of matching the
    existing one — splitting live data across two columns. Run this
    migration first, confirm the log looks right, THEN deploy.
-
+ 
    Does not read from or write to the live header row by column
    letter/number — it searches the actual header row for each OLD
    name and renames whatever column it's actually in. Robust to any
    historical drift between PATIENT_COLS/APPT_COLS and the physical
    sheet, and safe to re-run (already-renamed columns are skipped).
-
+ 
    HOW TO RUN:
      1. Open the Apps Script editor (bound to the Solrei ClinicBoard
         Data spreadsheet)
@@ -7586,16 +7686,16 @@ function renameHeadersForTerminologyCleanup() {
      ✅  Intake Paperwork Complete   (Intake)
      ✅  Insurance Verified & Valid  (InsVerified)
      ✅  Autopay / Credit Card on File (Autopay)
-
+ 
    HOW TO RUN:
      1. Open Apps Script editor
      2. Select  bulkVerifyQ1_2026  from the function dropdown
      3. Click ▶ Run  (dryRun = false — live write)
-
+ 
    HOW TO PREVIEW FIRST (recommended):
      Select  bulkVerifyQ1_2026_dryRun  and click ▶ Run.
      Check the Execution Log — no data is changed.
-
+ 
    SAFE TO RE-RUN: already-TRUE values are skipped (no double-write).
    ════════════════════════════════════════════════════════════════════ */
 function bulkVerifyQ1_2026_dryRun() { bulkVerifyQ1_2026(true); }
@@ -7704,10 +7804,10 @@ function _bulkVerifyRange(startISO, endISO, dryRun) {
    Fetches patient address/state from the Tebra GetPatients API
    and stamps PatientState on both the Patients tab (col M) and
    the Appointments tab (col BC).
-
+ 
    Called automatically at the end of every importFromTebraApi run
    (nightly sync, auto-sync, and on-demand import).
-
+ 
    Also available as a standalone on-demand function:
      runSyncPatientStates()       — fills only blank/missing values
      runSyncPatientStatesForce()  — overwrites ALL existing values
@@ -8196,6 +8296,360 @@ function testTebraGetPatientsRaw() {
   Logger.log('=== End diagnostic ===');
 }
 
+/**
+ * ONE-TIME (2026-08-16). Adds identifying headers to row 1 for the
+ * standalone columns (BH-CR / 60-96) that were never part of APPT_COLS
+ * and so never got a header. Verified against live sheet data before
+ * writing this. BH (60) is TebraPatientID as of 2026-08-17 — see
+ * TEBRA_PATIENT_ID_COL. Touches ONLY row 1. No data rows are read or
+ * modified.
+ */
+function addStandaloneColumnHeaders() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var apptSheet = ss.getSheetByName(TAB_APPT);
+
+  var headers = [
+    'TebraPatientID', 'Reserved (unused)', 'Reserved (unused)', 'Reserved (unused)', // BH-BK (60-63)
+    'PaymentTrackerComments',            // BL (64)
+    'Buffer (unused)',                   // BM (65)
+    'NoteProgressBy', 'NoteProgressAt',  // BN-BO (66-67)
+    'NoteReadyBy', 'NoteReadyAt',        // BP-BQ (68-69)
+    'StatusBy', 'StatusAt',              // BR-BS (70-71)
+    'CCEHRBy', 'CCEHRAt',                // BT-BU (72-73)
+    'ClaimStatusBy', 'ClaimStatusAt',    // BV-BW (74-75)
+    'ClaimSubmittedBy', 'ClaimSubmittedAt', // BX-BY (76-77)
+    'NoteSignedBy', 'NoteSignedAt',      // BZ-CA (78-79)
+    'ScrDataBy', 'ScrDataAt',            // CB-CC (80-81)
+    'BestRateConfirmed',                 // CD (82)
+    'BestRateConfirmedBy', 'BestRateConfirmedAt', // CE-CF (83-84)
+    'UnsignedConfirmed',                 // CG (85)
+    'UnsignedConfirmedBy', 'UnsignedConfirmedAt', // CH-CI (86-87)
+    'IntakeBy', 'IntakeAt',              // CJ-CK (88-89)
+    'InsVerifiedBy', 'InsVerifiedAt',    // CL-CM (90-91)
+    'AutopayBy', 'AutopayAt',            // CN-CO (92-93)
+    'ChecklistNoteBy', 'ChecklistNoteAt', // CP-CQ (94-95)
+    'TebraSourceID',                     // CR (96)
+  ];
+
+  apptSheet.getRange(1, 60, 1, headers.length).setValues([headers]);
+  Logger.log('✅  Added ' + headers.length + ' headers, columns 60 (BH) through ' + (59 + headers.length) + '.');
+}
+
+
+
+/* ════════════════════════════════════════════════════════════════
+   LEGACY ORPHAN CLEANUP (one-time, 2026-08-16)
+     Catches Appointments rows _findStaleRows never flagged because
+     ID_RE only matched purely numeric Tebra IDs (e.g. "11022" but not
+     "11022LCS"). The regex fix above stops NEW backlog; this handles
+     the historical backlog.
+  
+     Two-step, review-before-write:
+       1. runLegacyOrphanCleanup_Last6Months()  — DRY RUN. No writes.
+          Logs a full report (View → Logs after running).
+       2. confirmOrphanedAppointmentFlags([...])  — pass the ApptID
+          values you approve from the report. Flags ONLY those rows.
+  ════════════════════════════════════════════════════════════════ */
+
+var _LEGACY_ID_RE = /\(ID:([^)]+)\)/;  // same fix as corrected _findStaleRows
+
+
+/**
+* ONE-TIME. Populates TEBRA_SOURCE_ID_COL from Notes wherever an ID is
+* still recoverable. Rows already overwritten by staff are left blank
+* (that's the same "unparseable" set from the legacy cleanup scan).
+* Touches ONLY TEBRA_SOURCE_ID_COL. Safe to re-run — skips rows that
+* already have a value.
+*/
+function backfillTebraSourceIdColumn() {
+  var result = { scanned: 0, backfilled: 0, alreadyHad: 0, unrecoverable: 0 };
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var apptSheet = ss.getSheetByName(TAB_APPT);
+  var lastRow = apptSheet.getLastRow();
+  if (lastRow < 2) return JSON.stringify(result);
+
+  var COL_APPTID = APPT_COLS.indexOf('ApptID');
+  var COL_NOTES = APPT_COLS.indexOf('Notes');
+  var data = apptSheet.getRange(2, 1, lastRow - 1, APPT_COLS.length).getValues();
+  var existingIds = apptSheet.getRange(2, TEBRA_SOURCE_ID_COL, lastRow - 1, 1).getValues();
+
+  var writes = [];
+  data.forEach(function (row, i) {
+    var apptId = String(row[COL_APPTID] || '');
+    if (apptId.indexOf('TEBRA-API-') !== 0) return;
+    result.scanned++;
+    if (String(existingIds[i][0] || '').trim()) { result.alreadyHad++; return; }
+    var match = String(row[COL_NOTES] || '').match(/\(ID:([^)]+)\)/);
+    if (!match) { result.unrecoverable++; return; }
+    writes.push({ row: i + 2, value: match[1] });
+  });
+
+  writes.forEach(function (w) { apptSheet.getRange(w.row, TEBRA_SOURCE_ID_COL).setValue(w.value); });
+  result.backfilled = writes.length;
+
+  Logger.log('Scanned: ' + result.scanned + '  Backfilled: ' + result.backfilled +
+    '  Already had value: ' + result.alreadyHad + '  Unrecoverable: ' + result.unrecoverable);
+  return JSON.stringify(result);
+}
+
+
+function findLegacyOrphanedAppointments(startDateStr, endDateStr) {
+  var report = { scanned: 0, orphanCandidates: [], slotOnlyCandidates: [], unparseable: [], alreadyFlagged: 0, errors: [] };
+  try {
+    var c = _getTebraCreds();
+    if (!c.customerKey) {
+      report.errors.push('Tebra credentials not configured.');
+      return JSON.stringify(report);
+    }
+
+    Logger.log('=== Legacy orphan scan: ' + startDateStr + ' to ' + endDateStr + ' ===');
+
+    // ── Ground truth: everything Tebra currently has for this range ────────
+    var allAppts = _fetchTebraAppointmentsChunked(c, startDateStr, endDateStr);
+    var activeTebraIds = {};
+    var activeSlotKeys = {};
+    allAppts.forEach(function (a) {
+      if (a.tebraApptId) activeTebraIds[String(a.tebraApptId)] = true;
+      activeSlotKeys[a.provID + '||' + a.date + '||' + _normalizeTimeKey(a.time)] = true;
+    });
+    Logger.log('Tebra ground truth: ' + allAppts.length + ' appointments in range.');
+
+    // ── Scan the Appointments tab ───────────────────────────────────────────
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var apptSheet = ss.getSheetByName(TAB_APPT);
+    if (!apptSheet || apptSheet.getLastRow() < 2) return JSON.stringify(report);
+
+    var COL_APPTID = APPT_COLS.indexOf('ApptID');
+    var COL_DATE = APPT_COLS.indexOf('Date');
+    var COL_NOTES = APPT_COLS.indexOf('Notes');
+    var COL_TS = APPT_COLS.indexOf('TebraStatus');
+    var COL_PROV = APPT_COLS.indexOf('ProvID');
+    var COL_TIME = APPT_COLS.indexOf('Time');
+    var COL_PATIENT = APPT_COLS.indexOf('Patient');
+
+    var data = apptSheet.getRange(2, 1, apptSheet.getLastRow() - 1, APPT_COLS.length).getValues();
+
+    data.forEach(function (row, i) {
+      var apptId = String(row[COL_APPTID] || '');
+      if (apptId.indexOf('TEBRA-API-') !== 0) return;
+
+      var rowDate = _fmtDate(row[COL_DATE]);
+      if (rowDate < startDateStr || rowDate > endDateStr) return;
+
+      report.scanned++;
+
+      var tsExisting = String(row[COL_TS] || '').toLowerCase().trim();
+      if (tsExisting === 'deleted in tebra') { report.alreadyFlagged++; return; }
+
+      var match = String(row[COL_NOTES] || '').match(_LEGACY_ID_RE);
+      if (!match) {
+        // No embedded ID to check — fall back to slot-only matching.
+        // Lower confidence than an ID match (no cross-check possible),
+        // so this is a SEPARATE bucket — verify manually before confirming.
+        var slotKeyNoId = row[COL_PROV] + '||' + rowDate + '||' + _normalizeTimeKey(row[COL_TIME]);
+        if (activeSlotKeys[slotKeyNoId]) return; // still occupied — treat as active
+
+        report.slotOnlyCandidates.push({
+          apptId: apptId, patient: String(row[COL_PATIENT] || ''),
+          date: rowDate, provID: row[COL_PROV], time: row[COL_TIME],
+          sheetRow: i + 2, notes: String(row[COL_NOTES] || ''),
+        });
+        return;
+      }
+
+      var tebraId = match[1];
+      if (activeTebraIds[tebraId]) return;  // still active — not an orphan
+
+      var slotKey = row[COL_PROV] + '||' + rowDate + '||' + _normalizeTimeKey(row[COL_TIME]);
+      if (activeSlotKeys[slotKey]) return;  // slot re-occupied — not an orphan
+
+      report.orphanCandidates.push({
+        apptId: apptId, tebraId: tebraId,
+        patient: String(row[COL_PATIENT] || ''), date: rowDate,
+        provID: row[COL_PROV], time: row[COL_TIME], sheetRow: i + 2,
+      });
+    });
+
+    Logger.log('Scanned: ' + report.scanned + ' Tebra-sourced rows in range.');
+    Logger.log('Already flagged: ' + report.alreadyFlagged);
+    Logger.log('Orphan candidates (ID-confirmed): ' + report.orphanCandidates.length);
+    report.orphanCandidates.forEach(function (o) {
+      Logger.log('  ⚠️  ' + o.patient + ' — ' + o.date + ' ' + o.time +
+        ' (ApptID ' + o.apptId + ', Tebra ID ' + o.tebraId + ', row ' + o.sheetRow + ')');
+    });
+    Logger.log('Slot-only candidates (no ID — verify manually): ' + report.slotOnlyCandidates.length);
+    report.slotOnlyCandidates.forEach(function (s) {
+      Logger.log('  ❓  ' + s.patient + ' — ' + s.date + ' ' + s.time +
+        ' (ApptID ' + s.apptId + ', row ' + s.sheetRow + ') Notes: "' + s.notes + '"');
+    });
+
+  } catch (e) {
+    report.errors.push(e.message);
+    Logger.log('❌  findLegacyOrphanedAppointments error: ' + e.message);
+  }
+  Logger.log('=== End scan ===');
+  return JSON.stringify(report, null, 2);
+}
+
+/** Run this one from the Apps Script editor. Scans the last 6 months. */
+function runLegacyOrphanCleanup_Last6Months() {
+  var end = new Date();
+  var start = new Date();
+  start.setMonth(start.getMonth() - 6);
+  var tz = Session.getScriptTimeZone();
+  findLegacyOrphanedAppointments(
+    Utilities.formatDate(start, tz, 'yyyy-MM-dd'),
+    Utilities.formatDate(end, tz, 'yyyy-MM-dd')
+  );
+}
+
+/**
+ * CONFIRM STEP — after reviewing the dry-run log, pass the exact ApptID
+ * values you approve. Re-locates each row by ApptID (not stored row
+ * number) so it's safe even if the sheet changed since the dry run.
+ * Sets TebraStatus = 'Deleted in Tebra' only on those rows — nothing
+ * is ever hard-deleted.
+ */
+function confirmOrphanedAppointmentFlags(apptIds) {
+  var result = { flagged: 0, notFound: [], errors: [] };
+  try {
+    if (!Array.isArray(apptIds) || !apptIds.length) {
+      result.errors.push('Pass an array of ApptID strings from the dry-run report.');
+      return JSON.stringify(result);
+    }
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var apptSheet = ss.getSheetByName(TAB_APPT);
+    var COL_APPTID = APPT_COLS.indexOf('ApptID');
+    var COL_TS = APPT_COLS.indexOf('TebraStatus') + 1;
+    var COL_LMOD = APPT_COLS.indexOf('LastModified') + 1;
+    var COL_MODBY = APPT_COLS.indexOf('ModifiedBy') + 1;
+
+    var data = apptSheet.getRange(2, 1, apptSheet.getLastRow() - 1, APPT_COLS.length).getValues();
+    var wanted = {};
+    apptIds.forEach(function (id) { wanted[id] = true; });
+    var now = new Date().toISOString();
+
+    data.forEach(function (row, i) {
+      var apptId = String(row[COL_APPTID] || '');
+      if (!wanted[apptId]) return;
+      var rowNum = i + 2;
+      apptSheet.getRange(rowNum, COL_TS).setValue('Deleted in Tebra');
+      apptSheet.getRange(rowNum, COL_LMOD).setValue(now);
+      apptSheet.getRange(rowNum, COL_MODBY).setValue('Legacy Orphan Cleanup');
+      result.flagged++;
+      delete wanted[apptId];
+    });
+
+    result.notFound = Object.keys(wanted);
+    SpreadsheetApp.flush();
+    _audit(ss, 'LEGACY_ORPHAN_CLEANUP',
+      'Flagged ' + result.flagged + ' legacy orphaned appointments as Deleted in Tebra.');
+    Logger.log('✅  Flagged ' + result.flagged + ' rows. Not found: ' + result.notFound.length);
+  } catch (e) {
+    result.errors.push(e.message);
+    Logger.log('❌  confirmOrphanedAppointmentFlags error: ' + e.message);
+  }
+  return JSON.stringify(result);
+}
+
+/**
+ * ONE-TIME (2026-08-17). Backfills TEBRA_PATIENT_ID_COL for existing rows
+ * by re-fetching Tebra's live data across the given range and matching it
+ * back to sheet rows — first by TEBRA_SOURCE_ID_COL (reliable, covers most
+ * rows), then by provider+date+time slot as a fallback for rows that never
+ * got a source ID. Skips rows that already have a PatientID. Safe to re-run.
+ */
+function backfillPatientIdHistorical(startDateStr, endDateStr) {
+  var report = { scanned: 0, matchedById: 0, matchedBySlot: 0, noMatch: 0, alreadyHad: 0, errors: [] };
+  try {
+    var c = _getTebraCreds();
+    if (!c.customerKey) {
+      report.errors.push('Tebra credentials not configured.');
+      return JSON.stringify(report);
+    }
+
+    Logger.log('=== Historical PatientID backfill: ' + startDateStr + ' to ' + endDateStr + ' ===');
+
+    var allAppts = _fetchTebraAppointmentsChunked(c, startDateStr, endDateStr);
+    var idToPatientId = {};
+    var slotToPatientId = {};
+    allAppts.forEach(function (a) {
+      if (a.tebraApptId && a.tebraPatientId) idToPatientId[String(a.tebraApptId)] = a.tebraPatientId;
+      if (a.tebraPatientId) {
+        slotToPatientId[a.provID + '||' + a.date + '||' + _normalizeTimeKey(a.time)] = a.tebraPatientId;
+      }
+    });
+    Logger.log('Tebra ground truth: ' + allAppts.length + ' appointments in range.');
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var apptSheet = ss.getSheetByName(TAB_APPT);
+    var lastRow = apptSheet.getLastRow();
+    if (lastRow < 2) return JSON.stringify(report);
+
+    var COL_APPTID = APPT_COLS.indexOf('ApptID');
+    var COL_DATE = APPT_COLS.indexOf('Date');
+    var COL_PROV = APPT_COLS.indexOf('ProvID');
+    var COL_TIME = APPT_COLS.indexOf('Time');
+
+    var data = apptSheet.getRange(2, 1, lastRow - 1, APPT_COLS.length).getValues();
+    var sourceIds = apptSheet.getRange(2, TEBRA_SOURCE_ID_COL, lastRow - 1, 1).getValues();
+    var patientIds = apptSheet.getRange(2, TEBRA_PATIENT_ID_COL, lastRow - 1, 1).getValues();
+
+    var writes = 0;
+    data.forEach(function (row, i) {
+      var apptId = String(row[COL_APPTID] || '');
+      if (apptId.indexOf('TEBRA-API-') !== 0) return;
+
+      var rowDate = _fmtDate(row[COL_DATE]);
+      if (rowDate < startDateStr || rowDate > endDateStr) return;
+
+      report.scanned++;
+
+      var existingPid = String((patientIds[i] && patientIds[i][0]) || '').trim();
+      if (existingPid) { report.alreadyHad++; return; }
+
+      var srcId = String((sourceIds[i] && sourceIds[i][0]) || '').trim();
+      var found = '';
+      if (srcId && idToPatientId[srcId]) {
+        found = idToPatientId[srcId];
+        report.matchedById++;
+      } else {
+        var slotKey = row[COL_PROV] + '||' + rowDate + '||' + _normalizeTimeKey(row[COL_TIME]);
+        if (slotToPatientId[slotKey]) {
+          found = slotToPatientId[slotKey];
+          report.matchedBySlot++;
+        }
+      }
+
+      if (found) {
+        patientIds[i] = [found];
+        writes++;
+      } else {
+        report.noMatch++;
+      }
+    });
+
+    if (writes > 0) {
+      apptSheet.getRange(2, TEBRA_PATIENT_ID_COL, patientIds.length, 1).setValues(patientIds);
+    }
+
+    Logger.log('Scanned: ' + report.scanned + '  Matched by ID: ' + report.matchedById +
+      '  Matched by slot: ' + report.matchedBySlot + '  Already had value: ' + report.alreadyHad +
+      '  No match: ' + report.noMatch);
+
+  } catch (e) {
+    report.errors.push(e.message);
+    Logger.log('❌  backfillPatientIdHistorical error: ' + e.message);
+  }
+  Logger.log('=== End backfill ===');
+  return JSON.stringify(report);
+}
+
+/** Run this one. Covers your full observed appointment history. */
+function runPatientIdHistoricalBackfill_FullHistory() {
+  backfillPatientIdHistorical('2026-01-02', '2026-09-17');
+}
 
 /* ════════════════════════════════════════════════════════════════
    TEBRA PATIENT AUTH DIAGNOSTICS
@@ -8612,3 +9066,65 @@ function bulkImportPayments(rowsJson) {
   }
 }
 
+/**
+ * SAFE TEST — confirms PatientID is a valid Fields entry for GetAppointments
+ * before adding it to the production _fetchTebraAppointments request. This
+ * codebase already hit a case (ServiceLocationName/ID) where requesting an
+ * invalid field made Tebra silently return ZERO appointments instead of an
+ * error — so this is tested in isolation, never assumed. No sheet touched.
+ */
+function testTebraAppointmentsWithPatientID() {
+  var c = _getTebraCreds();
+  if (!c.customerKey) { Logger.log('❌  Run setTebraCreds() first.'); return; }
+
+  var end = new Date();
+  var start = new Date();
+  start.setDate(start.getDate() - 2);
+  var tz = Session.getScriptTimeZone();
+  var startTebra = _tebraDateFmt(_parseYMD(Utilities.formatDate(start, tz, 'yyyy-MM-dd')));
+  var endTebra = _tebraDateFmt(_parseYMD(Utilities.formatDate(end, tz, 'yyyy-MM-dd')));
+
+  var bodyXml =
+    '<ns:GetAppointments><ns:request>' +
+    _tebraHeader(c) +
+    '<ns:Fields>' +
+    '<ns:ConfirmationStatus>true</ns:ConfirmationStatus>' +
+    '<ns:ID>true</ns:ID>' +
+    '<ns:PatientCaseID>true</ns:PatientCaseID>' +
+    '<ns:PatientCaseName>true</ns:PatientCaseName>' +
+    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:PatientID>true</ns:PatientID>' +
+    '<ns:ResourceID1>true</ns:ResourceID1>' +
+    '<ns:ResourceName1>true</ns:ResourceName1>' +
+    '<ns:StartDate>true</ns:StartDate>' +
+    '</ns:Fields>' +
+    '<ns:Filter>' +
+    '<ns:StartDate>' + startTebra + '</ns:StartDate>' +
+    '<ns:EndDate>' + endTebra + '</ns:EndDate>' +
+    '</ns:Filter>' +
+    '</ns:request></ns:GetAppointments>';
+
+  Logger.log('=== Testing GetAppointments with PatientID field added ===');
+  try {
+    var text = _tebraPost('GetAppointments', bodyXml);
+    var doc = XmlService.parse(text);
+    var root = doc.getRootElement();
+    var apptEls = [];
+    _findXmlElements(root, 'AppointmentData', apptEls);
+
+    Logger.log('Appointments returned: ' + apptEls.length);
+    if (apptEls.length === 0) {
+      Logger.log('⚠️  ZERO results — PatientID is likely NOT a valid Field here. Do NOT add it to production. Raw response:');
+      Logger.log(text.substr(0, 1500));
+    } else {
+      var samplePid = _findFirstXml(apptEls[0], 'PatientID');
+      Logger.log('Sample PatientID from first result: ' + (samplePid || '[blank]'));
+      Logger.log(samplePid
+        ? '✅  Valid and populated — safe to add to production Fields list.'
+        : '⚠️  Appointments came back fine, but PatientID itself is blank — something more specific going on, don\'t assume safe yet.');
+    }
+  } catch (e) {
+    Logger.log('❌  ' + e.message);
+  }
+  Logger.log('=== End test ===');
+}
