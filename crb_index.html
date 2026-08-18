@@ -3232,116 +3232,17 @@
             box-shadow: none;
         }
 
-        .claim-day-stat {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 8px 16px;
-            border-radius: 0;
-            font-size: 15px;
-            font-weight: 900;
-            white-space: nowrap;
-            border: 1px solid;
-            background: #FBFBF3;
-        }
-
-        .cds-total {
-            color: var(--brand-primary);
-            border-color: var(--brand-primary);
-            opacity: .7
-        }
-
-        .cds-pend {
-            color: var(--warning);
-            border-color: var(--warning)
-        }
-
-        .cds-paid {
-            color: var(--success);
-            border-color: var(--success)
-        }
-
-        .cds-denied {
-            color: #791F1F;
-            border-color: var(--error)
-        }
-
-        .cds-resub {
-            color: #3D768A;
-            border-color: #7494AA
-        }
-
-        .cds-nosub {
-            color: var(--warning);
-            border-color: var(--warning)
-        }
-
-        /* ── "Unsigned Notes" stat — reuses the same Danger red already used for
-       .cds-denied and for the Provider view's unsigned-note alert (.una-wrap),
-       since both represent an item needing the same kind of attention. ── */
-        .cds-unsigned {
-            color: #791F1F;
-            border-color: var(--error)
-        }
-
-        /* ── Day-banner context stats (Total appointments / Unsigned notes) —
-       Dean asked for these ~25% smaller than the existing claim-status
-       stats so they read as secondary context rather than competing with
-       Pending/Paid. Applied alongside .claim-day-stat + a color class. ── */
-        .cds-day-sm {
-            font-size: 11px;
-            padding: 6px 12px;
-            gap: 4px;
-        }
-
-        /* ── "Signed" stat — Provider Day View's SummaryBar only, no BillingView
-       equivalent to match. Teal keeps it visually distinct from the other
-       four (gold/green/red/blue) already in use in this stat family. ── */
-        .cds-signed {
-            color: #0F766E;
-            border-color: #0F766E
-        }
-
-        /* ── Claims banner filter buttons — active/selected state, same
-       background-inversion pattern as .mthd-btn.on-* (Billing Channel
-       selector): fill with the stat's own color, flip text to white. ── */
-        .cds-nosub.cds-active {
-            background: var(--warning);
-            color: #FFFFFF
-        }
-
-        .cds-pend.cds-active {
-            background: var(--warning);
-            color: #FFFFFF
-        }
-
-        .cds-paid.cds-active {
-            background: var(--success);
-            color: #FFFFFF
-        }
-
-        .cds-denied.cds-active {
-            background: var(--error);
-            color: #FFFFFF
-        }
-
-        .cds-resub.cds-active {
-            background: #7494AA;
-            color: #FFFFFF
-        }
-
-        .cds-signed.cds-active {
-            background: #0F766E;
-            color: #FFFFFF
-        }
-
-        /* ── Provider Day View, Post-Visit SummaryBar stat buttons — a
-       separate class family from .claim-day-stat/.cds-* on purpose:
-       BillingView's Claims Ledger day banner (lines ~20412-20452) also
-       uses those, so resizing or recoloring here can't bleed into that
-       unrelated view. ~15% smaller than the .claim-day-stat baseline
-       this row used before (padding 8px 16px / font-size 15px / gap 5px
-       → 6.8px 13.6px / 12.75px / 4.25px, each × .85 exactly). ── */
+        /* ── .claim-day-stat/.cds-* (Total/Pending/Paid/Denied/Resubmitted/
+       NotSubmitted/Unsigned/Signed + .cds-day-sm + .cds-active) removed
+       Stage 3, Part 2 — BillingView's day banner row (ClaimDayBanner)
+       now shares .pv-stat/.pv-stat-* with ProviderView's SummaryBar
+       instead of its own parallel class family; Denied/Resubmitted are
+       gone as standalone stats (Resubmitted folds into Pending, Denied
+       is unshown, both still settable per-row via BRow's ClaimBadge).
+       .claim-day-banner (the row's own flex container) is unaffected —
+       still in use, see below. .cds-paid-amt (the small "· $X,XXX.XX"
+       aggregate) also stays — Billing-specific, kept on the converted
+       Paid stat, not part of this class-family swap. ── */
         .pv-stat {
             display: inline-flex;
             align-items: center;
@@ -3388,6 +3289,18 @@
         .pv-stat-green.pv-stat-active {
             background: var(--pv-stat-green);
             color: #FFFFFF;
+        }
+
+        /* ── New color, Stage 3 Part 2 — Total isn't a status (unlike the
+       red/gold/green members), so it needed a neutral variant that
+       didn't previously exist in this family. Same brand-primary blue
+       the old .cds-total used, at the same .7 opacity. No .pv-stat-active
+       pairing — Total is inert (matches ProviderView's own Total, which
+       is likewise non-interactive), so it never reaches that state. ── */
+        .pv-stat-blue {
+            color: var(--brand-primary);
+            border-color: var(--brand-primary);
+            opacity: .7;
         }
 
         .pv-stat-dim {
@@ -12906,12 +12819,14 @@
             // separate derivation needed, just the complement of `out`.
             const notSigned = total - out;
 
-            // Post-visit set — mirrors BillingView's ClaimDayBanner logic. Dean's
-            // requested list has no separate "Resubmitted" stat, so a resubmitted
-            // claim is counted under "Pending" (still awaiting final adjudication)
-            // rather than silently dropped from every count. Denied dropped from
-            // this row (Stage 1) — .cds-denied itself is untouched since
-            // BillingView's Claims Ledger day banner still uses it.
+            // Post-visit set — mirrors BillingView's ClaimDayBanner logic (and as
+            // of Stage 3 Part 2, BillingView's own claimPend fold-in now matches
+            // this exactly too). Dean's requested list has no separate
+            // "Resubmitted" stat, so a resubmitted claim is counted under
+            // "Pending" (still awaiting final adjudication) rather than silently
+            // dropped from every count. Denied dropped from this row (Stage 1);
+            // BillingView dropped it too as of Stage 3 Part 2 — Denied stays
+            // settable per-appointment via ClaimBadge, just not summarized here.
             const notSub = appts.filter(a => a.method !== 'direct' && a.billing !== 'submitted').length;
             const submittedAppts = appts.filter(a => a.billing === 'submitted');
             const claimPaid = submittedAppts.filter(a => a.claimStatus === 'Paid').length;
@@ -20563,14 +20478,23 @@
             // matter which filter is currently narrowing the sections below. ──
             const totalSubmtd = activeAppts.filter(a => a.billing === 'submitted');
             const totalNotSubmitted = activeAppts.filter(a => a.billing !== 'submitted');
-            // ── Filtered data feeding the three row sections below ──
-            const filteredAppts = !claimFilter
-                ? activeAppts
-                : claimFilter === 'notSubmitted'
-                    ? activeAppts.filter(a => a.billing !== 'submitted')
-                    : claimFilter === 'submitted'
-                        ? activeAppts.filter(a => a.billing === 'submitted')
-                        : activeAppts.filter(a => a.billing === 'submitted' && (a.claimStatus || 'Pending') === claimFilter);
+            // ── Filtered data feeding the three row sections below — predicate-
+            // function form (not a nested ternary chain) so it structurally
+            // matches ProviderView's matchesPostFilter, which this mirrors.
+            // 'Pending' folds in Resubmitted, same as Provider's claimPend —
+            // the displayed Pending count does the same fold (see
+            // ClaimDayBanner's `pend` below), so what you see is what you
+            // filter to. ──
+            function matchesClaimFilter(a) {
+                if (!claimFilter) return true;
+                if (claimFilter === 'notSubmitted') return a.billing !== 'submitted';
+                if (claimFilter === 'submitted') return a.billing === 'submitted';
+                if (claimFilter === 'notSigned') return !a.out;
+                if (claimFilter === 'signed') return !!a.out;
+                if (claimFilter === 'Pending') return a.billing === 'submitted' && (!a.claimStatus || a.claimStatus === 'Pending' || a.claimStatus === 'Resubmitted');
+                return a.billing === 'submitted' && (a.claimStatus || 'Pending') === claimFilter;
+            }
+            const filteredAppts = activeAppts.filter(matchesClaimFilter);
             const submtd = filteredAppts.filter(a => a.billing === 'submitted');
             const notSubmitted = filteredAppts.filter(a => a.billing !== 'submitted');
             const signedReady = notSubmitted.filter(a => a.out);   // signed → Submit Claim available (CPT optional)
@@ -20621,64 +20545,69 @@
                 // Reads the unfiltered totals (not submtd/notSubmitted) so every stat
                 // stays visible and clickable regardless of which filter is active.
                 const notSub = totalNotSubmitted.filter(a => a.method !== 'direct').length;
-                if (!totalSubmtd.length && !notSub) return null;
-                const pend = totalSubmtd.filter(a => !a.claimStatus || a.claimStatus === 'Pending').length;
+                // Stage 3, Part 2 — this row now also carries Total/Not Signed/Signed,
+                // which apply regardless of claim-submission activity (a direct-pay-only
+                // day still has signing status to show). Gate is "any appointments
+                // today" now, not the old claim-only "(!totalSubmtd.length && !notSub)".
+                if (!activeAppts.length) return null;
+                // Resubmitted folds into Pending here (no separate stat any more —
+                // Denied/Resubmitted removed from this row, Stage 3 Part 2), same as
+                // ProviderView's SummaryBar claimPend — and matchesClaimFilter's
+                // 'Pending' branch folds it in the same way, so the displayed count
+                // and what clicking it actually shows always agree.
+                const pend = totalSubmtd.filter(a => !a.claimStatus || a.claimStatus === 'Pending' || a.claimStatus === 'Resubmitted').length;
                 const paid = totalSubmtd.filter(a => a.claimStatus === 'Paid').length;
-                const denied = totalSubmtd.filter(a => a.claimStatus === 'Denied').length;
-                const resub = totalSubmtd.filter(a => a.claimStatus === 'Resubmitted').length;
                 const paidAmt = totalSubmtd.reduce((s, a) => s + (parseFloat(a.claimPaidAmount) || 0), 0);
-                // ── New context stats — Total appointments scheduled and notes still
-                // unsigned by the provider. Both read off activeAppts (the same
-                // unfiltered, void/placeholder-excluded set the rest of this banner
-                // uses), so like every other stat here they hold steady no matter
-                // which claim-status filter is currently active. ──
+                // Not Signed / Signed replace the old standalone "Unsigned Notes" stat
+                // with the same Not Signed/Signed pair ProviderView's SummaryBar uses —
+                // signedCount is exactly the old unsignedCount's complement, same field.
                 const totalAppts = activeAppts.length;
-                const unsignedCount = activeAppts.filter(a => !a.out).length;
+                const signedCount = activeAppts.filter(a => a.out).length;
+                const notSignedCount = totalAppts - signedCount;
                 return (
                     <div className="claim-day-banner">
-                        <span className="claim-day-stat cds-total cds-day-sm">📅 {totalAppts} Total</span>
-                        {/* "N Submitted" moved to the stacked date-banner header
-                (Stage 3, Part 1) — no longer duplicated here as "N Claims". */}
+                        {/* Total isn't a filter target (matches ProviderView's own Total,
+                which is likewise inert) — cursor override keeps hover honest since
+                .pv-stat's base rule defaults every member to cursor:pointer. */}
+                        <span className="pv-stat pv-stat-blue" style={{ cursor: 'default' }}>
+                            📅 {totalAppts} Total
+                        </span>
+                        {notSignedCount > 0 && (
+                            <span className={`pv-stat pv-stat-red${claimFilter === 'notSigned' ? ' pv-stat-active' : ''}`}
+                                onClick={() => toggleClaimFilter('notSigned')} title="Filter to not-yet-signed appointments">
+                                ✎ {notSignedCount} Not Signed
+                            </span>
+                        )}
+                        <span className={`pv-stat pv-stat-green${claimFilter === 'signed' ? ' pv-stat-active' : ''}${signedCount === 0 ? ' pv-stat-dim' : ''}`}
+                            onClick={signedCount > 0 ? () => toggleClaimFilter('signed') : undefined}
+                            title={signedCount > 0 ? 'Filter to signed appointments' : undefined}>
+                            ✍️ {signedCount} Signed
+                        </span>
                         {notSub > 0 && (
-                            <span className={`claim-day-stat cds-nosub${claimFilter === 'notSubmitted' ? ' cds-active' : ''}`}
-                                style={{ cursor: 'pointer' }} onClick={() => toggleClaimFilter('notSubmitted')}>
+                            <span className={`pv-stat pv-stat-red${claimFilter === 'notSubmitted' ? ' pv-stat-active' : ''}`}
+                                onClick={() => toggleClaimFilter('notSubmitted')} title="Filter to not-yet-submitted claims">
                                 📤 {notSub} Not Submitted
                             </span>
                         )}
                         {pend > 0 && (
-                            <span className={`claim-day-stat cds-pend${claimFilter === 'Pending' ? ' cds-active' : ''}`}
-                                style={{ cursor: 'pointer' }} onClick={() => toggleClaimFilter('Pending')}>
+                            <span className={`pv-stat pv-stat-gold${claimFilter === 'Pending' ? ' pv-stat-active' : ''}`}
+                                onClick={() => toggleClaimFilter('Pending')} title="Filter to claims still pending">
                                 ⏳ {pend} Pending
                             </span>
                         )}
-                        {denied > 0 && (
-                            <span className={`claim-day-stat cds-denied${claimFilter === 'Denied' ? ' cds-active' : ''}`}
-                                style={{ cursor: 'pointer' }} onClick={() => toggleClaimFilter('Denied')}>
-                                ✗ {denied} Denied
-                            </span>
-                        )}
-                        {resub > 0 && (
-                            <span className={`claim-day-stat cds-resub${claimFilter === 'Resubmitted' ? ' cds-active' : ''}`}
-                                style={{ cursor: 'pointer' }} onClick={() => toggleClaimFilter('Resubmitted')}>
-                                🔄 {resub} Resubmitted
-                            </span>
-                        )}
                         {paid > 0 && (
-                            <span className={`claim-day-stat cds-paid${claimFilter === 'Paid' ? ' cds-active' : ''}`}
-                                style={{ cursor: 'pointer' }} onClick={() => toggleClaimFilter('Paid')}>
+                            <span className={`pv-stat pv-stat-green${claimFilter === 'Paid' ? ' pv-stat-active' : ''}`}
+                                onClick={() => toggleClaimFilter('Paid')} title="Filter to paid claims">
                                 ✅ {paid} Paid
                                 {/* Large aggregate $ total — desktop only (hidden on phone via
                     .cds-paid-amt, see mobile media query). The small per-row
                     editable Paid-amount field (.csb-amt-input in BRow) stays
-                    visible on phone either way. */}
+                    visible on phone either way. Kept from the old cds-paid
+                    treatment — Billing-specific info Provider's own Paid stat
+                    doesn't need, so not part of the class-family match itself. */}
                                 {paidAmt > 0 && (
                                     <span className="cds-paid-amt"> · ${paidAmt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 )}
-                            </span>
-                        )}
-                        {unsignedCount > 0 && (
-                            <span className="claim-day-stat cds-unsigned cds-day-sm">
-                                ✎ {unsignedCount} Unsigned Note{unsignedCount !== 1 ? 's' : ''}
                             </span>
                         )}
                     </div>
