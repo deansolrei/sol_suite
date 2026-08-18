@@ -4336,21 +4336,23 @@
             gap: 12px;
             margin-bottom: 7px;
             border-top: 1px solid var(--brand-primary);
-            border-right: 1px solid var(--brand-primary);
             border-bottom: 1px solid var(--brand-primary);
-            /* border-left and box-shadow deliberately absent — both are now
-           fully owned by the note-status axis (.pv-post-not-started/
-           -in-progress/-ready/-signed + .pv-post-ring, Stage 4 Part 2,
-           reused directly from ProviderView, always exactly one of the
-           four applied per row). Three explicit sides instead of the
-           blanket `border:` shorthand this used to be — a real bug caught
-           by rendering: the shorthand still implicitly sets border-left,
-           tying in specificity ((0,1,0)) with .pv-post-*'s own
-           border-left and winning by source order (this rule sits later
-           in the file), silently overriding the note-status color with
-           plain brand-primary blue. Matches ProviderView's own .pv-row,
-           which likewise never sets a blanket `border` — only
-           border-bottom — for exactly this reason.
+            /* border-left, border-right, and box-shadow deliberately absent
+           — all three are now fully owned by the two-axis border system
+           reused from ProviderView: left = note-status
+           (.pv-post-not-started/-in-progress/-ready/-signed, Stage 4
+           Part 2), right = claim-status (.pv-post-not-submitted/-pending/
+           -paid, Stage 4 Part 3), both rendered via .pv-post-ring's
+           box-shadow, always exactly one of each per row. Explicit
+           top/bottom sides instead of the blanket `border:` shorthand
+           this used to be — a real bug caught by rendering (Part 2): the
+           shorthand still implicitly sets every side, tying in
+           specificity ((0,1,0)) with .pv-post-*'s own border-left/-right
+           and winning by source order (this rule sits later in the
+           file), silently overriding the axis color with plain
+           brand-primary blue. Matches ProviderView's own .pv-row, which
+           likewise never sets a blanket `border` — only border-bottom —
+           for exactly this reason.
            box-shadow:none used to live here too; kept it out on purpose
            — .pv-post-ring also sets box-shadow, and .b-card's rule would
            have tied it on specificity ((0,1,0) each) and won by source
@@ -7223,20 +7225,21 @@
        cards additionally get a rollover/hover background per state — every
        other channel's cards get the uniform non-Direct hover below instead
        (Stage 4, Part 1). Background values are Dean's Stage 4 Part 1 hex
-       set — same priority chain as before, values only. Left border is no
-       longer owned here (Stage 4, Part 2) — see the note-status axis
-       (.pv-post-* classes) applied alongside these in BRow instead; only
-       baseline still gets a light non-alert background tone, since "not
-       signed yet" isn't itself a problem.
+       set — same priority chain as before, values only. Left AND right
+       border are no longer owned here (Stage 4, Parts 2 and 3) — see the
+       note-status (left) and claim-status (right) axes, both .pv-post-*
+       classes applied alongside these in BRow instead; only baseline
+       still gets a light non-alert background tone, since "not signed
+       yet" isn't itself a problem.
        None of these four set border-color any more, either (used to be
        border-color: var(--brand-primary) in all four) — that shorthand's
-       sub-property touches border-left-color too, and at (0,2,0) it would
-       have outranked .pv-post-*'s (0,1,0) border-left-color outright,
-       recoloring the note-status border to brand-primary blue regardless
-       of state. .b-card's own base rule already colors top/right/bottom
-       brand-primary directly (border-top/-right/-bottom-color), so these
-       were fully redundant for those three sides anyway — removing them
-       needed no replacement. ──
+       sub-properties touch border-left-color and border-right-color too,
+       and at (0,2,0) they'd have outranked .pv-post-*'s (0,1,0) outright,
+       recoloring both axes to brand-primary blue regardless of state.
+       .b-card's own base rule only colors top/bottom brand-primary
+       directly now (border-top/-bottom-color) — these four were fully
+       redundant for those two sides anyway — removing them needed no
+       replacement. ──
        1. Baseline (note not yet signed)
        2. Signed / claim not submitted
        3. Signed / claim submitted / pending
@@ -7489,26 +7492,24 @@
         /* ── Billing Day View — dark-mode equivalents of the 4-state system
        above (Dean's hex values are light-mode only; these are darkened/
        desaturated counterparts, per-state hover treatment for Clinic
-       Submit cards). border-left-color removed from all four, and
-       border-color changed to explicit border-top/-right/-bottom-color
-       (Stage 4, Part 2) — same reasoning as the light-mode block above:
-       border-left belongs entirely to the note-status axis (.pv-post-*,
-       no dark-mode coverage of its own yet — see the separately-
-       scheduled dark-mode stage) now, and any shorthand touching
-       border-left-color here would silently outrank .pv-post-*'s own
-       (body.dark .b-card.b-card-X's specificity beats .pv-post-*'s by a
-       wide margin), overriding it with an unrelated leftover color
-       instead of just being unaddressed like the rest of the axis.
-       Unlike the light-mode block, this dark border-color ISN'T fully
-       redundant with .b-card's own base (that stays var(--brand-primary)
-       unconditionally in dark mode too) — these four deliberately dim
-       the top/right/bottom border to var(--surface)/var(--border) for
-       the dark theme, so that part is kept, just scoped away from the
-       left side instead of removed outright. ── */
+       Submit cards). border-left-color removed from all four in Part 2,
+       border-right-color removed too in Part 3 (same reasoning, other
+       side) — left belongs to the note-status axis, right to the
+       claim-status axis (.pv-post-*, neither with dark-mode coverage of
+       its own yet — see the separately-scheduled dark-mode stage), and
+       any shorthand touching either color here would silently outrank
+       .pv-post-*'s own (body.dark .b-card.b-card-X's specificity beats
+       .pv-post-*'s by a wide margin), overriding it with an unrelated
+       leftover color instead of just being unaddressed like the rest of
+       the axis. Unlike the light-mode block, this dark border-color
+       ISN'T fully redundant with .b-card's own base (that stays
+       var(--brand-primary) unconditionally in dark mode too) — these
+       four deliberately dim the top/bottom border to
+       var(--surface)/var(--border) for the dark theme, so that part is
+       kept, just scoped away from left AND right now. ── */
         body.dark .b-card.b-card-baseline {
             background: var(--surface);
             border-top-color: var(--surface);
-            border-right-color: var(--surface);
             border-bottom-color: var(--surface);
         }
 
@@ -7519,7 +7520,6 @@
         body.dark .b-card.b-card-unsubmitted {
             background: #791F1F;
             border-top-color: var(--border);
-            border-right-color: var(--border);
             border-bottom-color: var(--border);
         }
 
@@ -7530,7 +7530,6 @@
         body.dark .b-card.b-card-pending {
             background: #7A5A00;
             border-top-color: var(--border);
-            border-right-color: var(--border);
             border-bottom-color: var(--border);
         }
 
@@ -7541,7 +7540,6 @@
         body.dark .b-card.b-card-paid {
             background: var(--brand-primary);
             border-top-color: var(--border);
-            border-right-color: var(--border);
             border-bottom-color: var(--border);
         }
 
@@ -20735,13 +20733,24 @@
                 // Note-status left border (Stage 4, Part 2) — reused directly from
                 // ProviderView's own postBorderCls derivation (same field, same
                 // fallback order), not reinvented. .pv-post-ring renders it (plus a
-                // thin inner ring) via box-shadow; the right-side claim-status axis
-                // isn't wired up yet, so --pv-ring-right stays unset and .pv-post-ring
-                // falls back to transparent for that side — safe to apply now, ready
-                // for the right axis to join later without changes here.
+                // thin inner ring) via box-shadow.
                 const postBorderCls = a.out
                     ? 'pv-post-signed'
                     : (a.noteStatus === 'ready' ? 'pv-post-ready' : (a.noteStatus === 'in_progress' ? 'pv-post-in-progress' : 'pv-post-not-started'));
+                // Claim-status right border (Stage 4, Part 3) — mirrors
+                // ProviderView's own postClaimBorderCls shape, but built from
+                // isSubmitted/isPaid (already computed above) rather than reading
+                // a.billing/a.claimStatus directly. isPaid is deliberately buffered
+                // off `st`, not a.claimStatus, so the card's background stays in
+                // agreement with ClaimBadge while the Paid-amount input is
+                // focused (see the comment above isPaid) — reading a.claimStatus
+                // fresh here instead would let the border and background
+                // disagree for that same window. --pv-ring-right, unset until
+                // now, is picked up automatically by .pv-post-ring's existing
+                // box-shadow — no changes needed there.
+                const postClaimBorderCls = isSubmitted
+                    ? (isPaid ? 'pv-post-paid' : 'pv-post-pending')
+                    : 'pv-post-not-submitted';
 
                 function openBestRate(e) {
                     e.stopPropagation();
@@ -20953,7 +20962,7 @@
                             </div>
                         )}
                         <div
-                            className={`b-card${isDirect ? ' b-card-direct' : ''}${!a.out ? ' b-card-baseline' : (isSubmitted ? (isPaid ? ' b-card-paid' : ' b-card-pending') : ' b-card-unsubmitted')} ${postBorderCls} pv-post-ring`}
+                            className={`b-card${isDirect ? ' b-card-direct' : ''}${!a.out ? ' b-card-baseline' : (isSubmitted ? (isPaid ? ' b-card-paid' : ' b-card-pending') : ' b-card-unsubmitted')} ${postBorderCls} ${postClaimBorderCls} pv-post-ring`}
                             style={{ cursor: (isDirect || onOpen) ? 'pointer' : 'default' }}
                             onClick={isDirect ? () => setClaimModal(a) : (onOpen ? () => onOpen(a) : undefined)}>
                             <div style={{ minWidth: 150 }}>
