@@ -2029,11 +2029,33 @@
             margin-bottom: 18px;
         }
 
+        /* ── Provider Day — top band (Stage 5, Part 1), same role as
+       .billing-frozen-header: supplies the sticky context + the #777355
+       fill for the gap below .day-date-sticky-wrap (reused verbatim,
+       unmodified, inside this). top:88px is a placeholder — JS-synced
+       (see syncStickyTop) exactly like .billing-frozen-header's own.
+       Never mounted alongside .billing-frozen-header (Provider Day and
+       Billing Day are mutually exclusive views), so the identical
+       z-index doesn't collide in practice — kept as its own class
+       rather than reusing .billing-frozen-header's name so the DOM/CSS
+       doesn't carry "billing" into Provider's view. ── */
+        .pv-date-band {
+            position: sticky;
+            top: 88px;
+            z-index: 17;
+            background: #777355;
+            margin-bottom: 18px;
+        }
+
         body.dark .day-date-sticky-wrap {
             background: var(--surface);
         }
 
         body.dark .billing-frozen-header {
+            background: var(--surface);
+        }
+
+        body.dark .pv-date-band {
             background: var(--surface);
         }
 
@@ -17107,6 +17129,33 @@
 
             return (
                 <div>
+                    {/* ── Stage 5, Part 1 — new top band, matching Billing's actual
+              .day-date-sticky-wrap pattern (not the wider .billing-frozen-
+              header — DirectPaySection/ClaimDayBanner are fully opaque with
+              no gap, so Billing's olive only ever shows through around its
+              date pill; that's the real target here, not a full header
+              treatment). .pv-date-band supplies the sticky context (mirrors
+              .billing-frozen-header's role exactly, confirmed Billing's own
+              date-pill zone pins via its sticky PARENT, not itself) and the
+              matching #777355 fill for the gap below the reused wrap.
+              day-date-sticky-wrap and day-date-banner are reused verbatim,
+              unmodified — same column-flex/align-items:center centering
+              mechanism proven in Stage 3 Part 1, same nested-context CSS
+              override already written generically enough to apply here
+              with no changes. Applies identically regardless of dayMode —
+              this wrapper sits above SummaryBar entirely, independent of
+              Pre/Post-visit's differing internal row structure.
+              Purely additive for now (Stage 5, Part 1) — SummaryBar's own
+              .summary-date-pill and UnsignedTotalBanner's original
+              position below are deliberately untouched, so two date
+              banners and two notes-counters are expected on screen at
+              once. Resolved in Part 2. ── */}
+                    <div className="pv-date-band">
+                        <div className="day-date-sticky-wrap">
+                            <div className="day-date-banner">📋 {fmtDate(date)}</div>
+                            <UnsignedTotalBanner count={totalUnsigned} />
+                        </div>
+                    </div>
                     <UnsignedTotalBanner count={totalUnsigned} />
                     <UnsignedAlert appts={sorted} date={date} onClearPhantom={onClearPhantom} />
                     <DayDirectPayBanner appts={sorted} date={date} />
@@ -21750,7 +21799,7 @@
             // wraps onto 2-3 rows and its height isn't a fixed 58px anymore).
             // Each view's chain sticks in the same order it renders in the DOM:
             //   Week views:    .hdr -> .wk-week-label -> .wk-grid > .wk-col-hd
-            //   Provider Day:  .hdr -> .summary-row -> .pv-tabs
+            //   Provider Day:  .hdr -> .pv-date-band -> .summary-row -> .pv-tabs
             //   Assistant Day: .hdr -> .tbl-hd -> .asst-hd-sticky
             //   Billing Day:   .hdr -> .billing-frozen-header (single self-contained unit)
             useEffect(() => {
@@ -21767,11 +21816,16 @@
                     if (weekHdr) weekHdr.style.top = afterWeekLabel;
                     document.querySelectorAll('.wk-grid > .wk-col-hd').forEach(el => { el.style.top = afterWeekLabel; });
 
-                    // Provider Day — Summary stat row, then Pre-visit/Post-visit tabs
+                    // Provider Day — new top band (Stage 5, Part 1), then Summary stat
+                    // row, then Pre-visit/Post-visit tabs. Chained the same way
+                    // Billing Day's own frozen header stack accumulates offsets.
+                    const pvDateBand = document.querySelector('.pv-date-band');
+                    if (pvDateBand) pvDateBand.style.top = headerH + 'px';
+                    const afterPvDateBand = headerH + (pvDateBand ? pvDateBand.offsetHeight : 0);
                     const summaryRow = document.querySelector('.summary-row');
-                    if (summaryRow) summaryRow.style.top = headerH + 'px';
+                    if (summaryRow) summaryRow.style.top = afterPvDateBand + 'px';
                     const pvTabs = document.querySelector('.pv-tabs');
-                    if (pvTabs) pvTabs.style.top = (headerH + (summaryRow ? summaryRow.offsetHeight : 0)) + 'px';
+                    if (pvTabs) pvTabs.style.top = (afterPvDateBand + (summaryRow ? summaryRow.offsetHeight : 0)) + 'px';
 
                     // Assistant Day — title bar, then the standalone TIME/METHOD/BILLING…
                     // column-header banner (.asst-hd-sticky — a plain sticky div now,
