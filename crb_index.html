@@ -2087,65 +2087,34 @@
             margin-bottom: 10px
         }
 
-        /* ── Provider Day View's own date banner — same visual treatment as
-       Billing's .day-date-banner, positioned top-right within the already-
-       sticky .summary-row instead of having its own separate sticky
-       position (redundant, since its parent row is already sticky). ── */
-        .summary-date-pill {
-            margin-left: auto;
-            background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary) 100%);
-            color: var(--text-on-brand);
-            border-radius: 10px;
-            padding: 8px 22px;
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: .3px;
-            box-shadow: 0 2px 10px rgba(9, 55, 31, .22);
-            white-space: nowrap;
-            flex-shrink: 0
-        }
-
-        /* ── Post-Visit SummaryBar layout — three independent zones (left
-       button group / centered date banner / right button group) instead
-       of the plain flex row above, so the banner can sit genuinely
-       centered without disturbing the Not Signed/Signed/Not Submitted vs.
-       Pending/Paid split. Scoped to .summary-row-split (applied only in
-       dayMode 'post') so Pre-visit's flex row + margin-left:auto banner
-       above is untouched. ── */
-        .summary-row.summary-row-split {
-            display: grid;
-            /* minmax(0, 1fr), not bare 1fr — bare 1fr carries an implicit
-               minmax(auto, 1fr), so once a side's content can't shrink
-               below its min-content width the two "equal" columns stop
-               being equal and the banner drifts off-center. Found via a
-               620px-wide render test (24.6px drift); minmax(0, 1fr) lets
-               both sides actually shrink to fit, keeping columns 1 and 3
-               equal regardless of content. */
-            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-        }
-
-        .summary-row-split .summary-row-left,
-        .summary-row-split .summary-row-right {
+        /* ── Post-Visit SummaryBar layout (Stage 5, Part 2) — plain two-item
+       flex row, riding on .summary-row's own base flex properties (no
+       display override needed — .summary-row is already flex). Used to
+       be a 3-column grid (minmax(0,1fr) auto minmax(0,1fr)) to keep a
+       centered date banner genuinely centered between two flanking
+       groups of asymmetric width — that whole problem category doesn't
+       exist any more now that the banner lives in .pv-date-band instead
+       (Stage 5, Part 1) and there's nothing left to center here.
+       .summary-row-left needs no CSS of its own — flex's default start-
+       alignment already puts it flush left. .summary-row-right gets
+       margin-left:auto, the exact same technique Pre-visit's own trailing
+       date pill used to rely on in this identical .summary-row flex
+       container (never touched since before Stage 1) — not
+       justify-content:space-between, which only distributes space within
+       a single wrapped line: with exactly two items, a lone wrapped
+       second item would render at that line's START (left-aligned,
+       backwards), where margin-left:auto correctly holds it flush right
+       on its own line too. ── */
+        .summary-row-left,
+        .summary-row-right {
             display: flex;
             align-items: center;
             gap: 14px;
             flex-wrap: wrap;
         }
 
-        .summary-row-split .summary-row-left {
-            grid-column: 1;
-            justify-self: start;
-        }
-
-        .summary-row-split .summary-date-pill {
-            grid-column: 2;
-            justify-self: center;
-            margin-left: 0;
-        }
-
-        .summary-row-split .summary-row-right {
-            grid-column: 3;
-            justify-self: end;
+        .summary-row-right {
+            margin-left: auto;
         }
 
         .pv-time {
@@ -12895,7 +12864,7 @@
         // readiness-not-yet-determined state is now "In Process"; Post-visit's
         // insurance-claim-submitted-awaiting-result state is still "Pending" and
         // stays that way, per clinic terminology.
-        function SummaryBar({ appts, date, dayMode = 'pre', onIssueClick, onPendingClick, activeFilter, onFilterClick }) {
+        function SummaryBar({ appts, dayMode = 'pre', onIssueClick, onPendingClick, activeFilter, onFilterClick }) {
             const total = appts.length;
             // Use computeStatus (live) so counts match day view — avoids stale col Y mismatches.
             const ok = appts.filter(a => computeStatus(a) === 'valid').length;
@@ -12920,7 +12889,7 @@
             const claimPend = submittedAppts.filter(a => !a.claimStatus || a.claimStatus === 'Pending' || a.claimStatus === 'Resubmitted').length;
 
             return (
-                <div className={`summary-row${dayMode === 'post' ? ' summary-row-split' : ''}`}>
+                <div className="summary-row">
                     {dayMode === 'pre' ? (
                         <>
                             {pend > 0 && (
@@ -12982,7 +12951,6 @@
                             </div>
                         </>
                     )}
-                    {date && <div className="summary-date-pill">📋 {fmtDate(date)}</div>}
                 </div>
             );
         }
@@ -17129,7 +17097,7 @@
 
             return (
                 <div>
-                    {/* ── Stage 5, Part 1 — new top band, matching Billing's actual
+                    {/* ── Top band (Stage 5) — matches Billing's actual
               .day-date-sticky-wrap pattern (not the wider .billing-frozen-
               header — DirectPaySection/ClaimDayBanner are fully opaque with
               no gap, so Billing's olive only ever shows through around its
@@ -17145,21 +17113,19 @@
               with no changes. Applies identically regardless of dayMode —
               this wrapper sits above SummaryBar entirely, independent of
               Pre/Post-visit's differing internal row structure.
-              Purely additive for now (Stage 5, Part 1) — SummaryBar's own
-              .summary-date-pill and UnsignedTotalBanner's original
-              position below are deliberately untouched, so two date
-              banners and two notes-counters are expected on screen at
-              once. Resolved in Part 2. ── */}
+              As of Stage 5, Part 2, this is now the ONLY date banner and
+              ONLY notes counter in Provider Day View — the duplicates this
+              introduced in Part 1 (SummaryBar's own .summary-date-pill, and
+              the original UnsignedTotalBanner below) are both removed. ── */}
                     <div className="pv-date-band">
                         <div className="day-date-sticky-wrap">
                             <div className="day-date-banner">📋 {fmtDate(date)}</div>
                             <UnsignedTotalBanner count={totalUnsigned} />
                         </div>
                     </div>
-                    <UnsignedTotalBanner count={totalUnsigned} />
                     <UnsignedAlert appts={sorted} date={date} onClearPhantom={onClearPhantom} />
                     <DayDirectPayBanner appts={sorted} date={date} />
-                    <SummaryBar appts={sorted} date={date} dayMode={dayMode} onIssueClick={jumpToIssue} onPendingClick={jumpToPending}
+                    <SummaryBar appts={sorted} dayMode={dayMode} onIssueClick={jumpToIssue} onPendingClick={jumpToPending}
                         activeFilter={postFilter} onFilterClick={togglePostFilter} />
                     {/* ── Pre-visit / Post-visit workflow tabs (Rail-and-stile) ── */}
                     <div className="pv-tabs">
