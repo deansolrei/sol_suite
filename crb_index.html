@@ -2009,6 +2009,15 @@
             padding: 14px 24px 10px 24px;
             /* ↑ top pad = breathing room above banner */
             margin: 0 -24px 8px -24px;
+            /* ── Stage 3, Part 1: column stack so the date pill + the new
+           Submitted stat center as one unit. justify-content would center
+           the VERTICAL (main) axis here, not horizontal — align-items is
+           the cross-axis property that actually centers stacked children
+           of differing widths. ── */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
         }
 
         /* ── Billing Day — frozen header stack (Date + Direct-Pay + Claims info) ── */
@@ -2031,6 +2040,15 @@
         .day-date-sticky-wrap .day-date-banner {
             position: static;
             margin-bottom: 0;
+            /* .day-date-banner's base rule sets align-self:flex-start for use
+           outside this stacked context — that rule is dormant today (its
+           parent isn't flex) but would silently win over the new
+           align-items:center above once the parent IS flex, since a
+           child's align-self always overrides the parent's align-items.
+           This selector already outranks the base rule on specificity
+           (two classes vs. one), so overriding it here is cascade-safe
+           regardless of stylesheet source order. */
+            align-self: center;
         }
 
         .summary-row {
@@ -3212,17 +3230,6 @@
             padding: 14px 20px;
             margin: 0;
             box-shadow: none;
-        }
-
-        .claim-day-banner-label {
-            font-size: 13px;
-            font-weight: 900;
-            color: var(--brand-primary);
-            opacity: .55;
-            text-transform: uppercase;
-            letter-spacing: .7px;
-            margin-right: 4px;
-            flex-shrink: 0;
         }
 
         .claim-day-stat {
@@ -20561,7 +20568,9 @@
                 ? activeAppts
                 : claimFilter === 'notSubmitted'
                     ? activeAppts.filter(a => a.billing !== 'submitted')
-                    : activeAppts.filter(a => a.billing === 'submitted' && (a.claimStatus || 'Pending') === claimFilter);
+                    : claimFilter === 'submitted'
+                        ? activeAppts.filter(a => a.billing === 'submitted')
+                        : activeAppts.filter(a => a.billing === 'submitted' && (a.claimStatus || 'Pending') === claimFilter);
             const submtd = filteredAppts.filter(a => a.billing === 'submitted');
             const notSubmitted = filteredAppts.filter(a => a.billing !== 'submitted');
             const signedReady = notSubmitted.filter(a => a.out);   // signed → Submit Claim available (CPT optional)
@@ -20628,7 +20637,8 @@
                 return (
                     <div className="claim-day-banner">
                         <span className="claim-day-stat cds-total cds-day-sm">📅 {totalAppts} Total</span>
-                        <span className="claim-day-banner-label">{totalSubmtd.length} Claims</span>
+                        {/* "N Submitted" moved to the stacked date-banner header
+                (Stage 3, Part 1) — no longer duplicated here as "N Claims". */}
                         {notSub > 0 && (
                             <span className={`claim-day-stat cds-nosub${claimFilter === 'notSubmitted' ? ' cds-active' : ''}`}
                                 style={{ cursor: 'pointer' }} onClick={() => toggleClaimFilter('notSubmitted')}>
@@ -21075,6 +21085,14 @@
                     <div className="billing-frozen-header">
                         <div className="day-date-sticky-wrap">
                             <div className="day-date-banner">📋 {fmtDate(date)}</div>
+                            {totalSubmtd.length > 0 && (
+                                <span
+                                    className={`pv-stat pv-stat-green${claimFilter === 'submitted' ? ' pv-stat-active' : ''}`}
+                                    onClick={() => toggleClaimFilter('submitted')}
+                                    title="Filter to all submitted claims">
+                                    🧾 {totalSubmtd.length} Submitted
+                                </span>
+                            )}
                         </div>
                         <DirectPaySection appts={activeAppts} date={date} onUpdate={onUpdate} patientDb={patientDb} />
                         <ClaimDayBanner />
