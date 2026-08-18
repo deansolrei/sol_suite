@@ -2085,6 +2085,52 @@
             background: var(--surface);
         }
 
+        /* ── Border color-key (Stage 6) — explains what the row-border colors
+       (.pv-stile family, .pv-post family) mean, rendered inside .pv-date-band
+       / .billing-frozen-header so it's part of the sticky olive band, not a
+       separate element competing with it for space. Swatches are thin
+       vertical bars, not squares — .cl-legend (Claims Ledger) is the only
+       existing legend pattern in the file and its 12x12 square swatch is
+       the wrong shape for something explaining a border. Each swatch is
+       literally an empty box with the real .pv-stile/.pv-post border class
+       attached (width:0 + that class's border-left/-right) — the "swatch"
+       IS the border being explained, at its real 7px (Pre-visit) / 6px
+       (Post-visit, Billing) width, with zero new color values and zero
+       drift risk if those rules ever change. justify-content:space-between
+       mirrors the physical left/right split of the borders themselves —
+       Pre-visit has one group (no right border to key), Post-visit/Billing
+       have two, pushed to the edges they describe. ── */
+        .pv-key {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            padding: 0 0 12px;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--text-on-brand);
+        }
+
+        .pv-key-group {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            flex-wrap: wrap;
+        }
+
+        .pv-key-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .pv-key-bar {
+            width: 0;
+            height: 15px;
+            flex-shrink: 0;
+        }
+
         .day-date-sticky-wrap .day-date-banner {
             position: static;
             margin-bottom: 0;
@@ -12878,6 +12924,47 @@
             );
         }
 
+        // Border color-key (Stage 6) — explains the row-border color system
+        // (.pv-stile-* on Pre-visit rows, .pv-post-* on Post-visit/Billing rows)
+        // sitting in the sticky band above it. mode='pre' has only a left border
+        // (readiness), so it renders one group; mode='post' (Post-visit and
+        // Billing both use this shape — Billing has no mode of its own) has
+        // independent left (note-prep) and right (claim-status) borders, so it
+        // renders two, laid out left/right to mirror where those borders
+        // physically sit on the row. "In Process" (Pre-visit) vs "In Progress"
+        // (Post-visit/Billing) are two different states in the same list
+        // position, not one term spelled two ways — see the SummaryBar comment
+        // below for why only one of the app's two "Pending"-like terms was ever
+        // renamed.
+        function BorderColorKey({ mode }) {
+            if (mode === 'pre') {
+                return (
+                    <div className="pv-key">
+                        <div className="pv-key-group">
+                            <div className="pv-key-item"><div className="pv-key-bar pv-stile-err" />Issue</div>
+                            <div className="pv-key-item"><div className="pv-key-bar pv-stile-pend" />In Process</div>
+                            <div className="pv-key-item"><div className="pv-key-bar pv-stile-ok" />Valid</div>
+                        </div>
+                    </div>
+                );
+            }
+            return (
+                <div className="pv-key">
+                    <div className="pv-key-group">
+                        <div className="pv-key-item"><div className="pv-key-bar pv-post-not-started" />Not Started</div>
+                        <div className="pv-key-item"><div className="pv-key-bar pv-post-in-progress" />In Progress</div>
+                        <div className="pv-key-item"><div className="pv-key-bar pv-post-ready" />Ready</div>
+                        <div className="pv-key-item"><div className="pv-key-bar pv-post-signed" />Signed</div>
+                    </div>
+                    <div className="pv-key-group">
+                        <div className="pv-key-item"><div className="pv-key-bar pv-post-not-submitted" />Not Submitted</div>
+                        <div className="pv-key-item"><div className="pv-key-bar pv-post-pending" />Pending</div>
+                        <div className="pv-key-item"><div className="pv-key-bar pv-post-paid" />Paid</div>
+                    </div>
+                </div>
+            );
+        }
+
         // Two entirely different stat sets depending on Pre-visit vs Post-visit —
         // NOT the same set just hidden/shown. Pre-visit shows appointment-readiness
         // status (Assistant-window input): In Process / Issue / Valid. Post-visit
@@ -17146,6 +17233,7 @@
                             <div className="day-date-banner">📋 {fmtDate(date)}</div>
                             <UnsignedTotalBanner count={totalUnsigned} />
                         </div>
+                        <BorderColorKey mode={dayMode} />
                     </div>
                     <UnsignedAlert appts={sorted} date={date} onClearPhantom={onClearPhantom} />
                     <DayDirectPayBanner appts={sorted} date={date} />
@@ -21148,6 +21236,7 @@
                                 </span>
                             )}
                         </div>
+                        <BorderColorKey mode="post" />
                         <DirectPaySection appts={activeAppts} date={date} onUpdate={onUpdate} patientDb={patientDb} />
                         <ClaimDayBanner />
                     </div>
@@ -21867,10 +21956,16 @@
                 // .hdr's total height). The Assistant column header itself no longer
                 // needs to be watched here — AssistantView measures and re-syncs its
                 // own column widths independently (see colWidths in AssistantView).
+                // .pv-date-band/.billing-frozen-header are watched directly too (Stage 6)
+                // now that BorderColorKey's content lives inside them and varies by
+                // dayMode — before, their height only ever changed in lockstep with
+                // .summary-row's own dayMode-driven resize, which happened to trigger a
+                // resync anyway. That coupling isn't guaranteed, so observing the real
+                // source of the height change directly instead of relying on it.
                 let observer;
                 if (window.ResizeObserver) {
                     observer = new ResizeObserver(syncStickyTop);
-                    ['.hdr', '.summary-row', '.tbl-hd', '.wk-week-label', '.view-tabs'].forEach(sel => {
+                    ['.hdr', '.summary-row', '.tbl-hd', '.wk-week-label', '.view-tabs', '.pv-date-band', '.billing-frozen-header'].forEach(sel => {
                         const el = document.querySelector(sel);
                         if (el) observer.observe(el);
                     });
