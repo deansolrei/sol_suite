@@ -2021,12 +2021,32 @@
         }
 
         /* ── Billing Day — frozen header stack (Date + Direct-Pay + Claims info) ── */
+        /* margin:0 -24px + padding:0 24px — bleeds this element's own
+       BACKGROUND (which paints under padding by default) 24px past
+       .page's content edge on each side, exactly matching
+       .day-date-sticky-wrap's own -24px bleed, so the thin gap-strip
+       below the pill (revealed by day-date-sticky-wrap's own
+       margin-bottom, filled by THIS element's background) renders at
+       the same width as the pill zone above it instead of narrower.
+       The padding is load-bearing, not decorative: it cancels the
+       margin's effect on the CONTENT box available to children, so
+       DirectPaySection/ClaimDayBanner (no margin of their own) keep
+       rendering at .page's normal content width, unchanged — only
+       day-date-sticky-wrap (which has its OWN compensating -24px
+       margin) still bleeds, same as before. Margin-only, with no
+       compensating padding, was tried and rejected: day-date-sticky-
+       wrap's margin is relative to ITS parent's content width, so
+       widening the parent without restoring that content width just
+       compounds the mismatch bigger, it doesn't close it — confirmed
+       by rendering both variants side by side before choosing this
+       one. */
         .billing-frozen-header {
             position: sticky;
             top: 88px;
             z-index: 17;
             background: #777355;
-            margin-bottom: 18px;
+            margin: 0 -24px 18px -24px;
+            padding: 0 24px;
         }
 
         /* ── Provider Day — top band (Stage 5, Part 1), same role as
@@ -2038,13 +2058,19 @@
        Billing Day are mutually exclusive views), so the identical
        z-index doesn't collide in practice — kept as its own class
        rather than reusing .billing-frozen-header's name so the DOM/CSS
-       doesn't carry "billing" into Provider's view. ── */
+       doesn't carry "billing" into Provider's view.
+       Same margin+padding bleed-fix as .billing-frozen-header above,
+       for the identical reason — .pv-date-band wraps the same
+       unmodified .day-date-sticky-wrap and had the exact same width
+       mismatch, confirmed by measurement, not assumed just because it
+       reuses the mechanism. ── */
         .pv-date-band {
             position: sticky;
             top: 88px;
             z-index: 17;
             background: #777355;
-            margin-bottom: 18px;
+            margin: 0 -24px 18px -24px;
+            padding: 0 24px;
         }
 
         body.dark .day-date-sticky-wrap {
