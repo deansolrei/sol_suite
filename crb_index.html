@@ -17064,7 +17064,12 @@
                 );
                 return {
                     insurance: a.directIns || (pt && pt.insurance) || '',
-                    channel: (pt && pt.platform) || '',
+                    // FIXED (2026-08-19) — was reading only the patient-level default
+                    // (pt.platform), which never reflects a per-appointment channel
+                    // change made via the Biller popup. Now mirrors `insurance`'s own
+                    // pattern: the appointment's own method first, patient default
+                    // only as a fallback for the rare case it's somehow unset.
+                    channel: a.method ? (METHOD_LABEL[a.method] || a.method) : ((pt && pt.platform) || ''),
                 };
             }
             // Rail-and-stile redesign: split the single always-show-everything row
@@ -21773,7 +21778,7 @@
                         : dkey(prov, date);
                     fetchedRef.current.delete(k);
                     setRefreshTick(t => t + 1);
-                }, 60000);   // 60 seconds
+                }, 900000);   // 15 minutes
                 return () => clearInterval(id);
             }, [initLoading, prov, date, period]);
 
