@@ -5949,10 +5949,13 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
     apptData.forEach(function (r, i) {
       var key = r[0] + '||' + _fmtDate(r[1]) + '||' + _normalizeTimeKey(r[3]);
       var rowNum = i + 2; // 1-based sheet row (row 1 = header)
-      existingRowMap[key] = rowNum;
-      // Track patient name per row (for slot-conflict detection below)
-      // and per name (for _statusOnly new-patient check).
+      // CHANGED (2026-08-19) — one slot can legitimately hold more than one
+      // real patient (confirmed double-booking, not just stale rescheduling).
+      // existingRowMap now holds an ARRAY of {rowNum, patientName} candidates
+      // per slot instead of a single row number.
+      if (!existingRowMap[key]) existingRowMap[key] = [];
       var ptName = String(r[4] || '').toLowerCase().replace(/\s+/g, ' ').trim(); // col E = Patient
+      existingRowMap[key].push({ rowNum: rowNum, patientName: ptName });
       if (ptName) {
         existingPatientSet[ptName] = true;
         existingPatientByRow[rowNum] = ptName;
@@ -6058,99 +6061,93 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       }
       // ─────────────────────────────────────────────────────────────────
 
-      if (existingRowMap.hasOwnProperty(key)) {
-        var rowNum = existingRowMap[key];
+      // CHANGED (2026-08-19) — replaces the old "slot-conflict guard," which
+      // kept only ONE row per slot and treated every second real occupant as
+      // a brand-new arrival on every single sync, silently creating a fresh
+      // duplicate row each time (confirmed via ApptID timestamps ~11 days
+      // apart on the same real appointment). Now: find whichever candidate
+      // in this slot actually matches the incoming patient (fuzzy match via
+      // _samePatient, so middle-name variants still merge correctly). No
+      // match among however many real occupants this slot has → fall
+      // through to create a new row, same as before.
+      var incomingPt = (appt.patient || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      var _slotCandidates = existingRowMap[key] || [];
+      var _match = _slotCandidates.find(function (c) {
+        return c.patientName && incomingPt && _samePatient(c.patientName, incomingPt);
+      });
+
+      if (_match) {
+        var rowNum = _match.rowNum;
         var rowIdx = rowNum - 2; // index into apptData
+        var touched = false;
 
-        // ── Slot-conflict guard ──────────────────────────────────────────────
-        // If the existing row belongs to a DIFFERENT patient, a previous patient
-        // was rescheduled out of this slot and a NEW patient now occupies it.
-        // Do NOT update the old row with the new patient's status; instead fall
-        // through to create a fresh row for the new patient.
-        // Normalize whitespace so "John  Smith" and "John Smith" don't
-        // falsely trigger a slot-conflict and create a duplicate row.
-        var existingPtInRow = (existingPatientByRow[rowNum] || '').replace(/\s+/g, ' ').trim();
-        var incomingPt = (appt.patient || '').toLowerCase().replace(/\s+/g, ' ').trim();
-        // Use _samePatient() instead of strict equality so that middle-name variants
-        // ("Jane Smith" vs "Jane M Smith") are treated as the same person rather than
-        // triggering a false slot-conflict that creates a duplicate row.
-        if (existingPtInRow && incomingPt && !_samePatient(existingPtInRow, incomingPt)) {
-          Logger.log('  ⚡ Slot conflict on ' + appt.date + ' ' + appt.time +
-            ' [' + appt.provID + ']: sheet has "' + existingPtInRow +
-            '" but Tebra has "' + incomingPt + '" — creating new row');
-          // Fall through to row creation below (do NOT return here)
-        } else {
-          var touched = false;
+        // ── TebraStatus: ALWAYS overwrite with the latest value from Tebra.
+        // Statuses are fluid — Scheduled → Confirmed → Check-out (or No Show,
+        // Cancelled, Rescheduled). Never skip because a value already exists.
+        if (appt.tebraStatus && COL_TEBRA_STATUS > 0) {
+          var prevStatus = existingTSMap[rowNum] || '';
+          apptData[rowIdx][COL_TEBRA_STATUS - 1] = appt.tebraStatus;
+          existingTSMap[rowNum] = appt.tebraStatus; // keep in-memory map current
+          statusUpdated++;
+          touched = true;
+          if (prevStatus !== appt.tebraStatus) {
+            Logger.log('  ↻ TebraStatus: ' + appt.patient + ' (' + appt.date + ') ' +
+              (prevStatus ? '"' + prevStatus + '" → ' : '[new] ') +
+              '"' + appt.tebraStatus + '"');
+          }
 
-          // ── TebraStatus: ALWAYS overwrite with the latest value from Tebra.
-          // Statuses are fluid — Scheduled → Confirmed → Check-out (or No Show,
-          // Cancelled, Rescheduled). Never skip because a value already exists.
-          if (appt.tebraStatus && COL_TEBRA_STATUS > 0) {
-            var prevStatus = existingTSMap[rowNum] || '';
-            apptData[rowIdx][COL_TEBRA_STATUS - 1] = appt.tebraStatus;
-            existingTSMap[rowNum] = appt.tebraStatus; // keep in-memory map current
-            statusUpdated++;
+          // ── Auto-reconcile Signed flag with Tebra's "Checked Out" status.
+          // Clinic standard (effective 2026-07-24): Checked Out = provider has
+          // signed the note. When Tebra reports a row as Checked Out, SolBoard's
+          // own Signed flag should automatically match — no manual double-entry.
+          // Checked idempotently against current sheet state (not "did status
+          // just change") so every sync also mops up any pre-existing backlog
+          // of rows that are already Checked Out but not yet marked Signed.
+          if (COL_SIGNED > 0 && _isCheckedOutStatus(appt.tebraStatus) &&
+            !existingSignedMap[rowNum]) {
+            apptData[rowIdx][COL_SIGNED - 1] = true;
+            existingSignedMap[rowNum] = true;
+            autoSigned++;
             touched = true;
-            if (prevStatus !== appt.tebraStatus) {
-              Logger.log('  ↻ TebraStatus: ' + appt.patient + ' (' + appt.date + ') ' +
-                (prevStatus ? '"' + prevStatus + '" → ' : '[new] ') +
-                '"' + appt.tebraStatus + '"');
-            }
-
-            // ── Auto-reconcile Signed flag with Tebra's "Checked Out" status.
-            // Clinic standard (effective 2026-07-24): Checked Out = provider has
-            // signed the note. When Tebra reports a row as Checked Out, SolBoard's
-            // own Signed flag should automatically match — no manual double-entry.
-            // Checked idempotently against current sheet state (not "did status
-            // just change") so every sync also mops up any pre-existing backlog
-            // of rows that are already Checked Out but not yet marked Signed.
-            if (COL_SIGNED > 0 && _isCheckedOutStatus(appt.tebraStatus) &&
-              !existingSignedMap[rowNum]) {
-              apptData[rowIdx][COL_SIGNED - 1] = true;
-              existingSignedMap[rowNum] = true;
-              autoSigned++;
-              touched = true;
-              Logger.log('  ✓ Auto-signed: ' + appt.patient + ' (' + appt.date +
-                ') — TebraStatus "' + appt.tebraStatus + '" → Signed=TRUE');
-            }
+            Logger.log('  ✓ Auto-signed: ' + appt.patient + ' (' + appt.date +
+              ') — TebraStatus "' + appt.tebraStatus + '" → Signed=TRUE');
           }
-
-          // ── DirectIns: overwrite with Tebra's primary insurance carrier (PatientCaseName).
-          if (appt.insurance && COL_DIRECT_INS > 0) {
-            apptData[rowIdx][COL_DIRECT_INS - 1] = appt.insurance;
-            insuranceUpdated++;
-            touched = true;
-          }
-
-          // ── PatientState: stamp from Patients tab (primary source), only if
-          // currently blank. Read directly from the in-memory block — no
-          // separate getRange().getValue() round-trip needed anymore.
-          var COL_PT_STATE = APPT_COLS.indexOf('PatientState') + 1; // 1-based
-          var _ptLookupInfo = patientLookup[(appt.patient || '').toLowerCase()] || {};
-          var _stateToWrite = appt.patientState || _ptLookupInfo.patientState || '';
-          if (_stateToWrite && COL_PT_STATE > 0) {
-            var existingState = String(apptData[rowIdx][COL_PT_STATE - 1] || '').trim();
-            if (!existingState) {
-              apptData[rowIdx][COL_PT_STATE - 1] = _stateToWrite;
-              touched = true;
-            }
-          }
-
-          // ── TebraPatientID: backfill only if currently blank (2026-08-17).
-          // Lives outside apptData's width, so it's tracked in the parallel
-          // existingPatientIds array and written back separately below.
-          if (appt.tebraPatientId) {
-            var _existingPid = String((existingPatientIds[rowIdx] && existingPatientIds[rowIdx][0]) || '').trim();
-            if (!_existingPid) {
-              existingPatientIds[rowIdx] = [appt.tebraPatientId];
-              touched = true;
-            }
-          }
-
-          if (!touched) skipped++;
-          return;
         }
-        // ── End slot-conflict guard (fall-through means: create new row below) ──
+
+        // ── DirectIns: overwrite with Tebra's primary insurance carrier (PatientCaseName).
+        if (appt.insurance && COL_DIRECT_INS > 0) {
+          apptData[rowIdx][COL_DIRECT_INS - 1] = appt.insurance;
+          insuranceUpdated++;
+          touched = true;
+        }
+
+        // ── PatientState: stamp from Patients tab (primary source), only if
+        // currently blank. Read directly from the in-memory block — no
+        // separate getRange().getValue() round-trip needed anymore.
+        var COL_PT_STATE = APPT_COLS.indexOf('PatientState') + 1; // 1-based
+        var _ptLookupInfo = patientLookup[(appt.patient || '').toLowerCase()] || {};
+        var _stateToWrite = appt.patientState || _ptLookupInfo.patientState || '';
+        if (_stateToWrite && COL_PT_STATE > 0) {
+          var existingState = String(apptData[rowIdx][COL_PT_STATE - 1] || '').trim();
+          if (!existingState) {
+            apptData[rowIdx][COL_PT_STATE - 1] = _stateToWrite;
+            touched = true;
+          }
+        }
+
+        // ── TebraPatientID: backfill only if currently blank (2026-08-17).
+        // Lives outside apptData's width, so it's tracked in the parallel
+        // existingPatientIds array and written back separately below.
+        if (appt.tebraPatientId) {
+          var _existingPid = String((existingPatientIds[rowIdx] && existingPatientIds[rowIdx][0]) || '').trim();
+          if (!_existingPid) {
+            existingPatientIds[rowIdx] = [appt.tebraPatientId];
+            touched = true;
+          }
+        }
+
+        if (!touched) skipped++;
+        return;
       }
 
       // Don't create a new row for cancelled / no-show / deleted appointments —
@@ -8765,10 +8762,87 @@ function backfillPatientIdHistorical(startDateStr, endDateStr) {
   return JSON.stringify(report);
 }
 
-/** Run this one. Covers your full observed appointment history. */
-function runPatientIdHistoricalBackfill_FullHistory() {
-  backfillPatientIdHistorical('2026-01-02', '2026-09-17');
+/** Run this one — scans your ENTIRE appointment history for duplicates. */
+function runDuplicateAppointmentScan_AllTime() {
+  findDuplicateAppointments(null, null);
 }
+
+/**
+ * CONFIRM STEP — deletes specific duplicate Appointments rows by ApptID.
+ * Does NOT auto-decide which row in a cluster is "the real one" — you
+ * choose. Re-locates each row fresh by ApptID and deletes in descending
+ * row order so one deletion can't shift another's row number out from
+ * under it mid-call. Irreversible — no undo once a row is deleted.
+ */
+function confirmDuplicateAppointmentDeletion(apptIdsToDelete) {
+  var result = { deleted: 0, notFound: [], errors: [] };
+  try {
+    if (!Array.isArray(apptIdsToDelete) || !apptIdsToDelete.length) {
+      result.errors.push('Pass an array of ApptID strings to delete.');
+      return JSON.stringify(result);
+    }
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var apptSheet = ss.getSheetByName(TAB_APPT);
+    var COL_APPTID = APPT_COLS.indexOf('ApptID');
+    var lastRow = apptSheet.getLastRow();
+    if (lastRow < 2) return JSON.stringify(result);
+
+    var data = apptSheet.getRange(2, 1, lastRow - 1, APPT_COLS.length).getValues();
+    var wanted = {};
+    apptIdsToDelete.forEach(function (id) { wanted[id] = true; });
+
+    var rowsToDelete = [];
+    data.forEach(function (row, i) {
+      var apptId = String(row[COL_APPTID] || '');
+      if (wanted[apptId]) {
+        rowsToDelete.push({ apptId: apptId, rowNum: i + 2, patient: String(row[APPT_COLS.indexOf('Patient')] || '') });
+        delete wanted[apptId];
+      }
+    });
+    rowsToDelete.sort(function (a, b) { return b.rowNum - a.rowNum; });
+
+    rowsToDelete.forEach(function (r) {
+      apptSheet.deleteRow(r.rowNum);
+      result.deleted++;
+      Logger.log('🗑️  Deleted row ' + r.rowNum + ': ' + r.patient + ' (' + r.apptId + ')');
+    });
+
+    result.notFound = Object.keys(wanted);
+    SpreadsheetApp.flush();
+    _audit(ss, 'DUPLICATE_APPT_CLEANUP',
+      'Deleted ' + result.deleted + ' duplicate appointment row(s): ' + apptIdsToDelete.join(', '));
+    Logger.log('✅  Deleted ' + result.deleted + ' rows. Not found: ' + result.notFound.length);
+
+  } catch (e) {
+    result.errors.push(e.message);
+    Logger.log('❌  confirmDuplicateAppointmentDeletion error: ' + e.message);
+  }
+  return JSON.stringify(result);
+}
+
+/** ONE-TIME. Deletes the 10 confirmed same-slot duplicates found 2026-08-19
+ *  (scan results reviewed in chat). Does NOT touch the 4 date-drift clusters
+ *  or the 1 name-variant cluster — those need separate handling. Safe to
+ *  delete this function once it's been run. */
+function runDuplicateCleanup_20260819() {
+  confirmDuplicateAppointmentDeletion([
+    'TEBRA-API-1784989499487-MIC0',  // 14167 BL — keeping row 293
+    'TEBRA-API-1784989578481-2X5W',  // 14468 KG — keeping row 1229
+    'TEBRA-API-1784681908560-T95W',  // 16631 MB — keeping row 1777
+    'TEBRA-API-1784989858086-5K0Y',  // 16631 MB
+    'TEBRA-API-1784995607429-QH50',  // 16631 MB
+    'TEBRA-API-1785042688745-SCYM',  // 16631 MB
+    'TEBRA-API-1785129306614-KU6M',  // 17025 CM — keeping row 462
+    'TEBRA-API-1786425555946-Q02B',  // 17025 CM
+    'TEBRA-API-1787117395374-7ZP1',  // 17198 MK — keeping row 1486
+    'TEBRA-API-1787152551114-1Y3W',  // 17263 CS — keeping row 436
+  ]);
+}
+
+
+
+
 
 /* ════════════════════════════════════════════════════════════════
    TEBRA PATIENT AUTH DIAGNOSTICS
