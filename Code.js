@@ -123,6 +123,11 @@ const PATIENT_COLS = [
 // shared definition to reuse instead of writing a third copy.
 const PLATFORM_TO_METHOD = { 'alma': 'alma', 'headway': 'hw', 'grow': 'grow', 'direct': 'direct' };
 
+// Reverse of PLATFORM_TO_METHOD — Appointments-tab short code → Patients-tab
+// billing-channel label. Used to convert a row's/appt's short-code method
+// back into the label setPatientBillingChannel() expects before calling it.
+const METHOD_TO_PLATFORM = { 'alma': 'Alma', 'hw': 'Headway', 'grow': 'Grow', 'direct': 'Direct' };
+
 const STAFF_COLS = ['Email', 'Role', 'ProvID', 'DisplayName'];
 
 const STAFF_SEED = [
@@ -742,6 +747,36 @@ function saveAppointment(prov, date, apptJson) {
 
       const rowData = apptToRow(apptData, prov, date);
 
+      // ── Billing-channel change detection (2026-08-19) ────────────────────
+      // If this edit changes the row's own channel, clear the OUTGOING
+      // channel's verification fields on THIS row inline (rowData hasn't
+      // been written yet) — same clearing rules
+      // _propagateBillingChannelToFutureAppointments() uses for every OTHER
+      // future row, just applied directly here since this row's own write
+      // is already in flight. DirectIns is the patient's insurance carrier
+      // name, not a verification note — never cleared.
+      var CHAN_IDX = APPT_COLS.indexOf('BillingChannel');
+      var oldMethod = String(values[targetRow - 1][CHAN_IDX] || '').trim().toLowerCase();
+      var newMethod = String(apptData.method || '').trim().toLowerCase();
+      var channelChanged = newMethod !== oldMethod;
+
+      if (channelChanged) {
+        if (oldMethod === 'alma') {
+          rowData[APPT_COLS.indexOf('AlmaText')] = '';
+          rowData[APPT_COLS.indexOf('AlmaValid')] = '';
+        } else if (oldMethod === 'hw') {
+          rowData[APPT_COLS.indexOf('HWText')] = '';
+          rowData[APPT_COLS.indexOf('HWValid')] = '';
+        } else if (oldMethod === 'grow') {
+          rowData[APPT_COLS.indexOf('GrowText')] = '';
+          rowData[APPT_COLS.indexOf('GrowValid')] = '';
+        } else if (oldMethod === 'direct') {
+          rowData[APPT_COLS.indexOf('DirectValid')] = '';
+          // DirectIns is the patient's insurance carrier name, not a
+          // verification note — never clear it here.
+        }
+      }
+
       // ── Preserve Tebra-synced columns that the client may not have ──
       // If the incoming appt has no tebraStatus (e.g. the provider loaded
       // their page before the biller ran a Tebra sync), keep whatever value
@@ -802,6 +837,19 @@ function saveAppointment(prov, date, apptJson) {
         _audit(ss, 'NOTE_STATUS_UPDATED',
           'Appt ' + appt.id + ' → noteStatus=' + (newNoteStatus || '(cleared)') + ' by ' + attribEmail + ' (via saveAppointment)');
       }
+
+      // Runs AFTER this row's own write, so setPatientBillingChannel()'s
+      // internal re-scan of the Appointments tab sees this row already
+      // updated to its new channel (correctly skips re-touching it — its
+      // channel already matches the new default).
+      if (channelChanged) {
+        try {
+          var newLabel = METHOD_TO_PLATFORM[newMethod] || '';
+          setPatientBillingChannel(apptData.patient, newLabel);
+        } catch (e) {
+          Logger.log('saveAppointment: billing-channel propagation failed (non-fatal): ' + e.message);
+        }
+      }
     } else {
       // ── CREATE path ──
       // Seed UnsignedDates with every other currently-outstanding unsigned
@@ -817,6 +865,18 @@ function saveAppointment(prov, date, apptJson) {
         || '';
       appt.patientState = patInfoNew.patientState || '';
 
+      // ── Billing-channel override detection (2026-08-19) ─────────────────
+      // If the channel picked for this new appointment differs from the
+      // patient's current Patients-tab default, treat it the same as a
+      // manual channel edit on an existing appointment: it becomes the new
+      // default and propagates to the patient's other future appointments.
+      // (AddModal pre-fills from the current default, so this only fires
+      // when someone deliberately picks something else before saving.)
+      var currentDefaultLabel = _getPatientBillingChannelLabel(ss, appt.patient);
+      var currentDefaultShort = PLATFORM_TO_METHOD[currentDefaultLabel.toLowerCase()] || '';
+      var newMethodOnCreate = String(appt.method || '').trim().toLowerCase();
+      var channelOverriddenOnCreate = !!newMethodOnCreate && newMethodOnCreate !== currentDefaultShort;
+
       // Write the new row.
       const rowData = apptToRow(appt, prov, date);
       const newRow = sheet.getLastRow() + 1;
@@ -828,6 +888,19 @@ function saveAppointment(prov, date, apptJson) {
       sheet.getRange(newRow, 1, 1, rowData.length).setValues([rowData]);
 
       _audit(ss, 'CREATE', `${appt.patient} | ${appt.time} | ${date} | ${prov}`);
+
+      // Runs AFTER this row's own write so setPatientBillingChannel()'s
+      // internal re-scan sees this new row already in place (correctly
+      // skips re-touching it — its channel already matches). Best-effort,
+      // same as the UPDATE-path call above.
+      if (channelOverriddenOnCreate) {
+        try {
+          var newLabelOnCreate = METHOD_TO_PLATFORM[newMethodOnCreate] || '';
+          setPatientBillingChannel(appt.patient, newLabelOnCreate);
+        } catch (e) {
+          Logger.log('saveAppointment (CREATE): billing-channel propagation failed (non-fatal): ' + e.message);
+        }
+      }
     }
 
     SpreadsheetApp.flush();
@@ -7471,6 +7544,36 @@ function savePatientBestChannel(patientName, channelJson) {
   } catch (e) {
     Logger.log('savePatientBestChannel error: ' + e.message);
     return JSON.stringify({ ok: false, error: e.message });
+  }
+}
+
+
+// ── Get patient's current BillingChannel LABEL (2026-08-19) ────────────
+// Minimal, single-purpose Patients-tab lookup — returns the label (e.g.
+// "Headway") or '' if not found/not set. Deliberately NOT reusing
+// _buildPatientLookup() (builds a full-roster lookup for Tebra sync, more
+// than needed for a single-patient check) or _lookupPatient() (returns
+// insurance/state, not channel — adding channel there would overload an
+// unrelated shared helper). Used by saveAppointment()'s CREATE path to
+// detect whether a manually-picked channel differs from the patient's
+// existing default, matching the same name-matching style as
+// setPatientBillingChannel() itself.
+function _getPatientBillingChannelLabel(ss, patientName) {
+  try {
+    var sheet = ss.getSheetByName(TAB_PATIENT);
+    if (!sheet || sheet.getLastRow() < 2) return '';
+    var nameLower = (patientName || '').trim().toLowerCase();
+    var COL_CHAN = PATIENT_COLS.indexOf('BillingChannel');
+    if (COL_CHAN < 0) return '';
+    var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.max(COL_CHAN + 1, 2)).getValues();
+    for (var i = 0; i < data.length; i++) {
+      var fullName = (String(data[i][0] || '') + ' ' + String(data[i][1] || '')).trim().toLowerCase();
+      if (fullName === nameLower) return String(data[i][COL_CHAN] || '').trim();
+    }
+    return '';
+  } catch (e) {
+    Logger.log('_getPatientBillingChannelLabel error (non-fatal): ' + e.message);
+    return '';
   }
 }
 
