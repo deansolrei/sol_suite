@@ -3096,184 +3096,159 @@
             color: #6B9E8A
         }
 
+        /* ── Week View Dual-Ring Summary — full-width card (supersedes the
+       compact 32px tooltip-only ring, and the pre-Dual-Ring blue header
+       this whole block used to be — .wk-appt-count, .wk-status-summary/
+       .wk-ss-*, .wk-note-tally/.wk-note-chip/.wk-nc-*, and the old
+       .wk-col-hd-left/.wk-dayname/.wk-daynum day-label split are all
+       gone, replaced entirely by WeekDualRing's own rendered content
+       below (day label, caption, ring+legend, divider, Intake line).
+       Card fills its real grid column responsively (no fixed width —
+       measured live at 172px-247px across realistic viewport widths,
+       a ~30% range no single hardcoded value fits well) rather than the
+       340px fixed width in the design reference, which doesn't fit
+       7-across at any real width this grid actually renders at.
+       Border color is #377BAD, matching the OLD solid-blue header's own
+       var(--brand-primary) value exactly (confirmed identical in both
+       themes) — not approximated.
+       Background is #E1E1E1 (style pass, 2026-08-20) — previously
+       Parchment Light (#FBFBF3); still no separate dark-mode override,
+       same choice already made for every other light card in this file
+       (the date banners, ClaimSubmitModal, etc.), none of which
+       re-color for dark mode either. Caption, ring "TOTAL" label,
+       "INTAKE" tag, and the legend's own Total row were recolored to
+       #527AAE alongside this swap since they were sized/colored
+       against the old white-ish background. ── */
         .wk-col-hd {
-            padding: 9px 10px 8px;
+            padding: 11px 12px;
             cursor: pointer;
-            background: var(--brand-primary);
-            color: var(--text-on-brand);
+            background: #E1E1E1;
+            color: var(--text-primary);
             user-select: none;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 4px;
-            transition: none;
-            border-radius: 0;
-            border-bottom: 3px solid transparent
+            flex-direction: column;
+            transition: background .12s;
+            border: 3px solid #377BAD;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(9, 55, 31, .10);
+            /* Grid items default to an automatic min-width based on their
+               content's min-content size (here, the legend's nowrap text) —
+               without this override that min-content can exceed the track's
+               1fr share and force unequal column widths, breaking the
+               "perfect column alignment" .wk-grid exists for. */
+            min-width: 0;
         }
 
+        /* Scoped to the card itself — .wk-grid's row 2+ (Direct-Pay banners,
+       appointment rows) are separate sibling elements entirely, so this
+       can't leak onto the list below no matter how it's written; border
+       color is deliberately unchanged on hover, per spec. */
         .wk-col-hd:hover {
-            background: #124A2C
+            background: #BFCFD5
         }
 
-        /* Neither .wk-today nor .wk-sel touch background in light mode, so
-           hover (dark green) can apply on top of any of them — the #051F11
-           base fix above fails here (2.45:1, dark-on-dark); needs white. */
-        .wk-col-hd:hover .wk-appt-count {
-            color: var(--text-on-brand)
+        /* Today/selected indication, rebuilt correctly — the pre-existing
+       .wk-col.wk-today/.wk-col.wk-sel rules this replaced never actually
+       matched anything: wk-today/wk-sel are applied directly alongside
+       wk-col-hd on the same element in the real JSX, never as a
+       .wk-col-hd descendant of a separate .wk-col wrapper (that class is
+       never applied anywhere in this file). Found while rebuilding this
+       exact spot; fixed as part of it since it's the same mechanism, not
+       a separate cleanup. */
+        .wk-col-hd.wk-today {
+            border-color: #7494AA;
         }
 
-        .wk-col.wk-today .wk-col-hd {
-            border-bottom-color: #7494AA
+        .wk-col-hd.wk-sel {
+            box-shadow: 0 0 0 2px #377BAD, 0 3px 10px rgba(9, 55, 31, .10);
         }
 
-        .wk-col.wk-sel .wk-col-hd {
-            border-bottom-color: var(--border)
+        /* WeekDualRing's own inner content — day label, caption, ring+legend
+       row, divider, Intake line. Sizes scaled down from the 340px design
+       reference for the real ~172-247px column width, not a literal port. */
+        .wkdr-day {
+            font-weight: 800;
+            font-size: 14px;
+            line-height: 1.15;
+            color: var(--text-primary);
         }
 
-        .wk-col-hd-left {
+        .wkdr-cap {
+            font-size: 9px;
+            color: #527AAE;
+            margin: 3px 0 8px;
+        }
+
+        .wkdr-main {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* Single vertical column of all 6 items, not the design reference's
+       two side-by-side sub-columns — at the real ~172-247px card width a
+       two-column split leaves each label under ~25px, truncating text
+       like "Unsigned" to 2 characters even with ellipsis. One column gives
+       every label the card's full available legend width instead. */
+        .wkdr-legend {
+            flex: 1;
+            min-width: 0;
             display: flex;
             flex-direction: column;
-            gap: 0
-        }
-
-        .wk-dayname {
-            font-size: 9px;
-            font-weight: 800;
-            color: var(--text-on-brand);
-            text-transform: uppercase;
-            letter-spacing: .8px;
-            line-height: 1
-        }
-
-        .wk-daynum {
-            font-size: 22px;
-            font-weight: 900;
-            color: var(--text-on-brand);
-            line-height: 1.1
-        }
-
-        .wk-col.wk-today .wk-daynum {
-            color: #6FA0B2
-        }
-
-        .wk-col.wk-sel .wk-daynum {
-            color: var(--text-on-brand)
-        }
-
-        /* Same paper-deep-over-.wk-col-hd composite issue as .date-input —
-           light needs a dark value (4.74:1), dark keeps white (11.66:1). */
-        .wk-appt-count {
-            font-size: 9px;
-            font-weight: 700;
-            color: #051F11;
-            background: rgba(var(--paper-deep-rgb), .15);
-            border-radius: 0;
-            padding: 1px 6px;
-            white-space: nowrap;
-            align-self: flex-start
-        }
-
-        .wk-dots {
-            display: flex;
+            justify-content: center;
             gap: 3px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            align-self: flex-start;
-            margin-top: 2px
         }
 
-        /* ── Status summary chips — replaces the old per-appointment dot row ── */
-        /* (one dot per appointment got too busy/distracting with a full day of patients; */
-        /* this shows a single icon+count per status instead) */
-        .wk-status-summary {
+        .wkdr-legend-item {
             display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            align-self: flex-start;
-            margin-top: 2px
-        }
-
-        .wk-ss-chip {
-            display: inline-flex;
             align-items: center;
-            gap: 2px;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 1px 6px;
-            border-radius: 0;
-            background: #FBFBF3;
-            border: 1px solid;
-            white-space: nowrap;
-        }
-
-        .wk-ss-ok {
-            border-color: var(--success);
-            color: var(--success)
-        }
-
-        .wk-ss-pend {
-            border-color: var(--warning);
-            color: var(--warning)
-        }
-
-        .wk-ss-err {
-            border-color: var(--error);
-            color: #791F1F
-        }
-
-        /* ── Week-view claim status indicator row (billing mode only) ── */
-        .wk-claim-row {
-            display: flex;
             gap: 3px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            align-self: flex-start;
-            margin-top: 3px
-        }
-
-        .wk-ci {
-            font-size: 11px;
-            font-weight: 800;
-            border-radius: 0;
-            padding: 3px 8px;
+            font-size: 8.75px;
             white-space: nowrap;
-            letter-spacing: .2px
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .wk-ci-total {
-            background: rgba(var(--paper-deep-rgb), .13);
-            color: var(--text-on-brand)
+        .wkdr-legend-item b {
+            font-weight: 800;
         }
 
-        .wk-ci-unsub {
-            background: rgba(59, 130, 246, .38);
-            color: #E9F1F4
+        .wkdr-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
         }
 
-        .wk-ci-pend {
-            background: rgba(234, 179, 8, .38);
-            color: var(--warning)
+        .wkdr-divider {
+            border: none;
+            border-top: 1px solid #D8D3BF;
+            margin: 9px 0 7px;
         }
 
-        .wk-ci-paid {
-            background: rgba(34, 197, 94, .32);
-            color: #F0FDF4
+        .wkdr-intake {
+            font-size: 9.5px;
+            color: var(--text-primary);
+            line-height: 1.5;
         }
 
-        .wk-ci-denied {
-            background: rgba(239, 68, 68, .32);
-            color: #FEF2F2
+        .wkdr-intake-tag {
+            font-size: 8px;
+            letter-spacing: .08em;
+            color: #527AAE;
+            text-transform: uppercase;
+            margin-right: 5px;
         }
 
-        .wk-ci-resub {
-            background: rgba(168, 85, 247, .32);
-            color: #E9F1F4
+        .wkdr-intake-sep {
+            color: #ccc;
+            margin: 0 4px;
         }
 
-        .wk-ci-nosub {
-            background: rgba(234, 88, 12, .38);
-            color: #F8EFD8
+        .wkdr-intake u {
+            text-decoration-thickness: 2px;
+            text-underline-offset: 2px;
         }
 
         /* ── Billing day — Claim Overview Banner ─────────────────────────────── */
@@ -3560,51 +3535,6 @@
             color: #3D768A
         }
 
-        /* ── Provider week — daily note-signing tally chip ─────────────────── */
-        .wk-note-tally {
-            display: flex;
-            justify-content: flex-end;
-            align-self: flex-start;
-            margin-top: 4px;
-        }
-
-        .wk-note-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            padding: 2px 7px 2px 5px;
-            border-radius: 0;
-            border: 1px solid;
-            font-size: 9px;
-            font-weight: 900;
-            white-space: nowrap;
-            letter-spacing: .15px;
-            transition: none;
-        }
-
-        /* Sky Accent (#1C6FA3) — deliberately NOT gold. This is an action alert
-       ("you have notes to sign") not a status/pending indicator, and it sat
-       next to the Pending-claim gold badge on the same card, so the two read
-       as one color language when they mean different things. */
-        .wk-nc-pend {
-            background: #FBFBF3;
-            border-color: #1C6FA3;
-            color: #1C6FA3;
-        }
-
-        .wk-nc-done {
-            background: #FBFBF3;
-            border-color: var(--success);
-            color: var(--success);
-        }
-
-        .wk-nc-num {
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: -.3px;
-            line-height: 1
-        }
-
         /* ── Bottom row: unsigned stamp + method badge ──────────────────────── */
         .wk-bottom-row {
             display: flex;
@@ -3641,10 +3571,9 @@
             font-style: italic;
         }
 
-        /* Same Sky Accent alert color as .wk-nc-pend above — this is the
-       per-appointment twin of that day-header tally, and previously shared
-       the Pending-claim gold, which made "note needs signing" (an action
-       item) look identical to "claim pending" (a status). */
+        /* Sky Accent alert color, distinct from the Pending-claim gold —
+       previously shared that gold, which made "note needs signing" (an
+       action item) look identical to "claim pending" (a status). */
         .wk-note-stamp {
             margin-right: auto;
             display: flex;
@@ -3692,7 +3621,7 @@
         }
 
         .wk-appt {
-            background: #FBFBF3;
+            background: #BFCFD5;
             border: 1px solid var(--brand-primary);
             border-radius: 0;
             padding: 7px 9px;
@@ -3703,7 +3632,7 @@
         }
 
         .wk-appt:hover {
-            background: #FBFBF3
+            background: #9CB5BF
         }
 
         /* ── LEFT border = PRE-VISIT status (Assistant's intake/checklist work) ──
@@ -3743,10 +3672,18 @@
         }
 
         /* ── Direct-pay (Clinic Submit) patient cards ───────────────────────── */
+        /* Mint-green, distinct from the regular card's #BFCFD5/#9CB5BF blue-gray
+           (style pass, 2026-08-20) — two-class selector already outweighs the
+           base .wk-appt/.wk-appt:hover rules by specificity, verified via
+           computed-style check rather than assumed. */
         .wk-appt.wk-direct {
-            background: #FBFBF3;
+            background: #CBE8DB;
             border: 1px solid #7494AA;
             box-shadow: none;
+        }
+
+        .wk-appt.wk-direct:hover {
+            background: #B8E0CE;
         }
 
         .wk-appt.wk-direct.wk-ok {
@@ -3792,7 +3729,7 @@
         .wk-time {
             font-size: 9px;
             font-weight: 700;
-            color: var(--brand-primary);
+            color: #677681;
             opacity: .6;
             letter-spacing: .3px;
             white-space: nowrap
@@ -3819,7 +3756,7 @@
         .wk-pat {
             font-size: 11.5px;
             font-weight: 800;
-            color: var(--brand-primary);
+            color: #34543A;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -3830,7 +3767,7 @@
         .wk-prov {
             font-size: 9px;
             font-weight: 700;
-            color: var(--brand-primary);
+            color: #677681;
             opacity: .6;
             margin-bottom: 3px;
             white-space: nowrap;
@@ -6402,43 +6339,12 @@
             color: #D8D3BF;
         }
 
-        body.dark .wk-col-hd {
-            background: #051F11
-        }
-
-        body.dark .wk-col-hd:hover {
-            background: #051F11
-        }
-
-        body.dark .wk-appt-count {
-            color: var(--text-on-brand)
-        }
-
-        body.dark .wk-col.wk-today .wk-col-hd,
-        body.dark .wk-hdr-row .wk-today {
-            background: #1C6FA3
-        }
-
-        body.dark .wk-col.wk-sel .wk-col-hd,
-        body.dark .wk-hdr-row .wk-sel {
-            background: var(--brand-primary)
-        }
-
-        /* .wk-appt-count's own paper-deep tint means its real dark-mode
-           background differs by column state, not just theme. Base
-           .wk-col-hd (#051F11) keeps white (11.66:1, set above). Selected
-           composites to the same medium blue as light mode, needing the
-           same dark fix (4.74:1). Today composites to a third, tighter
-           dead zone (luminance ~.196) where nothing in the existing
-           palette clears 4.5:1 — verified pure black is the only value
-           that does (4.93:1), so it's used here as a one-off. */
-        body.dark .wk-col.wk-sel .wk-appt-count {
-            color: #051F11
-        }
-
-        body.dark .wk-col.wk-today .wk-appt-count {
-            color: #000000
-        }
+        /* .wk-col-hd deliberately has no dark-mode override any more — the
+       new card stays Parchment Light (#FBFBF3) with the same #377BAD
+       border in both themes, matching every other light card in this
+       file (date banners, ClaimSubmitModal, etc.), none of which
+       re-color for dark mode either. The #051F11 dark background this
+       used to have was specific to the old solid-blue header design. */
 
         body.dark .wk-col {
             background: #051F11;
@@ -6532,14 +6438,6 @@
 
         body.dark .wk-time {
             color: var(--warning)
-        }
-
-        body.dark .wk-dayname {
-            color: rgba(200, 210, 200, .55)
-        }
-
-        body.dark .wk-daynum {
-            color: #D8D3BF
         }
 
         body.dark .wk-empty {
@@ -12402,6 +12300,17 @@
             const dt = new Date(y, m - 1, d);
             return `${DAYS[dt.getDay()].slice(0, 3)} ${m}/${d}/${String(y).slice(-2)}`;
         }
+        // Week View Dual-Ring card's own day label — "Fri, July 31". Neither
+        // fmtDate ("Friday, July 31, 2026") nor fmtShort ("Fri 7/31/26")
+        // produces this exact shape (abbreviated weekday, full month name,
+        // no year), so it gets its own small formatter rather than
+        // reusing/overloading either — shared by both WeekView and
+        // AllProviderWeekView so the format can't drift between them.
+        function fmtWeekCardDate(ds) {
+            const [y, m, d] = ds.split('-').map(Number);
+            const dt = new Date(y, m - 1, d);
+            return `${DAYS[dt.getDay()].slice(0, 3)}, ${MONTHS[dt.getMonth()]} ${d}`;
+        }
         // Screener administration date — plain MM/DD/YYYY, no weekday, since it
         // prefixes a compact chip row (Assistant's Screeners section + the
         // Provider Pre-visit Clinical column).
@@ -17831,42 +17740,7 @@
                             <div key={`h-${ds}`}
                                 className={`wk-col-hd${isToday ? ' wk-today' : ''}${isSel ? ' wk-sel' : ''}`}
                                 onClick={() => onSwitchToDay(ds)}>
-                                <div className="wk-col-hd-left">
-                                    <div className="wk-dayname">{DAYS[dow].slice(0, 3)}</div>
-                                    <div className="wk-daynum">{wd}</div>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                                    {dAppts.length > 0 && <span className="wk-appt-count">{dAppts.length} appt{dAppts.length !== 1 ? 's' : ''}</span>}
-                                    {dAppts.length > 0 && (() => {
-                                        const counts = dAppts.reduce((acc, a) => {
-                                            const s = computeStatus(a) === 'valid' ? 'ok' : computeStatus(a) === 'issue' ? 'err' : 'pend';
-                                            acc[s] = (acc[s] || 0) + 1;
-                                            return acc;
-                                        }, {});
-                                        return (
-                                            <div className="wk-status-summary">
-                                                {counts.ok > 0 && <span className="wk-ss-chip wk-ss-ok" title={`${counts.ok} valid`}>✓ {counts.ok}</span>}
-                                                {counts.pend > 0 && <span className="wk-ss-chip wk-ss-pend" title={`${counts.pend} pending`}>⏳ {counts.pend}</span>}
-                                                {counts.err > 0 && <span className="wk-ss-chip wk-ss-err" title={`${counts.err} issue${counts.err !== 1 ? 's' : ''}`}>⚠ {counts.err}</span>}
-                                            </div>
-                                        );
-                                    })()}
-                                    {dAppts.length > 0 && (() => {
-                                        const pend = dAppts.filter(a => !a.out).length;
-                                        if (pend === 0) return (
-                                            <div className="wk-note-tally">
-                                                <span className="wk-note-chip wk-nc-done" title="All notes signed for this day">✓ all signed</span>
-                                            </div>
-                                        );
-                                        return (
-                                            <div className="wk-note-tally">
-                                                <span className="wk-note-chip wk-nc-pend" title={`${pend} note${pend !== 1 ? 's' : ''} need signing`}>
-                                                    ✎ <span className="wk-nc-num">{pend}</span> to sign
-                                                </span>
-                                            </div>
-                                        );
-                                    })()}
-                                </div>
+                                <WeekDualRing appts={dAppts} ds={ds} />
                             </div>
                         ))}
                         {/* Row 2 — Direct Pay collection banners */}
@@ -18130,6 +18004,175 @@
             );
         }
 
+        /* ════════════════════════════════════════════════════════════════
+           WEEK VIEW DUAL-RING SUMMARY — WeekDualRing — full-width card
+           Supersedes the earlier compact 32px tooltip-only ring entirely —
+           this is a full visual replacement, not an extension of it.
+           Renders the full day-column header CARD's inner content (day
+           label, caption, ring+legend, divider, Intake line); the
+           clickable/sticky/today-selected outer .wk-col-hd element itself
+           is still owned by each caller (WeekView / AllProviderWeekView),
+           unchanged in that respect — only what's INSIDE it is new.
+
+           Inner ring = Post-Visit (Unsigned/Signed), outer ring = Billing
+           (Not Submitted/Pending/Paid), outer ring colored only across
+           the Signed fraction, angularly aligned to start where the
+           inner ring's Signed arc starts. Ring geometry (r/stroke-width)
+           reuses the design reference's own viewBox="0 0 92 92" numbers
+           verbatim — only the SVG's displayed width/height and the
+           center text's font-size are independently adjusted (see below),
+           not the underlying ring proportions.
+
+           NS/P/PD derivation, unchanged math from the earlier compact
+           build: NS = S - submittedAppts.length, PD = Paid count, P =
+           submittedAppts.length - PD — guarantees NS+P+PD=S by
+           construction, not Day View's own `notSub`/`claimPend` (not
+           scoped to a.out, and claimPend excludes Denied — reusing them
+           verbatim would break the ring's required invariant).
+
+           NEW this pass — clamped against a real, reachable edge case,
+           not just the happy path: ProviderView's own "Mark Note Signed"
+           Undo button (.pv-sign-undo) does `onUpdate({ ...a, out: false })`
+           — it flips a signed note back to unsigned WITHOUT resetting
+           billing away from 'submitted'. That's a real, intentional user
+           action (undo a signature, e.g. to correct it), not a data bug,
+           and it means submittedAppts.length CAN exceed S on a given day,
+           which would make NS negative — invalid stroke-dasharray, and a
+           broken ring. submittedWithinSigned = Math.min(submittedAppts.
+           length, S) clamps this: the "un-signed after being submitted"
+           backlog simply doesn't get outer-ring color until the note is
+           re-signed, rather than corrupting the whole ring. ════════════ */
+        function WeekDualRing({ appts, ds }) {
+            const T = appts.length;
+            const cx = 46, cy = 46;
+            const rOut = 36, rIn = 25;
+            const swOut = 8, swIn = 7;
+            const fontFam = "'Wix Madefor Display', -apple-system, 'Segoe UI', Roboto, sans-serif";
+            const dayLabel = fmtWeekCardDate(ds);
+
+            if (T === 0) {
+                return (
+                    <>
+                        <div className="wkdr-day">{dayLabel}</div>
+                        <div className="wkdr-cap">Inner = post-visit &nbsp;·&nbsp; Outer = billing</div>
+                        <svg width="78" height="78" viewBox="0 0 92 92" className="wkdr-ring">
+                            <circle cx={cx} cy={cy} r={rOut} fill="none" stroke="#F0F0F0" strokeWidth={swOut} />
+                            <circle cx={cx} cy={cy} r={rIn} fill="none" stroke="#F0F0F0" strokeWidth={swIn} />
+                            <text x={cx} y={cy + 6} textAnchor="middle" fontSize="15" fontWeight="800" fill="#377BAD" fontFamily={fontFam}>0</text>
+                            <title>No appointments scheduled this day</title>
+                        </svg>
+                    </>
+                );
+            }
+
+            const U = appts.filter(a => !a.out).length;
+            const S = T - U;
+            const submittedAppts = appts.filter(a => a.billing === 'submitted');
+            const submittedWithinSigned = Math.min(submittedAppts.length, S);
+            const NS = S - submittedWithinSigned;
+            const rawPaid = submittedAppts.filter(a => a.claimStatus === 'Paid').length;
+            const PD = Math.min(rawPaid, submittedWithinSigned);
+            const P = submittedWithinSigned - PD;
+
+            const cIn = 2 * Math.PI * rIn;
+            const cOut = 2 * Math.PI * rOut;
+            const dasharray = (frac, c) => `${(frac * c).toFixed(2)} ${c.toFixed(2)}`;
+            const offset = (frac, c) => -(frac * c);
+            const rot = `rotate(-90 ${cx} ${cy})`;
+
+            const tip = {
+                total: `Total appointments scheduled this day (${T})`,
+                unsigned: `Clinical note not yet signed (${U})`,
+                signed: `Clinical note signed (${S})`,
+                notSub: `Claim signed but not yet submitted (${NS})`,
+                pending: `Claim submitted, payment pending (${P})`,
+                paid: `Claim submitted and paid (${PD})`,
+            };
+
+            return (
+                <>
+                    <div className="wkdr-day">{dayLabel}</div>
+                    <div className="wkdr-cap">Inner = post-visit &nbsp;·&nbsp; Outer = billing</div>
+                    <div className="wkdr-main">
+                        <svg width="78" height="78" viewBox="0 0 92 92" className="wkdr-ring" style={{ flexShrink: 0 }}>
+                            <circle cx={cx} cy={cy} r={rOut} fill="none" stroke="#F0F0F0" strokeWidth={swOut} />
+                            <circle cx={cx} cy={cy} r={rIn} fill="none" stroke="#F0F0F0" strokeWidth={swIn} />
+
+                            {U > 0 && (
+                                <circle cx={cx} cy={cy} r={rIn} fill="none" stroke="#d83434" strokeWidth={swIn}
+                                    strokeDasharray={dasharray(U / T, cIn)} strokeDashoffset={0} transform={rot}>
+                                    <title>{tip.unsigned}</title>
+                                </circle>
+                            )}
+                            {S > 0 && (
+                                <circle cx={cx} cy={cy} r={rIn} fill="none" stroke="#4E6C43" strokeWidth={swIn}
+                                    strokeDasharray={dasharray(S / T, cIn)} strokeDashoffset={offset(U / T, cIn)} transform={rot}>
+                                    <title>{tip.signed}</title>
+                                </circle>
+                            )}
+
+                            {NS > 0 && (
+                                <circle cx={cx} cy={cy} r={rOut} fill="none" stroke="#d83434" strokeWidth={swOut}
+                                    strokeDasharray={dasharray(NS / T, cOut)} strokeDashoffset={offset(U / T, cOut)} transform={rot}>
+                                    <title>{tip.notSub}</title>
+                                </circle>
+                            )}
+                            {P > 0 && (
+                                <circle cx={cx} cy={cy} r={rOut} fill="none" stroke="#fdef54" strokeWidth={swOut}
+                                    strokeDasharray={dasharray(P / T, cOut)} strokeDashoffset={offset((U + NS) / T, cOut)} transform={rot}>
+                                    <title>{tip.pending}</title>
+                                </circle>
+                            )}
+                            {PD > 0 && (
+                                <circle cx={cx} cy={cy} r={rOut} fill="none" stroke="#447433" strokeWidth={swOut}
+                                    strokeDasharray={dasharray(PD / T, cOut)} strokeDashoffset={offset((U + NS + P) / T, cOut)} transform={rot}>
+                                    <title>{tip.paid}</title>
+                                </circle>
+                            )}
+
+                            {/* Center text sized ~15% smaller than the design reference's own
+                  18/6 (font-size 18→15, "TOTAL" 6→5) — read as crowding the
+                  inner ring's top edge at the reference's own proportions. */}
+                            <text x={cx} y={cy - 2} textAnchor="middle" fontSize="15" fontWeight="800" fill="#377BAD" fontFamily={fontFam}>
+                                {T}
+                                <title>{tip.total}</title>
+                            </text>
+                            <text x={cx} y={cy + 9} textAnchor="middle" fontSize="7" fontWeight="700" letterSpacing="0.6" fill="#527AAE" fontFamily={fontFam}>
+                                TOTAL
+                            </text>
+                        </svg>
+                        <div className="wkdr-legend">
+                            <div className="wkdr-legend-item" title={tip.total} style={{ color: '#527AAE' }}><span className="wkdr-dot" style={{ background: '#527AAE' }} />Total <b>{T}</b></div>
+                            <div className="wkdr-legend-item" title={tip.unsigned}><span className="wkdr-dot" style={{ background: '#d83434' }} />Unsigned <b>{U}</b></div>
+                            <div className="wkdr-legend-item" title={tip.signed}><span className="wkdr-dot" style={{ background: '#4E6C43' }} />Signed <b>{S}</b></div>
+                            <div className="wkdr-legend-item" title={tip.notSub}><span className="wkdr-dot" style={{ background: '#d83434' }} />Not Sub. <b>{NS}</b></div>
+                            <div className="wkdr-legend-item" title={tip.pending}><span className="wkdr-dot" style={{ background: '#fdef54' }} />Pending <b>{P}</b></div>
+                            <div className="wkdr-legend-item" title={tip.paid}><span className="wkdr-dot" style={{ background: '#447433' }} />Paid <b>{PD}</b></div>
+                        </div>
+                    </div>
+                    <hr className="wkdr-divider" />
+                    {(() => {
+                        const counts = appts.reduce((acc, a) => {
+                            const cs = computeStatus(a);
+                            const s = cs === 'valid' ? 'ok' : cs === 'issue' ? 'err' : 'pend';
+                            acc[s] = (acc[s] || 0) + 1;
+                            return acc;
+                        }, { ok: 0, err: 0, pend: 0 });
+                        return (
+                            <div className="wkdr-intake">
+                                <span className="wkdr-intake-tag">Intake</span>
+                                <b>{counts.pend}</b> <u style={{ textDecorationColor: '#fdef54' }} title="This represents Pre-Visit designation of 'In Process'">In Process</u>
+                                <span className="wkdr-intake-sep">·</span>
+                                <b>{counts.err}</b> <u style={{ textDecorationColor: '#d83434' }} title="This represents Pre-Visit designation of 'Issue'">Issue</u>
+                                <span className="wkdr-intake-sep">·</span>
+                                <b>{counts.ok}</b> <u style={{ textDecorationColor: '#447433' }} title="This represents Pre-Visit designation of 'Valid'">Valid</u>
+                            </div>
+                        );
+                    })()}
+                </>
+            );
+        }
+
         function AllProviderWeekView({ date, allWeekData, onSwitchToDay, prov, view, onUpdateForDate, navigateAndOpenModal, showNoteBoard, setShowNoteBoard, showPaymentTracker, setShowPaymentTracker, showAppointmentFlow, setShowAppointmentFlow, showLedger, setShowLedger, showBillingChannels, setShowBillingChannels, showImportPanel, setShowImportPanel, patientDb, onRefreshPatients, appts, onUpdate }) {
             const ws = weekStart(date);
             const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
@@ -18176,52 +18219,17 @@
                     <div className="wk-grid">
                         {/* Row 1 — sticky day headers */}
                         {dayData.map(({ ds, dAppts, wd, dow, isToday, isSel }) => {
-                            // ── Claim status indicators (billing mode only — all methods) ──
-                            const submittedAppts = isBilling ? dAppts.filter(a => a.billing === 'submitted') : [];
-                            const claimsTotal = submittedAppts.length;
-                            const claimsPend = submittedAppts.filter(a => !a.claimStatus || a.claimStatus === 'Pending').length;
-                            const claimsPaid = submittedAppts.filter(a => a.claimStatus === 'Paid').length;
-                            const claimsDenied = submittedAppts.filter(a => a.claimStatus === 'Denied').length;
-                            const claimsResub = submittedAppts.filter(a => a.claimStatus === 'Resubmitted').length;
-                            // Not Submitted: insurance-billing appointments not yet submitted (exclude direct pay)
-                            const claimsNotSub = isBilling
-                                ? dAppts.filter(a => a.billing !== 'submitted' && a.method !== 'direct').length
-                                : 0;
                             return (
                                 <div key={`h-${ds}`}
                                     className={`wk-col-hd${isToday ? ' wk-today' : ''}${isSel ? ' wk-sel' : ''}`}
                                     onClick={() => onSwitchToDay(ds)}>
-                                    <div className="wk-col-hd-left">
-                                        <div className="wk-dayname">{DAYS[dow].slice(0, 3)}</div>
-                                        <div className="wk-daynum">{wd}</div>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                                        {dAppts.length > 0 && <span className="wk-appt-count">{dAppts.length} appt{dAppts.length !== 1 ? 's' : ''}</span>}
-                                        {dAppts.length > 0 && (() => {
-                                            const counts = dAppts.reduce((acc, a) => {
-                                                const cs = computeStatus(a);
-                                                const s = cs === 'valid' ? 'ok' : cs === 'issue' ? 'err' : 'pend';
-                                                acc[s] = (acc[s] || 0) + 1;
-                                                return acc;
-                                            }, {});
-                                            return (
-                                                <div className="wk-status-summary">
-                                                    {counts.ok > 0 && <span className="wk-ss-chip wk-ss-ok" title={`${counts.ok} valid`}>✓ {counts.ok}</span>}
-                                                    {counts.pend > 0 && <span className="wk-ss-chip wk-ss-pend" title={`${counts.pend} pending`}>⏳ {counts.pend}</span>}
-                                                    {counts.err > 0 && <span className="wk-ss-chip wk-ss-err" title={`${counts.err} issue${counts.err !== 1 ? 's' : ''}`}>⚠ {counts.err}</span>}
-                                                </div>
-                                            );
-                                        })()}
-                                        {isBilling && (claimsTotal > 0 || claimsNotSub > 0) && (
-                                            <div className="wk-claim-row" title={`${claimsNotSub} not submitted · ${claimsPend} pending · ${claimsDenied} denied · ${claimsResub} resubmitted · ${claimsPaid} paid`}>
-                                                {claimsNotSub > 0 && <span className="wk-ci wk-ci-nosub">📤{claimsNotSub}</span>}
-                                                {claimsPend > 0 && <span className="wk-ci wk-ci-pend">{claimsPend}⌛</span>}
-                                                {claimsDenied > 0 && <span className="wk-ci wk-ci-denied">{claimsDenied}✗</span>}
-                                                {claimsResub > 0 && <span className="wk-ci wk-ci-resub">{claimsResub}↺</span>}
-                                                {claimsPaid > 0 && <span className="wk-ci wk-ci-paid">{claimsPaid}✓</span>}
-                                            </div>
-                                        )}
-                                    </div>
+                                    {/* Dual-Ring Summary card — full-width replacement for the old
+                    solid-blue header. Shown for both Assistant and Billing
+                    week views (not gated on isBilling) — the ring's two axes
+                    aren't independently toggleable, and Assistant staff
+                    gaining billing visibility here is a deliberate
+                    consequence of that, not an oversight. */}
+                                    <WeekDualRing appts={dAppts} ds={ds} />
                                 </div>
                             );
                         })}
