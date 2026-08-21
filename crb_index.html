@@ -7178,6 +7178,34 @@
             cursor: default
         }
 
+        /* Claim-submitted Undo (2026-08-19) — styled and positioned to match
+           the Provider Day View's Mark Note Signed Undo pattern (.pv-sign-undo):
+           a small, visually distinct secondary action sitting right next to
+           an inert "done" status button, not merged into one clickable
+           toggle. Deliberately flat (0 radius) like .pv-sign-undo, even
+           though this modal's other buttons use 7px — matching the
+           reference button's style takes priority here, per the brand
+           guide's flat-corner rule that .pv-sign-undo already follows. */
+        .csm-submit-undo {
+            background: none;
+            border: 1px solid #777355;
+            border-radius: 0;
+            font-size: 11px;
+            font-weight: 700;
+            color: #777355;
+            cursor: pointer;
+            padding: 6px 12px;
+            font-family: inherit;
+            white-space: nowrap;
+            transition: none
+        }
+
+        .csm-submit-undo:hover {
+            background: #F8EFD8;
+            color: var(--warning);
+            border-color: var(--warning)
+        }
+
         .csm-submit-btn.disabled {
             background: #FBFBF3;
             color: #777355;
@@ -17022,7 +17050,14 @@
             // and offer a retry, instead of the provider wrongly believing a
             // signed note is safely recorded when the save never actually landed.
             async function saveCpt(appt, codes) {
-                const updated = { ...appt, cpt: codes, billing: codes.length > 0 ? 'ready' : 'pending' };
+                // Same submitted-claim guard as BillingView.saveCpt /
+                // ClaimSubmitModal (2026-08-19) — a provider editing CPT
+                // codes after a biller has already marked the claim
+                // submitted must not silently un-submit it.
+                const billing = appt.billing === 'submitted'
+                    ? 'submitted'
+                    : (codes.length > 0 ? 'ready' : 'pending');
+                const updated = { ...appt, cpt: codes, billing };
                 const shouldAutoSign = codes.length > 0 && !appt.out;
 
                 const cptResult = await onUpdate(updated);
@@ -19229,7 +19264,14 @@
                 onClose();
             }
             function handleSave() {
-                const billing = hasCpt && isSigned ? 'ready' : localAppt.billing;
+                // Once a claim is marked submitted, routine saves (paid
+                // amount, claim status, notes, etc.) must never downgrade
+                // billing back to 'ready'/'pending' as a side effect — only
+                // the explicit Undo button (footer, below) may reverse a
+                // submission (2026-08-19).
+                const billing = localAppt.billing === 'submitted'
+                    ? 'submitted'
+                    : (hasCpt && isSigned ? 'ready' : localAppt.billing);
                 onUpdate(buildFinalAppt({ billing }));
                 onClose();
             }
@@ -19774,12 +19816,16 @@
                                 <div className="csm-action-group">
                                     <button className="csm-save-btn" onClick={handleSave}>💾 Save Changes</button>
                                     {isSubmitted
-                                        ? <button className="csm-submit-btn done" onClick={() => {
-                                            onUpdate(buildFinalAppt({ billing: 'pending' }));
-                                            setLocalAppt(a => ({ ...a, billing: 'pending' }));
-                                        }}>
-                                            ✓ Submitted — Undo?
-                                        </button>
+                                        ? <>
+                                            <button className="csm-submit-btn done" disabled>✓ Claim Submitted</button>
+                                            <button className="csm-submit-undo" title="Undo claim submission"
+                                                onClick={() => {
+                                                    onUpdate(buildFinalAppt({ billing: 'pending' }));
+                                                    setLocalAppt(a => ({ ...a, billing: 'pending' }));
+                                                }}>
+                                                ↩ Undo
+                                            </button>
+                                        </>
                                         : <button
                                             className={`csm-submit-btn ${canSubmit ? 'ready' : 'disabled'}`}
                                             onClick={canSubmit ? handleSubmit : undefined}
@@ -19796,7 +19842,10 @@
                     {cptOpen && (
                         <CPTModal appt={localAppt}
                             onSave={codes => {
-                                const billing = codes.length > 0 && localAppt.out ? 'ready' : 'pending';
+                                // Same submitted-claim guard as handleSave() above (2026-08-19).
+                                const billing = localAppt.billing === 'submitted'
+                                    ? 'submitted'
+                                    : (codes.length > 0 && localAppt.out ? 'ready' : 'pending');
                                 setLocalAppt(a => ({ ...a, cpt: codes, billing }));
                                 setCptOpen(false);
                             }}
@@ -20705,7 +20754,10 @@
             const signedReady = notSubmitted.filter(a => a.out);   // signed → Submit Claim available (CPT optional)
             const needsSig = notSubmitted.filter(a => !a.out);  // not signed → cannot submit yet
             function saveCpt(appt, codes) {
-                const billing = codes.length > 0 && appt.out ? 'ready' : 'pending';
+                // Same submitted-claim guard as ClaimSubmitModal (2026-08-19).
+                const billing = appt.billing === 'submitted'
+                    ? 'submitted'
+                    : (codes.length > 0 && appt.out ? 'ready' : 'pending');
                 onUpdate({ ...appt, cpt: codes, billing });
                 setCptModal(null);
             }
