@@ -2394,7 +2394,6 @@ function getPatients() {
           billingNPI: String(r[14] || '').trim(),
           xCode: String(r[15] || '').trim(),
           paymentPlatform: String(r[16] || '').trim(),  // default collection platform
-          bestChannel: String(r[17] || '').trim(),  // saved rate recommendation JSON
         }))
         .filter(p => p.firstName || p.lastName)
     );
@@ -7493,59 +7492,13 @@ function savePatientClaimRecord(patientName, fieldsJson) {
   }
 }
 
-/* ════════════════════════════════════════════════════════════════
-   SAVE PATIENT BEST CHANNEL  — savePatientBestChannel
-   Persists the CPT Dashboard best-channel recommendation for a
-   patient into the BestChannel column (index 17) of the Patients
-   tab.  Called when the biller clicks "Save as recommended channel"
-   in the Claim Submit Modal's Best Channel badge.
-   channelJson = { channel, payer, state, rate, cpts, updatedAt }
-════════════════════════════════════════════════════════════════ */
-function savePatientBestChannel(patientName, channelJson) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(TAB_PATIENT);
-    if (!sheet || sheet.getLastRow() < 2) {
-      return JSON.stringify({ ok: false, error: 'No patient sheet' });
-    }
-
-    var nameLower = (patientName || '').trim().toLowerCase();
-    var COL_BC = PATIENT_COLS.indexOf('BestChannel') + 1;  // 1-based
-
-    if (COL_BC < 1) {
-      return JSON.stringify({ ok: false, error: 'BestChannel column not in PATIENT_COLS' });
-    }
-
-    // Ensure the header cell exists (auto-creates column if sheet is narrower than PATIENT_COLS)
-    while (sheet.getMaxColumns() < COL_BC) sheet.insertColumnAfter(sheet.getMaxColumns());
-    var hdrCell = sheet.getRange(1, COL_BC);
-    if (!hdrCell.getValue()) {
-      hdrCell.setValue('BestChannel');
-      hdrCell.setBackground('#3D768A').setFontColor('#FBFBF3').setFontWeight('bold');
-    }
-
-    var numCols = Math.min(PATIENT_COLS.length, sheet.getLastColumn());
-    var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.max(numCols, 2)).getValues();
-
-    for (var i = 0; i < data.length; i++) {
-      var fullName = (String(data[i][0] || '') + ' ' + String(data[i][1] || '')).trim().toLowerCase();
-      if (fullName !== nameLower) continue;
-
-      var rowNum = i + 2;
-      sheet.getRange(rowNum, COL_BC).setValue(channelJson || '');
-      SpreadsheetApp.flush();
-      _audit(ss, 'savePatientBestChannel', patientName + ' → ' + channelJson);
-      Logger.log('savePatientBestChannel: row ' + rowNum + ' for "' + patientName + '"');
-      return JSON.stringify({ ok: true, row: rowNum });
-    }
-
-    Logger.log('savePatientBestChannel: patient not found — "' + patientName + '"');
-    return JSON.stringify({ ok: false, error: 'Patient not found: ' + patientName });
-  } catch (e) {
-    Logger.log('savePatientBestChannel error: ' + e.message);
-    return JSON.stringify({ ok: false, error: e.message });
-  }
-}
+// savePatientBestChannel removed (2026-08-21, Stage D) — its only caller,
+// ClaimSubmitModal's saveChannelToPatient(), was removed on the frontend
+// when the old Best Rate mechanism was retired in favor of BestRatePopup.
+// The BestChannel column itself (Patients tab, PATIENT_COLS index 17) is
+// left untouched — never remove a live column position, only stop writing
+// to it — so any historical data already in that column is preserved,
+// just no longer read or written by anything.
 
 
 // ── Get patient's current BillingChannel LABEL (2026-08-19) ────────────
