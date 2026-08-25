@@ -17026,7 +17026,7 @@
            editing UI in this app already produces. Not scoped out here;
            this popup is just another entry point into that one shared,
            system-wide behavior, not a special case. ════════════════════ */
-        function ProvChannelModal({a, patientDb, onUpdate, onClose}) {
+        function ProvChannelModal({a, patientDb, onUpdate, onClose, onOpenComments}) {
             const [savingId, setSavingId] = useState(null); // METHODS id currently in flight, or null
             const [errId, setErrId] = useState(null);
 
@@ -17073,6 +17073,27 @@
                     .finally(() => setSavingIns(false));
             }
 
+            // Close-out handoff to Comments (Part 2c) — reuses the exact same
+            // setPamModal(...) mechanism CommChatIcon already triggers elsewhere
+            // in this row, via onOpenComments (threaded in from ProviderView, see
+            // its own mount site). This popup never touches pamModal directly.
+            // Disabled whenever either save is in flight — not just to avoid a
+            // double-click, but because ProviderApptModal auto-fires its own
+            // full-row-spread save the instant it mounts (markCommsReadPersist,
+            // on a useEffect with no deps). If that fired against a channel/
+            // insurance change that hadn't finished saving yet, it would silently
+            // revert it. onOpenComments is built from ProviderView's own
+            // channelModal state (kept in sync after every confirmed save by the
+            // onUpdate wrapper below) rather than a separately captured copy —
+            // but even that reference can be stale in the narrow window before a
+            // save's .then() resolves, so gating on savingId/savingIns is what
+            // actually closes the race, not just the choice of which appt object
+            // to hand off.
+            function openComments() {
+                onClose();
+                onOpenComments();
+            }
+
             return (
                 <div className="overlay" onClick={onClose}>
                     <div className="modal sm" onClick={e => e.stopPropagation()}>
@@ -17111,6 +17132,10 @@
                             </div>
                         </div>
                         <div className="m-foot">
+                            <button className="btn btn-s" onClick={openComments} disabled={!!savingId || savingIns}
+                                title="Open comments for this appointment">
+                                💬 Comments
+                            </button>
                             <button className="btn btn-p" onClick={saveInsurance} disabled={savingIns}>
                                 {savingIns ? 'Saving…' : 'Save'}
                             </button>
@@ -17778,6 +17803,7 @@
                                 return result;
                             }}
                             onClose={() => setChannelModal(null)}
+                            onOpenComments={() => setPamModal(channelModal)}
                         />
                     )}
 
