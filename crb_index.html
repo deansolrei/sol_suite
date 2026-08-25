@@ -2214,7 +2214,11 @@
             text-overflow: ellipsis
         }
 
-        /* ── Billing Channel chip (assigned via biller's "Assign Channel" tool) ── */
+        /* ── Billing Channel chip (assigned via biller's "Assign Channel" tool) ──
+           Shared by the Pre-visit strip (always a plain span) and Post-visit's
+           detail panel (plain span for everyone except Jodene, who gets the
+           .pv-channel-btn <button> variant below — Part 2 wires its onClick to
+           a real popup). Left fully untouched itself so neither usage drifts. */
         .pv-channel {
             display: inline-block;
             background: #FBFBF3;
@@ -2227,6 +2231,16 @@
             letter-spacing: .3px;
             margin-top: 3px;
             margin-right: 6px;
+        }
+
+        /* Button-only resets — applied alongside .pv-channel (not instead of
+           it) so the button-element still picks up every visual property
+           above unchanged, just adds back what a <button> needs to render
+           identically to the <span> it replaces for Jodene. */
+        .pv-channel-btn {
+            font-family: inherit;
+            line-height: normal;
+            cursor: pointer;
         }
 
         .pv-copay {
@@ -7890,6 +7904,30 @@
             filter: none;
             opacity: 1;
             text-shadow: 0 0 7px rgba(34, 197, 94, .9);
+        }
+
+        /* Post-Visit expanded row only, via CommChatIcon's className prop —
+           the shared .ci-bubble/.ci-has defaults above stay untouched, since
+           CommChatIcon also renders at the original 16px/.55 in five other
+           call sites (Week View rows, AllProviderWeekView, AssistantView,
+           BillingView) whose narrower layouts this task was never asked to
+           touch. 16px → 18px (+12.5%): a deliberate, clearly perceptible
+           bump without becoming the visually dominant element in a row
+           whose surrounding text (pv-channel, pv-ins) sits at 10-11px —
+           the bubble was already the largest glyph here before this change.
+           ci-has opacity .55 → .75 (+~36% relative): reads as clearly
+           present rather than half-faded, while staying visibly one step
+           below the fully-opaque (1.0) red/yellow/green urgent states —
+           collapsing that gap entirely would erase the "comments exist,
+           nothing needs my action" signal opacity was doing here. No
+           filter change: .ci-has never had a grayscale filter to begin
+           with (only .ci-empty does), so there's nothing to adjust there. */
+        .pv-comm-icon-lg .ci-bubble {
+            font-size: 18px;
+        }
+
+        .pv-comm-icon-lg .ci-bubble.ci-has {
+            opacity: .75;
         }
 
         .ci-badge {
@@ -17546,8 +17584,21 @@
                                                     onClick={toggleDetail}
                                                     title="Click anywhere here to close">
                                                     {screenerChips}
-                                                    <div className="pv-method">{METHOD_LABEL[a.method] || a.method}</div>
-                                                    {billingInfo.channel && <span className="pv-channel">{billingInfo.channel}</span>}
+                                                    {/* .pv-method's plain-text duplicate of this same value was removed
+                              (2026-08-25) — .pv-channel is now the only place
+                              billing channel shows in this row. Jodene-only:
+                              becomes a real button (Part 2 wires the popup);
+                              every other provider keeps today's exact
+                              non-interactive span, untouched. */}
+                                                    {billingInfo.channel && (userProvID === 'jodene'
+                                                        ? <button className="pv-channel pv-channel-btn"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                console.log('[PV-CHANNEL] TODO Part 2: open channel/insurance popup for', a.id);
+                                                            }}>
+                                                            {billingInfo.channel}
+                                                        </button>
+                                                        : <span className="pv-channel">{billingInfo.channel}</span>)}
                                                     {billingInfo.insurance && <div className="pv-ins">{billingInfo.insurance}</div>}
                                                     {hasU && (
                                                         <div className="pv-unote">
@@ -17569,7 +17620,7 @@
                                                     )}
                                                     {a.method !== 'direct' && <ProvClaimPill a={a} />}
                                                     <div style={{display: 'flex', alignItems: 'center', marginTop: 6}}>
-                                                        <CommChatIcon appt={a} onOpen={() => setPamModal(a)} />
+                                                        <CommChatIcon appt={a} onOpen={() => setPamModal(a)} className="pv-comm-icon-lg" />
                                                     </div>
                                                 </div>
                                             )}
