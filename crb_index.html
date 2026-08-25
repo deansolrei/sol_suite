@@ -17026,7 +17026,7 @@
            editing UI in this app already produces. Not scoped out here;
            this popup is just another entry point into that one shared,
            system-wide behavior, not a special case. ════════════════════ */
-        function ProvChannelModal({a, onUpdate, onClose}) {
+        function ProvChannelModal({a, patientDb, onUpdate, onClose}) {
             const [savingId, setSavingId] = useState(null); // METHODS id currently in flight, or null
             const [errId, setErrId] = useState(null);
 
@@ -17040,6 +17040,37 @@
                     })
                     .catch(() => setErrId(id))
                     .finally(() => setSavingId(null));
+            }
+
+            // ── Insurance Carrier — draft-until-Save, appointment-level only ──
+            // Initialized with the exact same priority order getPatientBilling()
+            // already uses for billingInfo.insurance (a.directIns first, patient
+            // record fallback second), so what this field shows on open matches
+            // what .pv-ins already displays for this row. Typing only updates
+            // local draft state — nothing saves until the Save button is clicked.
+            const ptRec = (patientDb || []).find(p =>
+                `${p.firstName} ${p.lastName}`.toLowerCase() === (a.patient || '').toLowerCase()
+            );
+            const [insurance, setInsurance] = useState(a.directIns || (ptRec && ptRec.insurance) || '');
+            const [savingIns, setSavingIns] = useState(false);
+            const [insErr, setInsErr] = useState(false);
+
+            // Deliberately independent of selectChannel()/savingId above — this
+            // writes only { directIns }, the same field+shape ClaimSubmitModal's
+            // own save already produces, scoped to just this one appointment.
+            // Never calls savePatientClaimRecord (patient-record path, confirmed
+            // out of scope — it writes ten other fields this popup has no draft
+            // state for, which would blank them out).
+            function saveInsurance() {
+                if (savingIns) return;
+                setSavingIns(true);
+                setInsErr(false);
+                Promise.resolve(onUpdate({...a, directIns: insurance}))
+                    .then(result => {
+                        if (result && result.ok === false) setInsErr(true);
+                    })
+                    .catch(() => setInsErr(true))
+                    .finally(() => setSavingIns(false));
             }
 
             return (
@@ -17073,6 +17104,16 @@
                                 </div>
                                 {errId && <div style={{color: 'var(--error)', fontSize: 11, marginTop: 6}}>Could not save — try again.</div>}
                             </div>
+                            <div className="frm">
+                                <label className="fl">Insurance Carrier</label>
+                                <input className="fi" value={insurance} onChange={e => setInsurance(e.target.value)} placeholder="e.g. Ambetter" />
+                                {insErr && <div style={{color: 'var(--error)', fontSize: 11, marginTop: 6}}>Could not save — try again.</div>}
+                            </div>
+                        </div>
+                        <div className="m-foot">
+                            <button className="btn btn-p" onClick={saveInsurance} disabled={savingIns}>
+                                {savingIns ? 'Saving…' : 'Save'}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -17713,6 +17754,7 @@
                     {channelModal && (
                         <ProvChannelModal
                             a={channelModal}
+                            patientDb={patientDb}
                             onUpdate={u => {
                                 const result = onUpdate(u);
                                 // Sync only after a confirmed success — matching
@@ -17720,12 +17762,17 @@
                                 // which likewise only updates its optimistic-override
                                 // state inside the .then(r.ok) branch, not before the
                                 // save resolves. Gating this the same way means a
-                                // failed save leaves the popup's highlighted button on
-                                // the appointment's last-known-good channel instead of
-                                // showing the attempted (but unsaved) one as selected.
+                                // failed save leaves the popup showing the appointment's
+                                // last-known-good channel/insurance instead of the
+                                // attempted (but unsaved) value. Spreads the whole `u`
+                                // (always a full appt copy with exactly one field
+                                // overridden — method from selectChannel, or directIns
+                                // from saveInsurance) rather than naming a field, so
+                                // this one sync path correctly covers both saves without
+                                // needing to know which one just fired.
                                 Promise.resolve(result).then(r => {
                                     if (!r || r.ok !== false) {
-                                        setChannelModal(prev => prev ? {...prev, method: u.method} : prev);
+                                        setChannelModal(prev => prev ? {...prev, ...u} : prev);
                                     }
                                 });
                                 return result;
