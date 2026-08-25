@@ -17002,12 +17002,90 @@
             );
         }
 
+        /* ════════════════════════════════════════════════════════════════
+           PROV CHANNEL MODAL — Jodene-only, opened from Post-Visit's
+           .pv-channel button (see ProviderView). Part 2a: Billing Channel
+           only — Insurance Carrier (2b) and Comments (2c) land in later
+           parts, same popup.
+
+           Billing Channel section reuses BillingChannelsPanel's .bc-btn
+           visual family (disabled-while-saving, on-* selected colors)
+           but NOT its data: built on METHODS (the real 4 values a.method
+           holds — alma/hw/grow/direct), not BillingChannelsPanel's own
+           CHANNELS array (patient-record platform labels — Alma/Headway/
+           Grow/Direct/Unknown, a different vocabulary entirely). Selection
+           highlight compares against THIS appointment's a.method, not any
+           patient-level default.
+
+           Save calls onUpdate({...a, method: newChannel}) — the same
+           shape BillerApptModal's own channel buttons already produce.
+           That save path is confirmed (2026-08-25 investigation) to also
+           propagate to the patient's default + their other future
+           appointments via saveAppointment()'s existing channel-change
+           handling in Code.js — the same cascade every other channel-
+           editing UI in this app already produces. Not scoped out here;
+           this popup is just another entry point into that one shared,
+           system-wide behavior, not a special case. ════════════════════ */
+        function ProvChannelModal({a, onUpdate, onClose}) {
+            const [savingId, setSavingId] = useState(null); // METHODS id currently in flight, or null
+            const [errId, setErrId] = useState(null);
+
+            function selectChannel(id) {
+                if (id === a.method || savingId) return;
+                setSavingId(id);
+                setErrId(null);
+                Promise.resolve(onUpdate({...a, method: id}))
+                    .then(result => {
+                        if (result && result.ok === false) setErrId(id);
+                    })
+                    .catch(() => setErrId(id))
+                    .finally(() => setSavingId(null));
+            }
+
+            return (
+                <div className="overlay" onClick={onClose}>
+                    <div className="modal sm" onClick={e => e.stopPropagation()}>
+                        <div className="m-hdr">
+                            <div>
+                                <div className="m-title"><PatientName name={a.patient} state={a.patientState} /></div>
+                                <div className="m-sub">{fmtTime(a.time)}</div>
+                            </div>
+                            <button className="m-close" onClick={onClose}>×</button>
+                        </div>
+                        <div className="m-body">
+                            <div className="frm">
+                                <label className="fl">Billing Channel</label>
+                                <div className="bc-row-btns">
+                                    {METHODS.map(({id, label}) => {
+                                        const isSavingThis = savingId === id;
+                                        return (
+                                            <button
+                                                key={id}
+                                                className={`bc-btn${a.method === id ? ' on-' + id : ''}${isSavingThis ? ' saving' : ''}`}
+                                                disabled={!!savingId}
+                                                onClick={() => selectChannel(id)}
+                                                title={`Set billing channel to ${label}`}
+                                            >
+                                                {isSavingThis ? '…' : label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                {errId && <div style={{color: 'var(--error)', fontSize: 11, marginTop: 6}}>Could not save — try again.</div>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         function ProviderView({appts, date, prov, onUpdate, onSignNote, totalUnsigned, onClearPhantom, userRole, userProvID, onForceRefresh, patientDb, dayMode, setDayMode, pendingModalRequest, onConsumePendingModalRequest, navigateAndOpenModal, returnToAppointmentFlow, onConsumeReturnToAppointmentFlow, showLedger, setShowLedger, showNoteBoard, setShowNoteBoard, showPaymentTracker, setShowPaymentTracker, showAppointmentFlow, setShowAppointmentFlow}) {
             const [cptModal, setCptModal] = useState(null);
             const [rxModal, setRxModal] = useState(null);
             const [notesDraft, setNotesDraft] = useState({});
             const [pamModal, setPamModal] = useState(null); // ProviderApptModal from day view 💬 button
             const [infoModalId, setInfoModalId] = useState(null); // PatientInfoModal — store ID for live lookup
+            const [channelModal, setChannelModal] = useState(null); // ProvChannelModal — Jodene-only, Post-Visit .pv-channel button
 
             // A5 (proof stage) — consumes navigateAndOpenModal's pending
             // request once this view has actually rendered with the target
@@ -17594,7 +17672,7 @@
                                                         ? <button className="pv-channel pv-channel-btn"
                                                             onClick={e => {
                                                                 e.stopPropagation();
-                                                                console.log('[PV-CHANNEL] TODO Part 2: open channel/insurance popup for', a.id);
+                                                                setChannelModal(a);
                                                             }}>
                                                             {billingInfo.channel}
                                                         </button>
@@ -17632,6 +17710,29 @@
                     </div>
                     {cptModal && <CPTModal appt={cptModal} onSave={codes => saveCpt(cptModal, codes)} onClose={() => setCptModal(null)} />}
                     {rxModal && <RxMedModal appt={rxModal} onSave={meds => saveRx(rxModal, meds)} onClose={() => setRxModal(null)} />}
+                    {channelModal && (
+                        <ProvChannelModal
+                            a={channelModal}
+                            onUpdate={u => {
+                                const result = onUpdate(u);
+                                // Sync only after a confirmed success — matching
+                                // BillingChannelsPanel's own setPlatform() pattern,
+                                // which likewise only updates its optimistic-override
+                                // state inside the .then(r.ok) branch, not before the
+                                // save resolves. Gating this the same way means a
+                                // failed save leaves the popup's highlighted button on
+                                // the appointment's last-known-good channel instead of
+                                // showing the attempted (but unsaved) one as selected.
+                                Promise.resolve(result).then(r => {
+                                    if (!r || r.ok !== false) {
+                                        setChannelModal(prev => prev ? {...prev, method: u.method} : prev);
+                                    }
+                                });
+                                return result;
+                            }}
+                            onClose={() => setChannelModal(null)}
+                        />
+                    )}
 
                     {/* ── Save-failure banner (CPT Codes / Mark Note Signed background saves) ── */}
                     {saveFailures.length > 0 && (
