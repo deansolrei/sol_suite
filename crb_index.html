@@ -1197,7 +1197,22 @@
             align-items: center;
             gap: 10px;
             padding: 8px 14px 7px;
-            border-bottom: 1px solid var(--brand-primary)
+            border-bottom: 1px solid var(--brand-primary);
+            cursor: pointer
+        }
+
+        /* Same rotation-on-open values as .void-archive-toggle .va-chevron
+           (crb_index.html:4265-4271) — reused, not reinvented, matching the
+           .af-chevron precedent of each section owning its own chevron class
+           under identical transform/transition values rather than sharing
+           the literal .va-chevron class across unrelated components. */
+        .una-chevron {
+            font-size: 10px;
+            transition: transform .2s;
+        }
+
+        .una-chevron.open {
+            transform: rotate(90deg);
         }
 
         .una-head-label {
@@ -12858,6 +12873,14 @@
         function urgCls(n) {return n >= 3 ? 'u3p' : n === 2 ? 'u2' : 'u1';}
 
         function UnsignedAlert({appts, date, onClearPhantom}) {
+            // Collapsed by default (2026-08-25) — header + count stay always
+            // visible; detail rows only render when expanded. No existing
+            // state-reset-on-date-change effect (postFilter's own [date]
+            // effect is unrelated, ProviderView-specific) applies to this
+            // component, and voidOpen — the pattern this reuses — has no
+            // such reset either, so this persists across date navigation
+            // the same way voidOpen already does.
+            const [open, setOpen] = useState(false);
             // Display-time filter: strip same-day entries and void appointments from each
             // appt's unsigned list before we decide whether/what to show.
             const hits = [...appts]
@@ -12870,39 +12893,48 @@
             const totalNotes = hits.reduce((s, a) => s + a._displayUnsigned.length, 0);
             return (
                 <div className="una-wrap">
-                    <div className="una-head">
+                    <div className="una-head" onClick={() => setOpen(o => !o)}>
+                        <span className={`una-chevron${open ? ' open' : ''}`}>▶</span>
                         <span className="una-head-label">⚠ Action Required · Sign Before Seeing Patient</span>
                         <span className="una-head-count">{totalNotes} note{totalNotes !== 1 ? 's' : ''} due · {hits.length} patient{hits.length !== 1 ? 's' : ''}</span>
                     </div>
-                    <div className="una-pills">
-                        {hits.map(a => {
-                            const n = a._displayUnsigned.length;
-                            return (
-                                <div key={a.id} className="una-pill">
-                                    <span className="una-pill-time">{fmtTime(a.time)}</span>
-                                    <span className="una-pill-name"><PatientName name={a.patient} state={a.patientState} /></span>
-                                    <span className={`una-pill-badge ${urgCls(n)}`}>{n}</span>
-                                    {a._displayUnsigned.map((d, i) => (
-                                        <span key={i} className="una-pill-date">
-                                            {fmtUnsignedDate(d)}
-                                            {onClearPhantom && (
-                                                <button
-                                                    className="una-date-dismiss"
-                                                    title={`Remove phantom date ${fmtUnsignedDate(d)} — use only if this date is wrong for this patient`}
-                                                    onClick={e => {e.stopPropagation(); onClearPhantom(a, d);}}
-                                                >✕</button>
-                                            )}
-                                        </span>
-                                    ))}
-                                </div>
-                            );
-                        })}
-                    </div>
+                    {open && (
+                        <div className="una-pills">
+                            {hits.map(a => {
+                                const n = a._displayUnsigned.length;
+                                return (
+                                    <div key={a.id} className="una-pill">
+                                        <span className="una-pill-time">{fmtTime(a.time)}</span>
+                                        <span className="una-pill-name"><PatientName name={a.patient} state={a.patientState} /></span>
+                                        <span className={`una-pill-badge ${urgCls(n)}`}>{n}</span>
+                                        {a._displayUnsigned.map((d, i) => (
+                                            <span key={i} className="una-pill-date">
+                                                {fmtUnsignedDate(d)}
+                                                {onClearPhantom && (
+                                                    <button
+                                                        className="una-date-dismiss"
+                                                        title={`Remove phantom date ${fmtUnsignedDate(d)} — use only if this date is wrong for this patient`}
+                                                        onClick={e => {e.stopPropagation(); onClearPhantom(a, d);}}
+                                                    >✕</button>
+                                                )}
+                                            </span>
+                                        ))}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             );
         }
 
         function UnsignedWeekAlert({data, prov, days}) {
+            // Collapsed by default — same pattern as UnsignedAlert (Day View),
+            // but this component has no single .una-pills wrapper to gate:
+            // detail content is the whole per-day {groups.map(...)} block
+            // below (each day owns its own una-day-hdr + una-pills pair), so
+            // that entire block is what toggles, not an inner piece of it.
+            const [open, setOpen] = useState(false);
             const groups = days.reduce((acc, ds) => {
                 const k = dkey(prov, ds);
                 // Filter each day's appts against that day's ds so same-day
@@ -12926,11 +12958,12 @@
             }
             return (
                 <div className="una-wrap" style={{marginBottom: 12}}>
-                    <div className="una-head">
+                    <div className="una-head" onClick={() => setOpen(o => !o)}>
+                        <span className={`una-chevron${open ? ' open' : ''}`}>▶</span>
                         <span className="una-head-label">⚠ Action Required · Sign Before Seeing Patient</span>
                         <span className="una-head-count">{totalNotes} note{totalNotes !== 1 ? 's' : ''} due this week</span>
                     </div>
-                    {groups.map(({ds, appts}, gi) => (
+                    {open && groups.map(({ds, appts}, gi) => (
                         <div key={ds}>
                             <div className={`una-day-hdr${gi === 0 ? ' first' : ''}`}>{fmtGroupDate(ds)}</div>
                             <div className="una-pills" style={{paddingTop: 4, paddingBottom: gi === groups.length - 1 ? 10 : 4}}>
