@@ -16868,7 +16868,7 @@
                                 <div className="pim-sub">
                                     {fmtTime(appt.time)}
                                     {appt.method ? ` · ${METHOD_LABEL[appt.method] || appt.method}` : ''}
-                                    {appt.directIns ? ` · ${appt.directIns}` : ''}
+                                    {appt.insuranceCarrier ? ` · ${appt.insuranceCarrier}` : ''}
                                     {' · '}{appt.out ? '✅ Note Signed' : '✎ Unsigned'}
                                 </div>
                             </div>
@@ -17076,29 +17076,31 @@
             }
 
             // ── Insurance Carrier — draft-until-Save, appointment-level only ──
-            // Initialized with the exact same priority order getPatientBilling()
-            // already uses for billingInfo.insurance (a.directIns first, patient
-            // record fallback second), so what this field shows on open matches
-            // what .pv-ins already displays for this row. Typing only updates
-            // local draft state — nothing saves until the Save button is clicked.
+            // Initialized from a.insuranceCarrier, patient record as fallback —
+            // appointment-level InsuranceCarrier (2026-08-26), not directIns.
+            // Typing only updates local draft state — nothing saves until the
+            // Save button is clicked.
             const ptRec = (patientDb || []).find(p =>
                 `${p.firstName} ${p.lastName}`.toLowerCase() === (a.patient || '').toLowerCase()
             );
-            const [insurance, setInsurance] = useState(a.directIns || (ptRec && ptRec.insurance) || '');
+            const [insurance, setInsurance] = useState(a.insuranceCarrier || (ptRec && ptRec.insurance) || '');
             const [savingIns, setSavingIns] = useState(false);
             const [insErr, setInsErr] = useState(false);
 
             // Deliberately independent of selectChannel()/savingId above — this
-            // writes only { directIns }, the same field+shape ClaimSubmitModal's
-            // own save already produces, scoped to just this one appointment.
-            // Never calls savePatientClaimRecord (patient-record path, confirmed
-            // out of scope — it writes ten other fields this popup has no draft
+            // writes only { insuranceCarrier }, scoped to just this one
+            // appointment. saveAppointment()'s backend now stamps
+            // INSURANCE_CARRIER_MANUAL_BY_COL/_AT_COL whenever this actually
+            // changes the value, and skips its own Patient-DB-driven
+            // InsuranceCarrier stamp on this row from then on. Never calls
+            // savePatientClaimRecord (patient-record path, confirmed out of
+            // scope — it writes ten other fields this popup has no draft
             // state for, which would blank them out).
             function saveInsurance() {
                 if (savingIns) return;
                 setSavingIns(true);
                 setInsErr(false);
-                Promise.resolve(onUpdate({...a, directIns: insurance}))
+                Promise.resolve(onUpdate({...a, insuranceCarrier: insurance}))
                     .then(result => {
                         if (result && result.ok === false) setInsErr(true);
                     })
@@ -17240,7 +17242,9 @@
                     `${p.firstName} ${p.lastName}`.toLowerCase() === (a.patient || '').toLowerCase()
                 );
                 return {
-                    insurance: a.directIns || (pt && pt.insurance) || '',
+                    // insuranceCarrier, not directIns (2026-08-26) — appointment field
+                    // first, patient record second, same shape as before.
+                    insurance: a.insuranceCarrier || (pt && pt.insurance) || '',
                     // FIXED (2026-08-19) — was reading only the patient-level default
                     // (pt.platform), which never reflects a per-appointment channel
                     // change made via the Biller popup. Now mirrors `insurance`'s own
@@ -17824,10 +17828,11 @@
                                 // last-known-good channel/insurance instead of the
                                 // attempted (but unsaved) value. Spreads the whole `u`
                                 // (always a full appt copy with exactly one field
-                                // overridden — method from selectChannel, or directIns
-                                // from saveInsurance) rather than naming a field, so
-                                // this one sync path correctly covers both saves without
-                                // needing to know which one just fired.
+                                // overridden — method from selectChannel, or
+                                // insuranceCarrier from saveInsurance) rather than
+                                // naming a field, so this one sync path correctly
+                                // covers both saves without needing to know which one
+                                // just fired.
                                 Promise.resolve(result).then(r => {
                                     if (!r || r.ok !== false) {
                                         setChannelModal(prev => prev ? {...prev, ...u} : prev);
@@ -18390,7 +18395,7 @@
                                         const cs = computeStatus(a);
                                         const s = cs === 'valid' ? 'ok' : cs === 'issue' ? 'err' : 'pend';
                                         const isDirect = a.method === 'direct';
-                                        const ic = insColor(a.directIns);
+                                        const ic = insColor(a.insuranceCarrier);
                                         const copayAmt = isDirect ? (a.rate ? `$${a.rate}` : '') : (a.copay ? `copay $${a.copay}` : '');
                                         const copayClass = isDirect
                                             ? (a.paymentCollected ? 'pay-coll' : a.paymentFailed ? 'pay-fail' : 'pay-pend')
@@ -18414,7 +18419,7 @@
                                                 onClick={e => {e.stopPropagation(); setModal({a, ds});}}>
                                                 <div className="wk-r1">
                                                     <span className="wk-time">{fmtTime(a.time)}</span>
-                                                    {a.directIns && <span className="wk-ins-badge" style={{background: ic.bg, color: ic.fg}}>{a.directIns}</span>}
+                                                    {a.insuranceCarrier && <span className="wk-ins-badge" style={{background: ic.bg, color: ic.fg}}>{a.insuranceCarrier}</span>}
                                                 </div>
                                                 <div className="wk-pat" style={{display: 'flex', alignItems: 'center', gap: 4}}>
                                                     <PatientName name={a.patient} state={a.patientState} />
@@ -18888,7 +18893,7 @@
                                         const cs = computeStatus(a);
                                         const s = cs === 'valid' ? 'ok' : cs === 'issue' ? 'err' : 'pend';
                                         const isDirect = a.method === 'direct';
-                                        const ic = insColor(a.directIns);
+                                        const ic = insColor(a.insuranceCarrier);
                                         const provName = (PROVIDERS.find(p => p.id === a.provID) || {}).name || '';
                                         const copayAmt = isDirect ? (a.rate ? `$${a.rate}` : '') : (a.copay ? `copay $${a.copay}` : '');
                                         const copayClass = isDirect
@@ -18909,7 +18914,7 @@
                                             <div key={a.id} className={`wk-appt wk-${s} ${postCls}${isDirect ? ' wk-direct' : ''}`} onClick={() => onSwitchToDay(ds)}>
                                                 <div className="wk-r1">
                                                     <span className="wk-time">{fmtTime(a.time)}</span>
-                                                    {a.directIns && <span className="wk-ins-badge" style={{background: ic.bg, color: ic.fg}}>{a.directIns}</span>}
+                                                    {a.insuranceCarrier && <span className="wk-ins-badge" style={{background: ic.bg, color: ic.fg}}>{a.insuranceCarrier}</span>}
                                                 </div>
                                                 <div className="wk-pat"><PatientName name={a.patient} state={a.patientState} /></div>
                                                 {provName && <div className="wk-prov">{provName}</div>}
@@ -19158,14 +19163,15 @@
             function cellCls(v) {return v === true ? 'cv' : v === false ? 'ce' : 'cp';}
 
             // Same carrier-resolution priority as BillingView.getPatientInfo()
-            // (2026-08-21, Stage C) — appointment's own directIns first, falls
-            // back to the patient's Patients-tab default. Needed to feed the
-            // new BestRatePopup a resolved carrier string.
+            // (2026-08-21, Stage C) — appointment's own insuranceCarrier first
+            // (not directIns, as of 2026-08-26), falls back to the patient's
+            // Patients-tab default. Needed to feed the BestRatePopup a
+            // resolved carrier string.
             function getPatientInfo(a) {
                 const pt = (patientDb || []).find(p =>
                     `${p.firstName} ${p.lastName}`.toLowerCase() === (a.patient || '').toLowerCase()
                 );
-                return {insurance: a.directIns || (pt && pt.insurance) || ''};
+                return {insurance: a.insuranceCarrier || (pt && pt.insurance) || ''};
             }
 
             function toggleSelect(id, e) {
@@ -19309,7 +19315,7 @@
                                                 <td style={{fontWeight: 800, whiteSpace: 'nowrap', fontSize: 13}}>{fmtTime(a.time)}</td>
                                                 <td className="td-patient" style={{fontWeight: 700}}>
                                                     <PatientName name={a.patient} state={a.patientState} />
-                                                    {a.directIns && <div className="td-ins-name" style={{fontSize: 11, fontWeight: 600, marginTop: 2}}>{a.directIns}</div>}
+                                                    {a.insuranceCarrier && <div className="td-ins-name" style={{fontSize: 11, fontWeight: 600, marginTop: 2}}>{a.insuranceCarrier}</div>}
                                                     <BestRatePopup
                                                         patientName={a.patient}
                                                         patientState={a.patientState}
@@ -19665,7 +19671,9 @@
 
             // ── Static patient fields ─────────────────────────────────
             const [claimPlatform, setClaimPlatform] = useState(ptRec.claimPlatform || '');
-            const [insurance, setInsurance] = useState(appt.directIns || ptRec.insurance || '');
+            // insuranceCarrier first, not directIns (2026-08-26) — same
+            // appointment-field-first, patient-record-second shape as before.
+            const [insurance, setInsurance] = useState(appt.insuranceCarrier || ptRec.insurance || '');
             const [memberID, setMemberID] = useState(ptRec.memberID || '');
             const [memberDOB, setMemberDOB] = useState(ptRec.memberDOB || '');
             const [pcn, setPcn] = useState(ptRec.pcn || '');
@@ -19718,8 +19726,12 @@
             function savePatientRecord() {
                 setSavingPt(true);
                 setPtSaved(false);
+                // insurance excluded (2026-08-26) — Insurance Carrier now
+                // saves per-appointment via buildFinalAppt/onUpdate only, same
+                // as ProvChannelModal/BillerApptModal; this button still owns
+                // every other genuinely patient-level field below.
                 gsr('savePatientClaimRecord', appt.patient, JSON.stringify({
-                    claimPlatform, insurance, memberID, memberDOB, pcn,
+                    claimPlatform, memberID, memberDOB, pcn,
                     groupNumber, primarySubscriber, patientState,
                     renderingNPI, billingNPI, xCode,
                     paymentPlatform
@@ -19743,7 +19755,7 @@
             function buildFinalAppt(overrides) {
                 return {
                     ...localAppt,
-                    directIns: insurance,
+                    insuranceCarrier: insurance,
                     paymentType,
                     paymentRate,
                     // Claim tracking fields
@@ -20344,7 +20356,9 @@
                 const aRate = sv(a.paymentRate);
                 const recRate = rec ? sv(rec.rate) : '';
                 return {
-                    insurance: a.directIns || (rec && rec.insurance) || '',
+                    // insuranceCarrier, not directIns (2026-08-26) — appointment field
+                    // first, patient record second, same shape as before.
+                    insurance: a.insuranceCarrier || (rec && rec.insurance) || '',
                     paymentType: a.paymentType || (rec && rec.patientPortion) || '',
                     paymentRate: aRate !== '' ? aRate : recRate,
                     // paymentPlatform: use appointment value if already set (override); else patient record default
@@ -20580,12 +20594,11 @@
              · Clinic note status (read-only badge)
            Does NOT replace ClaimSubmitModal for direct-pay claim entry.
         ════════════════════════════════════════════════════════════════ */
-        function BillerApptModal({appt, onSave, onUpdate, onClose, patientDb, onRefreshPatients}) {
+        function BillerApptModal({appt, onSave, onUpdate, onClose, patientDb}) {
             const [d, setD] = React.useState(() => ({...appt}));
             const ptRec = (patientDb || []).find(p =>
                 `${p.firstName} ${p.lastName}`.toLowerCase() === (appt.patient || '').toLowerCase()
             ) || {};
-            const [insurance, setInsurance] = React.useState(ptRec.insurance || appt.insuranceCarrier || '');
             const [commNote, setCommNote] = React.useState('');
             // Default to the first role-appropriate recipient (e.g. 'provider' for biller)
             // rather than 'all' so messages are targeted by default.
@@ -20663,7 +20676,7 @@
                                 </div>
                                 <div className="frm">
                                     <label className="fl">Patient Insurance Carrier</label>
-                                    <input className="fi" value={insurance} onChange={e => setInsurance(e.target.value)}
+                                    <input className="fi" value={d.insuranceCarrier || ''} onChange={e => upd('insuranceCarrier', e.target.value)}
                                         placeholder="e.g. Ambetter" />
                                 </div>
                                 {d.method === 'direct' && (
@@ -20761,11 +20774,12 @@
                         <div className="m-foot">
                             <button className="btn btn-s" onClick={onClose}>Cancel</button>
                             <button className="btn btn-p" onClick={() => {
-                                if (insurance !== (ptRec.insurance || appt.insuranceCarrier || '')) {
-                                    gsr('savePatientClaimRecord', d.patient, JSON.stringify({insurance}))
-                                        .then(() => {if (onRefreshPatients) onRefreshPatients();})
-                                        .catch(() => { });
-                                }
+                                // Patient Insurance Carrier now lives in d.insuranceCarrier —
+                                // appointment-level (2026-08-26), part of the same onSave
+                                // call below, same target ProvChannelModal uses. No longer
+                                // a separate savePatientClaimRecord call to the patient
+                                // record (confirmed out of scope — see ProvChannelModal's
+                                // own comment on why).
                                 onSave({...d, status: computeStatus(d)});
                             }}>Save Changes</button>
                         </div>
@@ -21217,7 +21231,9 @@
                     `${p.firstName} ${p.lastName}`.toLowerCase() === (a.patient || '').toLowerCase()
                 );
                 return {
-                    insurance: a.directIns || (pt && pt.insurance) || '',
+                    // insuranceCarrier, not directIns (2026-08-26) — appointment field
+                    // first, patient record second, same shape as before.
+                    insurance: a.insuranceCarrier || (pt && pt.insurance) || '',
                     portion: a.paymentType || (pt && pt.patientPortion) || '',
                     rate: a.paymentRate || (pt && pt.rate) || '',
                     patientState: (pt && pt.patientState) || '',
@@ -21621,7 +21637,6 @@
                         <BillerApptModal
                             appt={billerModal}
                             patientDb={patientDb}
-                            onRefreshPatients={onRefreshPatients}
                             onUpdate={u => {onUpdate(u); setBillerModal(prev => prev ? {...prev, comms: u.comms} : prev);}}
                             onSave={a => {onUpdate(a); setBillerModal(null);}}
                             onClose={() => setBillerModal(null)} />

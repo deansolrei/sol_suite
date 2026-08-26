@@ -734,15 +734,43 @@ function saveAppointment(prov, date, apptJson) {
       // (_reconcilePatientUnsignedDates) and the nightly sweep.
       var apptData = Object.assign({}, appt);   // mutable copy — don't mutate parsed JSON
 
+      // ── Manual-override detection (2026-08-26) — captured BEFORE the
+      // Patient-DB stamp below runs, so this compares what the CLIENT
+      // actually sent against what was already on the sheet, not the
+      // post-stamp value. Every onUpdate call in the frontend spreads the
+      // full current appointment object plus explicit overrides, so for
+      // any save that doesn't intentionally touch InsuranceCarrier,
+      // appt.insuranceCarrier already equals the sheet's current value —
+      // this only reads as "manually edited" when a human genuinely typed
+      // a new value via ProvChannelModal/BillerApptModal, never as a side
+      // effect of the automatic Patient-DB stamp re-deriving the field for
+      // an unrelated save. Same array `values` already read above; may be
+      // shorter than INSURANCE_CARRIER_MANUAL_AT_COL for any row that
+      // predates this column, in which case indexing past the array's end
+      // returns undefined — `|| ''` treats that as not-yet-manually-set,
+      // the correct default.
+      var IC_IDX_FOR_ATTRIB = APPT_COLS.indexOf('InsuranceCarrier');
+      var oldInsuranceCarrier = String(values[targetRow - 1][IC_IDX_FOR_ATTRIB] || '');
+      var clientSentInsuranceCarrier = String(appt.insuranceCarrier || '');
+      var insuranceCarrierManuallyEdited = clientSentInsuranceCarrier !== oldInsuranceCarrier;
+      var wasInsuranceCarrierManuallySet = String(values[targetRow - 1][INSURANCE_CARRIER_MANUAL_AT_COL - 1] || '').trim();
+
       // ── Stamp InsuranceCarrier + PatientState from Patient DB ────────────
       // Always refresh from the source of truth so records stay accurate even
-      // when the patient DB is updated after the appointment was created.
-      // Priority: Patient DB > existing appointment value > directIns (direct only).
+      // when the patient DB is updated after the appointment was created —
+      // UNLESS a human has manually set this row's InsuranceCarrier
+      // (wasInsuranceCarrierManuallySet), in which case the Patient-DB stamp
+      // is skipped entirely and whatever the client sent is kept as-is; a
+      // manual edit must never get silently overwritten by this same stamp
+      // on the very next unrelated save.
+      // Priority when not manually set: Patient DB > existing appointment value > directIns (direct only).
       var patInfo = _lookupPatient(ss, apptData.patient);
-      apptData.insuranceCarrier = patInfo.insurance
-        || apptData.insuranceCarrier
-        || (apptData.method === 'direct' ? apptData.directIns : '')
-        || '';
+      if (!wasInsuranceCarrierManuallySet) {
+        apptData.insuranceCarrier = patInfo.insurance
+          || apptData.insuranceCarrier
+          || (apptData.method === 'direct' ? apptData.directIns : '')
+          || '';
+      }
       apptData.patientState = patInfo.patientState || apptData.patientState || '';
 
       const rowData = apptToRow(apptData, prov, date);
@@ -804,6 +832,21 @@ function saveAppointment(prov, date, apptJson) {
       [36, 40, 44, 48].forEach(function (c) { sheet.getRange(targetRow, c).setNumberFormat('@'); });
       sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
       _audit(ss, 'UPDATE', `${apptData.patient} | ${apptData.time} | ${date} | ${prov}`);
+
+      // ── InsuranceCarrier Manual-Override Attribution ────────────────────
+      // Same "only fires when it actually changed" discipline as Note
+      // Status Attribution below — insuranceCarrierManuallyEdited was
+      // computed above from the RAW client payload vs. the sheet's prior
+      // value, before the Patient-DB stamp ran, so this only fires for a
+      // genuine edit through ProvChannelModal/BillerApptModal, never as a
+      // side effect of an unrelated save. Stamped in the same operation as
+      // the row write above, not a separate step — if this save fails,
+      // neither the value nor the timestamp lands; if it succeeds, both do.
+      if (insuranceCarrierManuallyEdited) {
+        _stampAttribution(ss, sheet, targetRow, INSURANCE_CARRIER_MANUAL_BY_COL, INSURANCE_CARRIER_MANUAL_AT_COL);
+        _audit(ss, 'INSURANCE_CARRIER_MANUAL_SET',
+          `Appt ${appt.id} → InsuranceCarrier="${clientSentInsuranceCarrier}" (manual, was "${oldInsuranceCarrier}")`);
+      }
 
       // ── Note Status Attribution ────────────────────────────────────────
       // The inline "NOTE STATUS" column in the Assistant day view saves
@@ -2981,6 +3024,22 @@ var CHECKLIST_NOTE_AT_COL = 95;        // CQ
    manual save. Confirm empty via verifyTebraSourceIdColEmpty() before
    first use. ── */
 var TEBRA_SOURCE_ID_COL = 96;  // CR
+
+/* ── INSURANCE CARRIER MANUAL OVERRIDE (2026-08-26) — standalone by/at
+   pair, same _stampAttribution() shape as STATUS_BY_COL etc. above, but
+   this is the first standalone pair used PROTECTIVELY rather than just
+   for display attribution: every sync-side write to Appointments.
+   InsuranceCarrier (the main import loop's DirectIns write,
+   backfillInsuranceCarrier(), and syncPatientStates()' Appointments-tab
+   write) checks INSURANCE_CARRIER_MANUAL_AT_COL first and skips
+   entirely — not "newer wins," permanently — once a human has set the
+   value via ProvChannelModal or BillerApptModal. Column 96 (CR) is the
+   last currently-used standalone column; this picks up right after it.
+   Patients.InsuranceCarrier is NOT covered by this pair — it has no
+   equivalent standalone-attribution convention on that sheet at all,
+   and is out of scope for this stage. ── */
+var INSURANCE_CARRIER_MANUAL_BY_COL = 97;  // CS
+var INSURANCE_CARRIER_MANUAL_AT_COL = 98;  // CT
 
 /* ── TEBRA PATIENT ID (2026-08-17) — standalone column. Repurposes BH
    (60), one of four columns an earlier comment described as "3 dead
@@ -6249,6 +6308,15 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
       ? apptSheet.getRange(2, TEBRA_PATIENT_ID_COL, apptSheet.getLastRow() - 1, 1).getValues()
       : [];
 
+    // Parallel read of INSURANCE_CARRIER_MANUAL_AT_COL, same row range and
+    // same reasoning as existingPatientIds above — kept separate because it
+    // lives outside APPT_COLS width. Checked before the DirectIns write
+    // below skips a row entirely once a human has manually set its
+    // InsuranceCarrier value.
+    var existingInsuranceManualAt = (apptSheet.getLastRow() > 1)
+      ? apptSheet.getRange(2, INSURANCE_CARRIER_MANUAL_AT_COL, apptSheet.getLastRow() - 1, 1).getValues()
+      : [];
+
     apptData.forEach(function (r, i) {
       var key = r[0] + '||' + _fmtDate(r[1]) + '||' + _normalizeTimeKey(r[3]);
       var rowNum = i + 2; // 1-based sheet row (row 1 = header)
@@ -6417,8 +6485,12 @@ function importFromTebraApi(startDateStr, endDateStr, dryRun) {
           }
         }
 
-        // ── DirectIns: overwrite with Tebra's primary insurance carrier (PatientCaseName).
-        if (appt.insurance && COL_DIRECT_INS > 0) {
+        // ── DirectIns: overwrite with Tebra's primary insurance carrier (PatientCaseName)
+        // — UNLESS a human has manually set this row's InsuranceCarrier value
+        // (INSURANCE_CARRIER_MANUAL_AT_COL populated), in which case the sync
+        // skips this row's DirectIns entirely, permanently, not just this run.
+        var _existingManualAt = String((existingInsuranceManualAt[rowIdx] && existingInsuranceManualAt[rowIdx][0]) || '').trim();
+        if (appt.insurance && COL_DIRECT_INS > 0 && !_existingManualAt) {
           apptData[rowIdx][COL_DIRECT_INS - 1] = appt.insurance;
           insuranceUpdated++;
           touched = true;
@@ -8408,7 +8480,18 @@ function backfillInsuranceCarrier(forceOverwrite) {
     var apptData = apptSheet.getRange(2, 1, numRows, APPT_COLS.length).getValues();
     var updated = 0;
 
+    // Parallel read of INSURANCE_CARRIER_MANUAL_AT_COL, same row range and
+    // reasoning as the other standalone-column parallel reads in this file
+    // (e.g. importFromTebraApi's existingPatientIds) — outside APPT_COLS
+    // width. Checked unconditionally, even under forceOverwrite: once a
+    // human has manually set a row's InsuranceCarrier, this function must
+    // never touch it again, not even via the explicit force runner.
+    var manualAtCol = apptSheet.getRange(2, INSURANCE_CARRIER_MANUAL_AT_COL, numRows, 1).getValues();
+
     apptData.forEach(function (row, i) {
+      var manuallySet = String((manualAtCol[i] && manualAtCol[i][0]) || '').trim();
+      if (manuallySet) return;  // human-set — never touched by this function, force or not
+
       var existing = String(row[IDX_INS_CARR] || '').trim();
       if (existing && !forceOverwrite) return;  // already populated — skip unless force
 
@@ -8557,6 +8640,11 @@ function syncPatientStates(tebraPatientMap, forceOverwrite) {
 
     if (apptSheet && apptSheet.getLastRow() > 1 && COL_APPT_STATE > 0) {
       var apptData = apptSheet.getRange(2, 1, apptSheet.getLastRow() - 1, APPT_COLS.length).getValues();
+      // Parallel read of INSURANCE_CARRIER_MANUAL_AT_COL, outside APPT_COLS
+      // width, same reasoning as backfillInsuranceCarrier()'s equivalent —
+      // checked unconditionally, even under forceOverwrite, guarding only
+      // the InsuranceCarrier write below (PatientState is unaffected).
+      var manualAtCol = apptSheet.getRange(2, INSURANCE_CARRIER_MANUAL_AT_COL, apptSheet.getLastRow() - 1, 1).getValues();
       apptData.forEach(function (row, i) {
         var patNameNorm = _normName(String(row[COL_APPT_PAT_IDX] || ''));
         if (!patNameNorm) return;
@@ -8567,13 +8655,14 @@ function syncPatientStates(tebraPatientMap, forceOverwrite) {
         var rowNum = i + 2;
         var existingSt = String(row[COL_APPT_ST_IDX] || '').trim();
         var existingIns = String(row[COL_APPT_INS_IDX] || '').trim();
+        var manuallySet = String((manualAtCol[i] && manualAtCol[i][0]) || '').trim();
         var anyUpdate = false;
 
         if (tebraData.state && (forceOverwrite || !existingSt)) {
           apptSheet.getRange(rowNum, COL_APPT_STATE).setValue(tebraData.state);
           anyUpdate = true;
         }
-        if (tebraData.insurance && (forceOverwrite || !existingIns)) {
+        if (tebraData.insurance && !manuallySet && (forceOverwrite || !existingIns)) {
           apptSheet.getRange(rowNum, COL_APPT_INS).setValue(tebraData.insurance);
           anyUpdate = true;
         }
