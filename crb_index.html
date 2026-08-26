@@ -2332,15 +2332,6 @@
             gap: 3px
         }
 
-        .pv-method {
-            font-size: 10px;
-            font-weight: 800;
-            color: #777355;
-            text-transform: uppercase;
-            letter-spacing: .4px;
-            margin-top: 1px
-        }
-
         .pv-stxt {
             font-size: 11px;
             font-weight: 600
@@ -6177,10 +6168,6 @@
 
         body.dark .pv-ins {
             color: #6FA0B2
-        }
-
-        body.dark .pv-method {
-            color: var(--warning)
         }
 
         body.dark .pv-copay.pay-coll {
@@ -13758,8 +13745,6 @@
                     });
                 }
             }
-            const msKey = d.method === 'alma' ? 'alma' : d.method === 'hw' ? 'hw' : d.method === 'grow' ? 'grow' : 'direct';
-            const ms = d[msKey] || {text: '', valid: null};
             function RadioRow({label, field, req, onChange: onChangeProp}) {
                 return (
                     <div className="rrow">
@@ -13835,29 +13820,15 @@
                                         </div>
                                     </>
                                 )}
-                                {/* Billing status inline — text note + validity radio, now part of Appointment Info */}
-                                <div style={{background: '#FBFBF3', borderRadius: 8, padding: '10px 12px', marginTop: 10, border: '1px solid #FBFBF3'}}>
-                                    <div style={{fontSize: 11, fontWeight: 800, color: '#777355', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 6}}>
-                                        Billing Status — {METHOD_LABEL[d.method] || d.method}
-                                    </div>
-                                    <div className="frm" style={{marginBottom: 8}}>
-                                        <input className="fi" value={ms.text} onChange={e => updMs(msKey, 'text', e.target.value)}
-                                            placeholder="Status note with initials — e.g. Valid 4/2/26 MA  or  Payment expired JC" />
-                                    </div>
-                                    <div className="ropt">
-                                        {[[true, '🟢 Valid'], [false, '🔴 Issue'], [null, '⏳ In Process']].map(([v, l]) => (
-                                            <label key={String(v)} style={{fontSize: 14, gap: 6}}>
-                                                <input type="radio" checked={ms.valid === v} onChange={() => {
-                                                    setD(p => {
-                                                        const key = _msKeyOf(p.method);
-                                                        const next = {...p, [key]: {...(p[key] || {text: '', valid: null}), valid: v}};
-                                                        if (v === true) {next.intake = true; next.ins = true; next.autopay = true;}
-                                                        return next;
-                                                    });
-                                                }} /> {l}
-                                            </label>
-                                        ))}
-                                    </div>
+                                {/* Insurance Carrier — draft-until-Save, appointment-level insuranceCarrier
+                            (2026-08-26), same target/protection as ProvChannelModal/BillerApptModal/
+                            ClaimSubmitModal. Fourth surface funneling through the same onSave/onUpdate
+                            path (AssistantView's save() → onUpdate), so saveAppointment()'s manual-
+                            override stamp fires identically — no new backend wiring needed. */}
+                                <div className="frm">
+                                    <label className="fl">Insurance Carrier</label>
+                                    <input className="fi" value={d.insuranceCarrier || ''} onChange={e => upd('insuranceCarrier', e.target.value)}
+                                        placeholder="e.g. Ambetter" />
                                 </div>
                                 <div className="frm" style={{marginTop: 10}}>
                                     <label className="fl">Unsigned Note Dates</label>
@@ -17640,7 +17611,6 @@
                                                             {a.paymentRate && <span> · {a.paymentRate}</span>}
                                                         </div>
                                                     )}
-                                                    <div className="pv-method">{METHOD_LABEL[a.method] || a.method}</div>
                                                     {ms.text && <div className={`pv-stxt ${ms.valid === true ? 'ok' : ms.valid === false ? 'err' : 'pend'}`}>{ms.text}</div>}
                                                     {showPay && <div className={`pay-badge ${pBadge}`}>{pTxt}</div>}
                                                     {a.method !== 'direct' && <ProvClaimPill a={a} />}
