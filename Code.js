@@ -5458,6 +5458,225 @@ function testTebraPatientCaseFields() {
   }
 }
 
+/**
+ * Diagnostic — READ-ONLY, makes zero writes to any sheet and zero Tebra
+ * write calls. Compares the two Tebra insurance sources this codebase
+ * currently routes into InsuranceCarrier columns — PatientCaseName
+ * (appointment-level, GetAppointments) vs. PrimaryInsurancePolicyCompanyName
+ * (patient-level, GetAllPatients) — for a sample of real patients who have
+ * data from BOTH sources, and reports how often they actually agree.
+ *
+ * Every patient is logged under a redacted "Patient XY" label (initials
+ * only, derived in-memory from the Tebra name and never itself written
+ * anywhere) — no full name, DOB, or other identifier ever appears in the
+ * log, matching this project's existing redaction convention.
+ *
+ * Sourcing mirrors the two PRODUCTION functions this diagnostic is
+ * comparing, not a simplified guess:
+ *   - Appointment fetch: same Fields/Filter/error-handling shape as
+ *     _fetchTebraAppointments() (the real GetAppointments call used by
+ *     the nightly sync), just a fixed 30-day lookback window instead of
+ *     the sync's own start/end range.
+ *   - Patient fetch: reuses _fetchTebraPatientStates() directly — the
+ *     exact same GetAllPatients call and PrimaryInsurancePolicyCompanyName
+ *     field the real syncPatientStates() already uses.
+ *
+ * Run from the Apps Script editor:  testCompareInsuranceSources()
+ * Optional sample cap:              testCompareInsuranceSources(50)
+ * Forward-looking window instead of the default backward-looking one
+ * (today through +30 days, vs. the default -30 days through today) —
+ * tests whether PatientCaseName availability is date-dependent (e.g.
+ * only populated close to/at the visit, so a backward-looking window
+ * undercounts patients whose only recent activity is a future visit):
+ *                                    testCompareInsuranceSources(25, 'forward')
+ * Both directions can be run back to back and compared directly — this
+ * doesn't replace the original backward-looking behavior, just adds a
+ * second mode alongside it.
+ * Then inspect the execution log (View → Logs).
+ *
+ * WRITE SAFETY: this function contains no setValue(), setValues(),
+ * appendRow(), or any other sheet-mutating call anywhere in its body —
+ * every line either reads (UrlFetchApp.fetch via _tebraPost/_tebraHeader,
+ * which only ever POSTs Tebra's own read operations GetAppointments/
+ * GetAllPatients — never a Tebra write operation) or calls Logger.log().
+ * There is no code path, success or failure, under which this function
+ * writes to the Appointments tab, the Patients tab, or anywhere in Tebra.
+ */
+function testCompareInsuranceSources(sampleSize, direction) {
+  sampleSize = sampleSize || 25;
+  // 'back' (default — original behavior, unchanged) = last 30 days through today.
+  // 'forward' = today through the next 30 days — tests whether PatientCaseName
+  // availability is date-dependent (e.g. only set close to/at the visit itself,
+  // so a backward-looking window undercounts it for patients whose only recent
+  // activity is a future-scheduled appointment).
+  direction = direction === 'forward' ? 'forward' : 'back';
+
+  var c = _getTebraCreds();
+  if (!c.customerKey) { Logger.log('❌  Run setTebraCreds() first.'); return; }
+
+  // ── 1. Pull a 30-day window of appointments for PatientCaseName ─────────
+  // Same Fields/Filter/error-checking shape as the real _fetchTebraAppointments()
+  // — deliberately not a simplified diagnostic-only shape, so this reflects what
+  // the actual sync sees, not an approximation of it.
+  //
+  // "Today" is computed the same tz-aware way testTebraPatientCaseFields()
+  // does — Session.getScriptTimeZone() → Utilities.formatDate() → _parseYMD()
+  // — not a raw `new Date()` fed straight into _tebraDateFmt(). A plain Date
+  // object's getMonth()/getDate()/getFullYear() resolve using the Apps Script
+  // runtime's own default timezone, which isn't guaranteed to match the
+  // spreadsheet's configured timezone (Session.getScriptTimeZone()); near a
+  // timezone boundary those two can disagree on what calendar day it is,
+  // which would silently shift this diagnostic's date range by a day
+  // relative to a tz-aware caller querying "the same day."
+  var tz = Session.getScriptTimeZone();
+  var todayStr = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  var todayDate = _parseYMD(todayStr);
+  var start, end;
+  if (direction === 'forward') {
+    start = new Date(todayDate);
+    end = new Date(todayDate); end.setDate(todayDate.getDate() + 30);
+  } else {
+    start = new Date(todayDate); start.setDate(todayDate.getDate() - 30);
+    end = new Date(todayDate);
+  }
+  var startTebra = _tebraDateFmt(start);
+  var endTebra = _tebraDateFmt(end);
+
+  var apptBodyXml =
+    '<ns:GetAppointments><ns:request>' +
+    _tebraHeader(c) +
+    '<ns:Fields>' +
+    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:PatientCaseName>true</ns:PatientCaseName>' +
+    '<ns:StartDate>true</ns:StartDate>' +
+    '</ns:Fields>' +
+    '<ns:Filter>' +
+    '<ns:StartDate>' + startTebra + '</ns:StartDate>' +
+    '<ns:EndDate>' + endTebra + '</ns:EndDate>' +
+    '</ns:Filter>' +
+    '</ns:request></ns:GetAppointments>';
+
+  var apptText = _tebraPost('GetAppointments', apptBodyXml);
+  var apptDoc = XmlService.parse(apptText);
+  var apptRoot = apptDoc.getRootElement();
+
+  var secEls = [];
+  _findXmlElements(apptRoot, 'SecurityResponse', secEls);
+  if (secEls.length && _findFirstXml(secEls[0], 'Authenticated') === 'false') {
+    Logger.log('❌  GetAppointments auth failure: ' +
+      (_findFirstXml(secEls[0], 'SecurityResult') || 'Unknown'));
+    return;
+  }
+  var errEls = [];
+  _findXmlElements(apptRoot, 'ErrorResponse', errEls);
+  if (errEls.length && _getXmlChildText(errEls[0], 'IsError').toLowerCase() === 'true') {
+    Logger.log('❌  GetAppointments API error: ' +
+      (_getXmlChildText(errEls[0], 'ErrorMessage') || _getXmlChildText(errEls[0], 'Message') || 'Unknown'));
+    return;
+  }
+
+  var apptEls = [];
+  _findXmlElements(apptRoot, 'AppointmentData', apptEls);
+
+  // Most-recently-seen PatientCaseName per patient in this window.
+  var caseNameByPatient = {};
+  apptEls.forEach(function (el) {
+    var name = _findFirstXml(el, 'PatientFullName');
+    var caseName = (_findFirstXml(el, 'PatientCaseName') || '').trim();
+    if (!name || !caseName) return;
+    caseNameByPatient[_normName(name)] = caseName;
+  });
+
+  Logger.log('Window: ' + direction + '-looking (' + startTebra + ' → ' + endTebra + '). ' +
+    'Fetched ' + apptEls.length + ' appointments — ' +
+    Object.keys(caseNameByPatient).length + ' distinct patients have a PatientCaseName.');
+
+  // ── 2. Pull PrimaryInsurancePolicyCompanyName for all patients ──────────
+  // Reuses the real production function directly — not a re-implementation.
+  var patMap = _fetchTebraPatientStates(c); // keyed by _normName(fullName) → {state, insurance, providerName}
+
+  // ── 3. Keep only patients present in BOTH sources with non-blank values ─
+  var compared = [];
+  Object.keys(caseNameByPatient).forEach(function (key) {
+    var pat = patMap[key];
+    if (!pat || !pat.insurance) return;
+    compared.push({ key: key, caseName: caseNameByPatient[key], policyName: pat.insurance });
+  });
+
+  Logger.log(compared.length + ' patients have BOTH a PatientCaseName and a ' +
+    'PrimaryInsurancePolicyCompanyName populated.');
+
+  if (!compared.length) {
+    Logger.log('Nothing to compare — no overlap between the two sources in this window. ' +
+      'Try again on a day with more scheduled appointments, or widen the lookback window.');
+    return;
+  }
+
+  // ── 4. Redact, compare, log ──────────────────────────────────────────────
+  var sample = compared.slice(0, Math.min(sampleSize, compared.length));
+
+  // Heuristic only — flags case-name text that reads as a billing/administrative
+  // label rather than an insurance carrier name. Not exhaustive; a case name
+  // that doesn't match any pattern here still gets manually eyeballed in the
+  // log output itself (the raw redacted value is always printed alongside the
+  // flag), so this heuristic missing a real non-carrier label doesn't hide it.
+  var NON_CARRIER_PATTERNS = [
+    /self[\s-]*pay/i, /cash[\s-]*pay/i, /no\s*insurance/i, /uninsured/i,
+    /work(ers)?[\s-]*comp/i, /\bintake\b/i, /new\s*patient/i, /^case\b/i,
+    /^default\b/i, /\bmisc\b/i, /\bgeneral\b/i, /\btbd\b/i, /\bpending\b/i,
+    /\bunknown\b/i, /\bn\/?a\b/i,
+  ];
+  function looksNonCarrier(s) {
+    return NON_CARRIER_PATTERNS.some(function (re) { return re.test(s); });
+  }
+  function normForCompare(s) {
+    return String(s || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+  // Redacts to initials only ("Patient BA") — derived in-memory from the
+  // already-normalized name key, never logged or stored as the full name.
+  function redact(key) {
+    var parts = key.split(' ').filter(Boolean);
+    var first = parts[0] ? parts[0][0].toUpperCase() : '?';
+    var last = parts.length > 1 ? parts[parts.length - 1][0].toUpperCase() : '';
+    return 'Patient ' + first + last;
+  }
+
+  var agree = 0, mismatch = 0, mismatchNonCarrier = 0, mismatchTwoCarriers = 0;
+
+  Logger.log('══════════════════════════════════════════════════════════');
+  Logger.log('PatientCaseName vs. PrimaryInsurancePolicyCompanyName (' + direction + '-looking window) — ' +
+    'sample of ' + sample.length + ' of ' + compared.length + ' eligible');
+  Logger.log('══════════════════════════════════════════════════════════');
+
+  sample.forEach(function (row) {
+    var label = redact(row.key);
+    var same = normForCompare(row.caseName) === normForCompare(row.policyName);
+    if (same) {
+      agree++;
+      Logger.log(label + ':  case="' + row.caseName + '"  policy="' + row.policyName + '"  → AGREE');
+    } else {
+      mismatch++;
+      var nonCarrier = looksNonCarrier(row.caseName);
+      if (nonCarrier) mismatchNonCarrier++; else mismatchTwoCarriers++;
+      Logger.log(label + ':  case="' + row.caseName + '"  policy="' + row.policyName + '"  → MISMATCH' +
+        (nonCarrier ? '  [case reads as non-carrier text]' : '  [both read as real carrier names]'));
+    }
+  });
+
+  Logger.log('──────────────────────────────────────────────────────────');
+  Logger.log('SUMMARY');
+  Logger.log('  Compared:                          ' + sample.length);
+  Logger.log('  Agree:                             ' + agree);
+  Logger.log('  Mismatch:                          ' + mismatch);
+  Logger.log('    - non-carrier text in case name:  ' + mismatchNonCarrier);
+  Logger.log('    - two different real carrier names: ' + mismatchTwoCarriers);
+  Logger.log('══════════════════════════════════════════════════════════');
+  Logger.log('WRITE CHECK: this function made zero writes. No setValue/setValues/' +
+    'appendRow call exists anywhere in its body, and every Tebra call above was ' +
+    'a read operation (GetAppointments, GetAllPatients) — nothing was written to ' +
+    'any sheet or to Tebra during this run.');
+}
+
 // ─────────────────────────────────────────────────────────────────
 // MAINTENANCE: call once after adding columns to APPT_COLS to
 // update the header row in the Appointments sheet.
@@ -6821,7 +7040,12 @@ function debugImportMay12() {
 
 function runTebraApiImportThisWeek() {
   var tz = Session.getScriptTimeZone();
-  var today = new Date();
+  // tz-aware "today" — Session.getScriptTimeZone() -> Utilities.formatDate()
+  // -> _parseYMD(), same construction already proven correct in
+  // testTebraPatientCaseFields()/runTebraApiImportToday(), not a raw
+  // `new Date()` whose local-time methods (getDay()/getDate()) resolve
+  // against the Apps Script runtime's own default timezone instead of tz.
+  var today = _parseYMD(Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd'));
   var dow = today.getDay();
   var mon = new Date(today);
   mon.setDate(today.getDate() - ((dow + 6) % 7));
@@ -6838,7 +7062,9 @@ function runTebraApiImportThisWeek() {
 
 function runTebraApiImportEightWeeks() {
   var tz = Session.getScriptTimeZone();
-  var today = new Date();
+  // tz-aware "today" — same construction as runTebraApiImportThisWeek(),
+  // not a raw `new Date()`. See that function's comment for why.
+  var today = _parseYMD(Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd'));
   var dow = today.getDay();
 
   var lastMon = new Date(today);
@@ -6863,7 +7089,9 @@ function runTebraApiImportEightWeeks() {
 // importFromTebraApi() with a narrow date range.
 function fullSyncTebraApi(startDateStr, endDateStr) {
   var tz = Session.getScriptTimeZone();
-  var today = new Date();
+  // tz-aware "today" — same construction as runTebraApiImportThisWeek(),
+  // not a raw `new Date()`. See that function's comment for why.
+  var today = _parseYMD(Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd'));
 
   // If the UI didn't pass explicit dates, build a sensible default range.
   if (!startDateStr) {
@@ -6897,7 +7125,12 @@ function overnightSyncTebraApi() {
   var DAYS_FORWARD = 28;  // 4 weeks forward
 
   var tz = Session.getScriptTimeZone();
-  var today = new Date();
+  // tz-aware "today" — same construction as runTebraApiImportThisWeek(),
+  // not a raw `new Date()`. This is the real, automated nightly sync,
+  // running unattended on a 1-2am trigger — exactly the window where a
+  // mismatch between the runtime's default timezone and tz would most
+  // likely shift which calendar day "today" resolves to.
+  var today = _parseYMD(Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd'));
 
   var start = new Date(today); start.setDate(today.getDate() - DAYS_BACK);
   var end = new Date(today); end.setDate(today.getDate() + DAYS_FORWARD);
@@ -8032,13 +8265,21 @@ function _fetchTebraPatientStates(c) {
     throw new Error('Tebra GetAllPatients API error: ' + errMsg);
   }
 
-  // Look for patient elements — Tebra may wrap them as PatientData or Patient
+  // Look for patient elements — Tebra may wrap them as PatientData, Patient,
+  // or PatientBatchData (confirmed 2026-08-26 via testTebraGetPatientsRaw()'s
+  // raw response for this account — neither of the first two matched).
   var patientEls = [];
   _findXmlElements(root, 'PatientData', patientEls);
   if (patientEls.length === 0) {
     _findXmlElements(root, 'Patient', patientEls);
     if (patientEls.length > 0) {
       Logger.log('ℹ️  Found patient records under <Patient> (not <PatientData>).');
+    }
+  }
+  if (patientEls.length === 0) {
+    _findXmlElements(root, 'PatientBatchData', patientEls);
+    if (patientEls.length > 0) {
+      Logger.log('ℹ️  Found patient records under <PatientBatchData> (not <PatientData> or <Patient>).');
     }
   }
   Logger.log('Tebra GetAllPatients returned ' + patientEls.length + ' patients.');
@@ -8450,6 +8691,11 @@ function testTebraGetPatientsRaw() {
     var firstPatStart = text.indexOf('<PatientData');
     if (firstPatStart === -1) firstPatStart = text.indexOf('<Patient ');
     if (firstPatStart === -1) firstPatStart = text.indexOf('<Patient>');
+    // PatientBatchData — confirmed 2026-08-26 as this account's real container
+    // name via this same diagnostic's raw-response fallback below; neither of
+    // the two above matched it. Checked last, same order as the fallback
+    // chain in _fetchTebraPatientStates().
+    if (firstPatStart === -1) firstPatStart = text.indexOf('<PatientBatchData');
 
     if (firstPatStart !== -1) {
       Logger.log('');
