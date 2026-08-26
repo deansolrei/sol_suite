@@ -13724,7 +13724,7 @@
                 setUDate('');
             }
             function rmUDate(v) {setD(p => ({...p, unsigned: p.unsigned.filter(x => x !== v)}));}
-            function handleSave() {
+            function doHandleSave() {
                 // Intake/InsVerified/Autopay are batched in local state (d)
                 // until this Save click, unlike checklistNote which saves on
                 // blur — so attribution has to fire from here, and only for
@@ -13744,6 +13744,21 @@
                         if (autopayChanged) gsr('saveAutopay', appt.id, d.autopay).catch(() => { });
                     });
                 }
+            }
+
+            // Warns only when Insurance Carrier actually changed from the
+            // appointment's raw current value. Named insuranceCarrierChanged
+            // (not insChanged) to stay clearly distinct from doHandleSave's
+            // own insChanged, which tracks the unrelated Insurance Verified
+            // checklist boolean (d.ins), not this field.
+            const [showInsWarning, setShowInsWarning] = useState(false);
+            function handleSave() {
+                const insuranceCarrierChanged = (d.insuranceCarrier || '') !== (appt.insuranceCarrier || '');
+                if (insuranceCarrierChanged) {
+                    setShowInsWarning(true);
+                    return;
+                }
+                doHandleSave();
             }
             function RadioRow({label, field, req, onChange: onChangeProp}) {
                 return (
@@ -13992,6 +14007,12 @@
                             {!confirmDelete && <button className="btn btn-s" onClick={onClose}>Cancel</button>}
                             {!confirmDelete && <button className="btn btn-p" onClick={handleSave}>Save &amp; Update Status</button>}
                         </div>
+                        {showInsWarning && (
+                            <InsuranceCarrierWarningDialog
+                                onCancel={() => setShowInsWarning(false)}
+                                onConfirm={() => { setShowInsWarning(false); doHandleSave(); }}
+                            />
+                        )}
                     </div>
                 </div>
             );
@@ -17030,6 +17051,37 @@
            editing UI in this app already produces. Not scoped out here;
            this popup is just another entry point into that one shared,
            system-wide behavior, not a special case. ════════════════════ */
+        // ── Insurance Carrier change warning — shared across all four edit
+        // surfaces (ProvChannelModal, BillerApptModal, ClaimSubmitModal,
+        // PatientModal). Presentational only: each surface owns its own
+        // "did the value actually change" check (against the appointment's
+        // raw current insuranceCarrier, not any patient-record fallback used
+        // just to pre-fill the field) and re-invokes its own real save
+        // function from onConfirm. (2026-08-26)
+        function InsuranceCarrierWarningDialog({onConfirm, onCancel}) {
+            return (
+                <div className="overlay" onClick={onCancel} style={{zIndex: 10000}}>
+                    <div className="modal sm" onClick={e => e.stopPropagation()}>
+                        <div className="m-hdr">
+                            <div className="m-title">Confirm Insurance Carrier Change</div>
+                            <button className="m-close" onClick={onCancel}>×</button>
+                        </div>
+                        <div className="m-body">
+                            <p style={{fontSize: 13, lineHeight: 1.5, margin: 0}}>
+                                You're changing this appointment's Insurance Carrier. This affects only
+                                this appointment, and once saved, the automated Tebra sync will never
+                                overwrite it again.
+                            </p>
+                        </div>
+                        <div className="m-foot">
+                            <button className="btn btn-s" onClick={onCancel}>Cancel</button>
+                            <button className="btn btn-p" onClick={onConfirm}>Confirm &amp; Save</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         function ProvChannelModal({a, patientDb, onUpdate, onClose, onOpenComments}) {
             const [savingId, setSavingId] = useState(null); // METHODS id currently in flight, or null
             const [errId, setErrId] = useState(null);
@@ -17067,7 +17119,7 @@
             // savePatientClaimRecord (patient-record path, confirmed out of
             // scope — it writes ten other fields this popup has no draft
             // state for, which would blank them out).
-            function saveInsurance() {
+            function doSaveInsurance() {
                 if (savingIns) return;
                 setSavingIns(true);
                 setInsErr(false);
@@ -17077,6 +17129,19 @@
                     })
                     .catch(() => setInsErr(true))
                     .finally(() => setSavingIns(false));
+            }
+
+            // Warns only when the value actually changed from the appointment's
+            // raw current insuranceCarrier — not the patient-record fallback
+            // used just to pre-fill this field, so opening the popup and
+            // saving without editing anything never triggers the dialog.
+            const [showInsWarning, setShowInsWarning] = useState(false);
+            function saveInsurance() {
+                if (insurance !== (a.insuranceCarrier || '')) {
+                    setShowInsWarning(true);
+                    return;
+                }
+                doSaveInsurance();
             }
 
             // Close-out handoff to Comments (Part 2c) — reuses the exact same
@@ -17146,6 +17211,12 @@
                                 {savingIns ? 'Saving…' : 'Save'}
                             </button>
                         </div>
+                        {showInsWarning && (
+                            <InsuranceCarrierWarningDialog
+                                onCancel={() => setShowInsWarning(false)}
+                                onConfirm={() => { setShowInsWarning(false); doSaveInsurance(); }}
+                            />
+                        )}
                     </div>
                 </div>
             );
@@ -19751,7 +19822,7 @@
             const canSubmit = hasCpt && isSigned && localAppt.billing !== 'submitted';
             const isSubmitted = localAppt.billing === 'submitted';
 
-            function handleSubmit() {
+            function doHandleSubmit() {
                 // Auto-stamp submitted date and default status on first submission
                 const today = new Date().toISOString().slice(0, 10);
                 const submittedDate = claimSubmittedDate || today;
@@ -19775,7 +19846,7 @@
                 });
                 onClose();
             }
-            function handleSave() {
+            function doHandleSave() {
                 // Once a claim is marked submitted, routine saves (paid
                 // amount, claim status, notes, etc.) must never downgrade
                 // billing back to 'ready'/'pending' as a side effect — only
@@ -19786,6 +19857,26 @@
                     : (hasCpt && isSigned ? 'ready' : localAppt.billing);
                 onUpdate(buildFinalAppt({billing}));
                 onClose();
+            }
+
+            // Warns only when Insurance Carrier actually changed from the
+            // appointment's raw current value — not the patient-record
+            // fallback used just to pre-fill `insurance` on open. One shared
+            // pendingInsuranceAction (rather than a plain boolean) since this
+            // modal has two independent save actions — Save Changes and
+            // Submit — either of which can carry a changed value; Confirm
+            // re-invokes whichever one was actually requested.
+            const [pendingInsuranceAction, setPendingInsuranceAction] = useState(null); // null | 'save' | 'submit'
+            function insuranceChanged() {
+                return insurance !== (appt.insuranceCarrier || '');
+            }
+            function handleSave() {
+                if (insuranceChanged()) { setPendingInsuranceAction('save'); return; }
+                doHandleSave();
+            }
+            function handleSubmit() {
+                if (insuranceChanged()) { setPendingInsuranceAction('submit'); return; }
+                doHandleSubmit();
             }
 
             const prov = PROVIDERS.find(p => p.id === appt.provID);
@@ -20302,6 +20393,16 @@
                             }}
                             onClose={() => setRxOpen(false)} />
                     )}
+                    {pendingInsuranceAction && (
+                        <InsuranceCarrierWarningDialog
+                            onCancel={() => setPendingInsuranceAction(null)}
+                            onConfirm={() => {
+                                const action = pendingInsuranceAction;
+                                setPendingInsuranceAction(null);
+                                if (action === 'submit') doHandleSubmit(); else doHandleSave();
+                            }}
+                        />
+                    )}
                 </>
             );
         }
@@ -20603,6 +20704,21 @@
             const msKey = d.method === 'alma' ? 'alma' : d.method === 'hw' ? 'hw' : d.method === 'grow' ? 'grow' : 'direct';
             const ms = d[msKey] || {text: '', valid: null};
 
+            // Warns only when Insurance Carrier actually changed from the
+            // appointment's raw current value — d starts as an exact copy of
+            // appt, so no fallback-blending complication here.
+            const [showInsWarning, setShowInsWarning] = React.useState(false);
+            function doSave() {
+                onSave({...d, status: computeStatus(d)});
+            }
+            function attemptSave() {
+                if ((d.insuranceCarrier || '') !== (appt.insuranceCarrier || '')) {
+                    setShowInsWarning(true);
+                    return;
+                }
+                doSave();
+            }
+
             // d.comms synced with readBy updates in useEffect above
             // Send is FINAL — persist immediately via onUpdate without closing
             const addComm = makeAddComm(commNote, commTo, d, setD, setCommNote, onUpdate);
@@ -20743,16 +20859,21 @@
                         </div>
                         <div className="m-foot">
                             <button className="btn btn-s" onClick={onClose}>Cancel</button>
-                            <button className="btn btn-p" onClick={() => {
-                                // Patient Insurance Carrier now lives in d.insuranceCarrier —
-                                // appointment-level (2026-08-26), part of the same onSave
-                                // call below, same target ProvChannelModal uses. No longer
-                                // a separate savePatientClaimRecord call to the patient
-                                // record (confirmed out of scope — see ProvChannelModal's
-                                // own comment on why).
-                                onSave({...d, status: computeStatus(d)});
-                            }}>Save Changes</button>
+                            {/* Patient Insurance Carrier now lives in d.insuranceCarrier —
+                                appointment-level (2026-08-26), part of the same onSave
+                                call, same target ProvChannelModal uses. No longer a
+                                separate savePatientClaimRecord call to the patient
+                                record (confirmed out of scope — see ProvChannelModal's
+                                own comment on why). attemptSave() gates only through the
+                                warning dialog when insuranceCarrier itself changed. */}
+                            <button className="btn btn-p" onClick={attemptSave}>Save Changes</button>
                         </div>
+                        {showInsWarning && (
+                            <InsuranceCarrierWarningDialog
+                                onCancel={() => setShowInsWarning(false)}
+                                onConfirm={() => { setShowInsWarning(false); doSave(); }}
+                            />
+                        )}
                     </div>
                 </div>
             );
