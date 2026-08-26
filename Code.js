@@ -5542,12 +5542,24 @@ function testCompareInsuranceSources(sampleSize, direction) {
   var startTebra = _tebraDateFmt(start);
   var endTebra = _tebraDateFmt(end);
 
+  // Fields list is production's EXACT current request, verbatim, copied
+  // from _fetchTebraAppointments() (2026-08-26) — not the 7-field version
+  // just tested, not an inference from a related-but-different list. This
+  // directly tests what production itself actually sends: 9 fields,
+  // including PatientID and ResourceID1, still without
+  // PatientCasePayerScenario.
   var apptBodyXml =
     '<ns:GetAppointments><ns:request>' +
     _tebraHeader(c) +
     '<ns:Fields>' +
-    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:ConfirmationStatus>true</ns:ConfirmationStatus>' +
+    '<ns:ID>true</ns:ID>' +
+    '<ns:PatientCaseID>true</ns:PatientCaseID>' +
     '<ns:PatientCaseName>true</ns:PatientCaseName>' +
+    '<ns:PatientFullName>true</ns:PatientFullName>' +
+    '<ns:PatientID>true</ns:PatientID>' +
+    '<ns:ResourceID1>true</ns:ResourceID1>' +
+    '<ns:ResourceName1>true</ns:ResourceName1>' +
     '<ns:StartDate>true</ns:StartDate>' +
     '</ns:Fields>' +
     '<ns:Filter>' +
