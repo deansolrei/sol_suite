@@ -12716,6 +12716,31 @@
             return t.replace(/\s*(AM|PM)/i, ' $1').trim();
         }
 
+        // ── _apptTimeHasPassed(a) — client-side mirror of Code.js's own
+        // _apptTimeHasPassed(dateVal, timeVal), the established "has THIS
+        // SPECIFIC appointment's own date+time passed" rule already used
+        // for Signed reconciliation and unsigned-note eligibility. NOT the
+        // same concept as dayMode: dayMode is a manual Pre-Visit/Post-Visit
+        // TAB TOGGLE that changes how the whole day's list renders — every
+        // appointment shows in both tabs regardless of whether it has
+        // actually happened, so it says nothing about any one appointment's
+        // real timing. This is a genuine per-appointment fact, computed
+        // fresh from a.date/a.time (both already present on every
+        // appointment object) — same string-comparison approach as the
+        // backend (no Date() object arithmetic, avoiding the tz-drift class
+        // of bug this session already found and fixed repeatedly elsewhere
+        // tonight). a.date is 'YYYY-MM-DD', a.time is 24-hour 'HH:MM' —
+        // both already in that shape on the raw appt object (fmtTime() only
+        // reformats for display, never touches the stored value).
+        function _apptTimeHasPassed(a) {
+            if (!a || !a.date) return false;
+            const key = a.date + 'T' + (a.time || '00:00');
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const nowKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            return key <= nowKey;
+        }
+
         /* ═══════════════════════════════════════════════════════════
            SMALL COMPONENTS
         ═══════════════════════════════════════════════════════════ */
@@ -14185,7 +14210,14 @@
            Day View (💬 button in each row).
            Shows: Messages (read/reply) · Rx · CPT Codes · Note Signed
         ════════════════════════════════════════════════════════════════ */
-        function ProviderApptModal({appt, onSave, onUpdate, onClose}) {
+        // hasOccurred: whether THIS appointment's own date+time has passed —
+        // computed once by the caller via _apptTimeHasPassed(appt) and
+        // threaded in explicitly, not derived here, so every mount site
+        // (and any future one) has to make a deliberate choice rather than
+        // this modal silently assuming Post-Visit context. Gates only the
+        // three action sections (Rx / CPT Codes / Note Signed) — Messages
+        // and Intake Updates stay fully usable regardless of timing.
+        function ProviderApptModal({appt, onSave, onUpdate, onClose, hasOccurred}) {
             const [comms, setComms] = useState(appt.comms || []);
             const [rxMeds, setRxMeds] = useState(appt.rxMeds || []);
             const [cpt, setCpt] = useState(appt.cpt || []);
@@ -14346,18 +14378,24 @@
                             <div className="pam-section">
                                 <div className="pam-sec-hdr rx-hdr">
                                     💊 Controlled Substances Prescribed
-                                    {rxMeds.length > 0 && <span style={{background: 'var(--paper-deep)', color: 'var(--brand-primary)', borderRadius: 20, padding: '1px 8px', fontSize: 10, fontWeight: 900}}>{rxMeds.length}</span>}
+                                    {hasOccurred && rxMeds.length > 0 && <span style={{background: 'var(--paper-deep)', color: 'var(--brand-primary)', borderRadius: 20, padding: '1px 8px', fontSize: 10, fontWeight: 900}}>{rxMeds.length}</span>}
                                 </div>
                                 <div className="pam-sec-body">
-                                    <div className="pam-rx-list">
-                                        {rxMeds.length === 0
-                                            ? <span style={{fontSize: 12, color: '#777355', fontStyle: 'italic'}}>None prescribed</span>
-                                            : rxMeds.map((m, i) => <span key={i} className="rx-pv-chip" style={{fontSize: 13}}>{m}</span>)
-                                        }
-                                    </div>
-                                    <button className="btn btn-s btn-sm" onClick={() => setRxModal(true)}>
-                                        {rxMeds.length > 0 ? '✎ Edit Rx' : '+ Add Rx'}
-                                    </button>
+                                    {!hasOccurred ? (
+                                        <span style={{fontSize: 12, color: '#777355', fontStyle: 'italic'}}>Available after the visit</span>
+                                    ) : (
+                                        <>
+                                            <div className="pam-rx-list">
+                                                {rxMeds.length === 0
+                                                    ? <span style={{fontSize: 12, color: '#777355', fontStyle: 'italic'}}>None prescribed</span>
+                                                    : rxMeds.map((m, i) => <span key={i} className="rx-pv-chip" style={{fontSize: 13}}>{m}</span>)
+                                                }
+                                            </div>
+                                            <button className="btn btn-s btn-sm" onClick={() => setRxModal(true)}>
+                                                {rxMeds.length > 0 ? '✎ Edit Rx' : '+ Add Rx'}
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
@@ -14365,18 +14403,24 @@
                             <div className="pam-section">
                                 <div className="pam-sec-hdr cpt-hdr">
                                     📋 CPT Codes
-                                    {normCpt(cpt).length > 0 && <span style={{background: '#FBFBF3', color: '#1C6FA3', borderRadius: 0, padding: '1px 8px', fontSize: 10, fontWeight: 900}}>{normCpt(cpt).length}</span>}
+                                    {hasOccurred && normCpt(cpt).length > 0 && <span style={{background: '#FBFBF3', color: '#1C6FA3', borderRadius: 0, padding: '1px 8px', fontSize: 10, fontWeight: 900}}>{normCpt(cpt).length}</span>}
                                 </div>
                                 <div className="pam-sec-body">
-                                    <div className="pam-cpt-chips">
-                                        {normCpt(cpt).length === 0
-                                            ? <span style={{fontSize: 12, color: '#777355', fontStyle: 'italic'}}>No codes added yet</span>
-                                            : normCpt(cpt).map(c => <span key={c} className="cpt-chip" style={{fontSize: 13}}>{c}</span>)
-                                        }
-                                    </div>
-                                    <button className="btn btn-s btn-sm" onClick={() => setCptModal(true)}>
-                                        {normCpt(cpt).length > 0 ? '✎ Edit Codes' : '+ Add Codes'}
-                                    </button>
+                                    {!hasOccurred ? (
+                                        <span style={{fontSize: 12, color: '#777355', fontStyle: 'italic'}}>Available after the visit</span>
+                                    ) : (
+                                        <>
+                                            <div className="pam-cpt-chips">
+                                                {normCpt(cpt).length === 0
+                                                    ? <span style={{fontSize: 12, color: '#777355', fontStyle: 'italic'}}>No codes added yet</span>
+                                                    : normCpt(cpt).map(c => <span key={c} className="cpt-chip" style={{fontSize: 13}}>{c}</span>)
+                                                }
+                                            </div>
+                                            <button className="btn btn-s btn-sm" onClick={() => setCptModal(true)}>
+                                                {normCpt(cpt).length > 0 ? '✎ Edit Codes' : '+ Add Codes'}
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
@@ -14385,7 +14429,9 @@
                                 <div className="pam-sec-hdr sign-hdr">✍ Note Signature</div>
                                 <div className="pam-sec-body">
                                     <div className="pam-sign-row">
-                                        {out ? (
+                                        {!hasOccurred ? (
+                                            <span style={{fontSize: 12, color: '#777355', fontStyle: 'italic'}}>Available after the visit</span>
+                                        ) : out ? (
                                             <>
                                                 <span style={{background: '#FBFBF3', border: '1px solid var(--success)', color: 'var(--success)', borderRadius: 0, padding: '6px 16px', fontSize: 14, fontWeight: 800}}>✓ Note Signed</span>
                                                 <button className="btn btn-s btn-sm" onClick={() => setOut(false)}>↩ Undo Signature</button>
@@ -17860,6 +17906,7 @@
                     {pamModal && (
                         <ProviderApptModal
                             appt={pamModal}
+                            hasOccurred={_apptTimeHasPassed(pamModal)}
                             onUpdate={u => {onUpdate(u); setPamModal(prev => prev ? {...prev, comms: u.comms, scrData: u.scrData, scrNote: u.scrNote, checklistNote: u.checklistNote} : prev);}}
                             onSave={u => {onUpdate(u); setPamModal(null);}}
                             onClose={() => setPamModal(null)}
@@ -18450,6 +18497,7 @@
                     {modal && (
                         <ProviderApptModal
                             appt={modal.a}
+                            hasOccurred={_apptTimeHasPassed(modal.a)}
                             onUpdate={u => {onUpdateForDate(modal.ds, u); setModal(prev => prev ? {...prev, a: {...prev.a, comms: u.comms}} : prev);}}
                             onSave={u => {save(modal.ds, u);}}
                             onClose={() => setModal(null)}
