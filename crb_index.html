@@ -13638,7 +13638,6 @@
                     ...(appt.scrData || {}),
                 },
                 scrNote: appt.scrNote || '',
-                checklistNote: appt.checklistNote || '',
                 alma: {...appt.alma},
                 hw: {...appt.hw},
                 grow: {...(appt.grow || {text: '', valid: null})},
@@ -13700,19 +13699,6 @@
                 setD(p => ({...p, [field]: val}));
                 if (onUpdate) return onUpdate({...d, [field]: val});
             }
-            // Same as syncField, plus stamps ChecklistNote attribution once the
-            // primary save confirms — mirrors the sequencing already used for
-            // claim submission (fire only on {ok:true}, never before, never on
-            // failure). Kept separate from syncField itself since that's shared
-            // with scrNote, which doesn't get this treatment.
-            function syncChecklistNote(val) {
-                const p = syncField('checklistNote', val);
-                if (p && typeof p.then === 'function') {
-                    p.then(result => {
-                        if (result && result.ok) gsr('saveChecklistNote', appt.id, val).catch(() => { });
-                    });
-                }
-            }
             function _msKeyOf(method) {
                 return method === 'alma' ? 'alma' : method === 'hw' ? 'hw' : method === 'grow' ? 'grow' : 'direct';
             }
@@ -13730,12 +13716,12 @@
             const addComm = makeAddComm(commNote, commTo, d, setD, setCommNote, onUpdate);
             function doHandleSave() {
                 // Intake/InsVerified/Autopay are batched in local state (d)
-                // until this Save click, unlike checklistNote which saves on
-                // blur — so attribution has to fire from here, and only for
-                // whichever of the three actually changed from the original
-                // appt this modal opened with. Sequenced after the primary
-                // save confirms {ok:true}, same pattern as everywhere else in
-                // this feature — no phantom stamp if the save fails.
+                // until this Save click — so attribution has to fire from
+                // here, and only for whichever of the three actually changed
+                // from the original appt this modal opened with. Sequenced
+                // after the primary save confirms {ok:true}, same pattern as
+                // everywhere else in this feature — no phantom stamp if the
+                // save fails.
                 const intakeChanged = d.intake !== appt.intake;
                 const insChanged = d.ins !== appt.ins;
                 const autopayChanged = d.autopay !== appt.autopay;
@@ -13879,19 +13865,6 @@
                                     <RadioRow label="Intake Paperwork Complete" field="intake" req onChange={v => updRequired('intake', v)} />
                                     <RadioRow label="Insurance Verified &amp; Valid" field="ins" req onChange={v => updRequired('ins', v)} />
                                     <RadioRow label="Autopay / Credit Card on File" field="autopay" req onChange={v => updRequired('autopay', v)} />
-                                    <div style={{marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border)'}}>
-                                        <div style={{fontSize: 11, fontWeight: 800, color: '#777355', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5}}>
-                                            ⚠️ Issue Notes
-                                            <span style={{fontSize: 10, fontWeight: 600, color: 'var(--warning)', textTransform: 'none', letterSpacing: 0}}>— reason for any Issue designation</span>
-                                        </div>
-                                        <textarea
-                                            className="scr-note-area"
-                                            placeholder="Describe any issues with intake paperwork, insurance, or autopay (e.g. insurance expired, card declined, paperwork incomplete)…"
-                                            value={d.checklistNote || ''}
-                                            onChange={e => upd('checklistNote', e.target.value)}
-                                            onBlur={e => syncChecklistNote(e.target.value)}
-                                        />
-                                    </div>
                                 </div>
                                 <div style={{background: '#FBFBF3', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid var(--border)'}}>
                                     <div style={{fontSize: 11, fontWeight: 800, color: '#777355', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 4}}>Screeners</div>
