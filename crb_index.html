@@ -5018,6 +5018,22 @@
             box-shadow: 0 0 0 2px rgba(9, 55, 31, .1)
         }
 
+        /* ── Message input border (2026-08-26) — scoped to .fi.msg-input
+           specifically, NOT a change to .fi itself. .fi's own border color
+           (#FBFBF3) exactly matches both its own background and .modal's
+           background, so it's invisible everywhere else it's used (Insurance
+           Carrier, MemberID, every other form field) — deliberately left
+           alone; this class only adds a visible border where explicitly
+           applied. var(--brand-primary) (#377BAD) against #FBFBF3 gives a
+           relative-luminance contrast ratio of ~4.4:1 (comparable to WCAG
+           AA's 4.5:1 text threshold) — clearly visible, versus var(--warning)
+           against the same background at ~1.4:1 (the gold .scr-note-area
+           border, intentionally not reused here since --warning already
+           means "pending/issue" elsewhere in this app). */
+        .fi.msg-input {
+            border-color: var(--brand-primary);
+        }
+
         textarea.fi {
             resize: vertical;
             min-height: 60px
@@ -13950,15 +13966,15 @@
                                 </div>
                             </div>
 
-                            {/* ── SECTION 3: COMMENTS ── */}
+                            {/* ── SECTION 3: MESSAGES ── */}
                             <div className="step">
-                                <div className="step-hd"><span className="step-num">3</span> Comments</div>
+                                <div className="step-hd"><span className="step-num">3</span> Messages</div>
                                 <div style={{fontSize: 12, color: '#777355', marginBottom: 8, fontStyle: 'italic'}}>
-                                    Shared staff comments — date, time, and author logged automatically.
+                                    Staff messaging — date, time, and author logged automatically. 🔴 Unread message waiting for you · 🟡 Unread (sent by you) · 🟢 All read.
                                 </div>
                                 <div className="pam-comm-list" ref={commListRef} style={{marginBottom: 8}}>
                                     {(d.comms || []).length === 0 && (
-                                        <div style={{fontSize: 12, color: '#777355', padding: '8px 0', fontStyle: 'italic'}}>No comments yet.</div>
+                                        <div style={{fontSize: 12, color: '#777355', padding: '8px 0', fontStyle: 'italic'}}>No messages yet.</div>
                                     )}
                                     {(d.comms || []).map((c, i) => <CommItem key={i} c={c} />)}
                                 </div>
@@ -13971,7 +13987,7 @@
                                     >
                                         {toOptions.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
                                     </select>
-                                    <input className="fi" style={{flex: 1}} placeholder="Add comment…" value={commNote}
+                                    <input className="fi msg-input" style={{flex: 1}} placeholder="Add message…" value={commNote}
                                         onChange={e => setCommNote(e.target.value)} onKeyDown={e => e.key === 'Enter' && addComm()} />
                                     <button className="pam-send-btn" onClick={addComm}>Send</button>
                                 </div>
@@ -14212,7 +14228,7 @@
            PROVIDER APPOINTMENT MODAL
            Opened from Provider Week View (click appointment) and Provider
            Day View (💬 button in each row).
-           Shows: Comments (read/reply) · Rx · CPT Codes · Note Signed
+           Shows: Messages (read/reply) · Rx · CPT Codes · Note Signed
         ════════════════════════════════════════════════════════════════ */
         function ProviderApptModal({appt, onSave, onUpdate, onClose}) {
             const [comms, setComms] = useState(appt.comms || []);
@@ -14280,16 +14296,19 @@
                         </div>
 
                         <div className="pam-body">
-                            {/* ── Section 1: COMMENTS ── */}
+                            {/* ── Section 1: MESSAGES ── */}
                             <div className="pam-section pam-comm-section">
                                 <div className="pam-sec-hdr comms">
-                                    💬 Comments
+                                    💬 Messages
                                     {comms.length > 0 && <span style={{background: '#F0FDF4', color: '#065F46', borderRadius: 20, padding: '1px 8px', fontSize: 10, fontWeight: 900}}>{comms.length}</span>}
                                 </div>
                                 <div className="pam-sec-body" style={{flexDirection: 'column', gap: 8}}>
+                                    <div style={{fontSize: 12, color: '#777355', fontStyle: 'italic'}}>
+                                        Staff messaging — date, time, and author logged automatically. 🔴 Unread message waiting for you · 🟡 Unread (sent by you) · 🟢 All read.
+                                    </div>
                                     <div className="pam-comm-list" ref={commListRef}>
                                         {comms.length === 0 && (
-                                            <div style={{fontSize: 12, color: '#777355', fontStyle: 'italic', padding: '8px 0'}}>No comments yet — start the conversation.</div>
+                                            <div style={{fontSize: 12, color: '#777355', fontStyle: 'italic', padding: '8px 0'}}>No messages yet.</div>
                                         )}
                                         {comms.map((c, i) => <CommItem key={i} c={c} />)}
                                     </div>
@@ -14303,8 +14322,8 @@
                                             {toOptions.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
                                         </select>
                                         <input
-                                            className="fi" style={{flex: 1}}
-                                            placeholder="Add a comment…"
+                                            className="fi msg-input" style={{flex: 1}}
+                                            placeholder="Add message…"
                                             value={commNote}
                                             onChange={e => setCommNote(e.target.value)}
                                             onKeyDown={e => e.key === 'Enter' && sendComment()}
@@ -17188,8 +17207,8 @@
                         </div>
                         <div className="m-foot">
                             <button className="btn btn-s" onClick={openComments} disabled={!!savingId || savingIns}
-                                title="Open comments for this appointment">
-                                💬 Comments
+                                title="Open messages for this appointment">
+                                💬 Messages
                             </button>
                             <button className="btn btn-p" onClick={saveInsurance} disabled={savingIns}>
                                 {savingIns ? 'Saving…' : 'Save'}
@@ -18595,9 +18614,12 @@
                             <button className="pam-close" onClick={onClose} style={{fontSize: 18, lineHeight: 1}}>×</button>
                         </div>
                         <div className="cp-body">
+                            <div style={{fontSize: 11, color: '#777355', fontStyle: 'italic'}}>
+                                Staff messaging — date, time, and author logged automatically. 🔴 Unread message waiting for you · 🟡 Unread (sent by you) · 🟢 All read.
+                            </div>
                             <div className="cp-list" ref={commListRef}>
                                 {comms.length === 0
-                                    ? <div className="cp-empty">No comments yet.</div>
+                                    ? <div className="cp-empty">No messages yet.</div>
                                     : comms.map((c, i) => <CommItem key={i} c={c} />)
                                 }
                             </div>
@@ -18611,8 +18633,8 @@
                                     {toOptions.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
                                 </select>
                                 <input
-                                    className="fi" style={{flex: 1, fontSize: 12}}
-                                    placeholder="Add a comment…"
+                                    className="fi msg-input" style={{flex: 1, fontSize: 12}}
+                                    placeholder="Add message…"
                                     value={commNote}
                                     onChange={e => setCommNote(e.target.value)}
                                     onKeyDown={e => e.key === 'Enter' && sendComment()}
@@ -20661,7 +20683,7 @@
            Allows the biller to view and edit any appointment — not just
            Direct-pay / Claim Submit cards. Provides access to:
              · Insurance / billing method info (editable)
-             · Comments log (viewable + addable by biller)
+             · Messages log (viewable + addable by biller)
              · Clinic note status (read-only badge)
            Does NOT replace ClaimSubmitModal for direct-pay claim entry.
         ════════════════════════════════════════════════════════════════ */
@@ -20827,17 +20849,17 @@
                                 {d.out && <div style={{marginTop: 8, fontSize: 12, color: 'var(--success)', fontWeight: 700}}>✓ Provider has signed this note.</div>}
                             </div>
 
-                            {/* ── Section 3: Comments ── */}
+                            {/* ── Section 3: Messages ── */}
                             <div className="step">
                                 <div className="step-hd" style={{background: 'linear-gradient(135deg,var(--warning),var(--warning))', color: '#FFFFFF', borderRadius: 8, padding: '8px 12px', marginBottom: 10}}>
-                                    💬 Comments
+                                    💬 Messages
                                 </div>
                                 <div style={{fontSize: 12, color: '#777355', marginBottom: 8, fontStyle: 'italic'}}>
-                                    Shared notes between all staff. Add billing-specific notes here.
+                                    Staff messaging — date, time, and author logged automatically. 🔴 Unread message waiting for you · 🟡 Unread (sent by you) · 🟢 All read.
                                 </div>
                                 <div className="pam-comm-list" ref={commListRef} style={{marginBottom: 8}}>
                                     {(d.comms || []).length === 0 && (
-                                        <div style={{fontSize: 12, color: '#777355', padding: '8px 0', fontStyle: 'italic'}}>No comments yet.</div>
+                                        <div style={{fontSize: 12, color: '#777355', padding: '8px 0', fontStyle: 'italic'}}>No messages yet.</div>
                                     )}
                                     {(d.comms || []).map((c, i) => <CommItem key={i} c={c} />)}
                                 </div>
@@ -20850,7 +20872,7 @@
                                     >
                                         {toOptions.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
                                     </select>
-                                    <input className="fi" style={{flex: 1}} placeholder="Add billing note…" value={commNote}
+                                    <input className="fi msg-input" style={{flex: 1}} placeholder="Add message…" value={commNote}
                                         onChange={e => setCommNote(e.target.value)} onKeyDown={e => e.key === 'Enter' && addComm()} />
                                     <button className="pam-send-btn" onClick={addComm}>Send</button>
                                 </div>
