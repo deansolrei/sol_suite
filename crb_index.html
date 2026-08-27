@@ -13639,7 +13639,6 @@
                 const opts = COMM_TO_OPTIONS[r] || COMM_TO_OPTIONS.assistant;
                 return (opts[0] && opts[0].v) || 'all';
             });
-            const [uDate, setUDate] = useState('');
             const commListRef = React.useRef(null);
             const myRole = _crbUser.role || 'assistant';
             const toOptions = COMM_TO_OPTIONS[myRole] || COMM_TO_OPTIONS.assistant;
@@ -13718,12 +13717,6 @@
             }
 
             const addComm = makeAddComm(commNote, commTo, d, setD, setCommNote, onUpdate);
-            function addUDate() {
-                const v = uDate.trim();
-                if (v && !(d.unsigned || []).includes(v)) setD(p => ({...p, unsigned: [...(p.unsigned || []), v]}));
-                setUDate('');
-            }
-            function rmUDate(v) {setD(p => ({...p, unsigned: p.unsigned.filter(x => x !== v)}));}
             function doHandleSave() {
                 // Intake/InsVerified/Autopay are batched in local state (d)
                 // until this Save click, unlike checklistNote which saves on
@@ -13845,19 +13838,26 @@
                                     <input className="fi" value={d.insuranceCarrier || ''} onChange={e => upd('insuranceCarrier', e.target.value)}
                                         placeholder="e.g. Ambetter" />
                                 </div>
+                                {/* Read-only (2026-08-26) — the old Add/Remove editor never actually
+                            saved (saveAppointment preserves the sheet's UnsignedDates cell as-is
+                            regardless of client input); d.unsigned is already the live-computed
+                            value getAppointments() overrides on every fetch, so this just displays
+                            it. Note status reuses the exact .ns-badge markup/classes ProviderView's
+                            post-visit badge and NoteBoardPanel already render this same field
+                            with — not recreated from scratch. No inputs, no click handlers. */}
                                 <div className="frm" style={{marginTop: 10}}>
                                     <label className="fl">Unsigned Note Dates</label>
-                                    <div style={{display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6}}>
-                                        {(d.unsigned || []).map(v => (
-                                            <span key={v} className="uchip">({v}) <span className="uchip-x" onClick={() => rmUDate(v)}>×</span></span>
-                                        ))}
-                                        {!(d.unsigned && d.unsigned.length) && <span style={{fontSize: 12, color: '#777355'}}>No unsigned notes</span>}
+                                    <div style={{fontSize: 12, marginBottom: 8}}>
+                                        {(d.unsigned || []).length > 0
+                                            ? d.unsigned.join(', ')
+                                            : <span style={{color: '#777355'}}>No unsigned notes due</span>}
                                     </div>
-                                    <div style={{display: 'flex', gap: 8}}>
-                                        <input className="fi" style={{flex: 1}} placeholder="e.g. 3/11/26" value={uDate}
-                                            onChange={e => setUDate(e.target.value)} onKeyDown={e => e.key === 'Enter' && addUDate()} />
-                                        <button className="btn btn-s btn-sm" onClick={addUDate}>+ Add</button>
-                                    </div>
+                                    <label className="fl">Note Status</label>
+                                    {(() => {
+                                        const ns = d.noteStatus || '';
+                                        const info = NS_LABELS[ns] || NS_LABELS[''];
+                                        return <span className={`ns-badge ${info.cls}`}>{info.icon} {info.label}</span>;
+                                    })()}
                                 </div>
                             </div>
                             {/* ── SECTION 2: INTAKE CHECKLIST ── */}
