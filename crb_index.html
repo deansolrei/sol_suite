@@ -13554,6 +13554,31 @@
             };
         }
 
+        // ── Intake Updates — same shape as makeAddComm, minus the recipient
+        // argument (audience is fixed: Provider + Biller, never user-picked).
+        // Shared by every surface that edits d.intakeUpdates — currently
+        // PatientModal and BillerApptModal, both read/write the SAME array,
+        // no source tag, no filtering by which surface added an entry. Same
+        // date/time/author construction buildComment() uses for Messages,
+        // but returns only {date, time, author, note} — no to/role/readBy,
+        // since there's no conversation/unread-tracking concept here.
+        function makeAddIntakeUpdate(intakeNote, d, setD, setIntakeNote, onUpdate) {
+            return function addIntakeUpdate() {
+                if (!intakeNote.trim()) return;
+                const now = new Date();
+                const ds = `${now.getMonth() + 1}/${now.getDate()}/${String(now.getFullYear()).slice(-2)}`;
+                const ts = now.toLocaleTimeString('en-US', {
+                    hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York',
+                }) + ' ET';
+                const author = _crbUser.display || _crbUser.email || 'Staff';
+                const entry = {date: ds, time: ts, author, note: intakeNote.trim()};
+                const newIntakeUpdates = [...(d.intakeUpdates || []), entry];
+                setD(p => ({...p, intakeUpdates: newIntakeUpdates}));
+                setIntakeNote('');
+                if (onUpdate) onUpdate({...d, intakeUpdates: newIntakeUpdates});
+            };
+        }
+
         function makeSendComment(commNote, commTo, appt, comms, setComms, setCommNote, onUpdate, extraFields) {
             return function sendComment() {
                 if (!commNote.trim()) return;
@@ -13653,28 +13678,12 @@
             const addComm = makeAddComm(commNote, commTo, d, setD, setCommNote, onUpdate);
             // Intake Updates — multiple, individually-attributed entries
             // (successor to the old single-value scrNote "Provider Notes"
-            // field), Assistant-written, always readable by Provider + Biller
-            // (no recipient picker — audience is fixed, not user-selected the
-            // way Messages' commTo is). Same date/time/author construction
-            // buildComment() already uses for Messages, but returns only
-            // {date, time, author, note} — no to/role/readBy, since there's
-            // no conversation/unread-tracking concept here. Saves immediately
-            // on Add, same as addComm — not bundled into the modal's general
-            // Save button.
-            function addIntakeUpdate() {
-                if (!intakeNote.trim()) return;
-                const now = new Date();
-                const ds = `${now.getMonth() + 1}/${now.getDate()}/${String(now.getFullYear()).slice(-2)}`;
-                const ts = now.toLocaleTimeString('en-US', {
-                    hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York',
-                }) + ' ET';
-                const author = _crbUser.display || _crbUser.email || 'Staff';
-                const entry = {date: ds, time: ts, author, note: intakeNote.trim()};
-                const newIntakeUpdates = [...(d.intakeUpdates || []), entry];
-                setD(p => ({...p, intakeUpdates: newIntakeUpdates}));
-                setIntakeNote('');
-                if (onUpdate) onUpdate({...d, intakeUpdates: newIntakeUpdates});
-            }
+            // field), Assistant/Biller-written, always readable by Provider +
+            // Biller (no recipient picker — audience is fixed, not
+            // user-selected the way Messages' commTo is). Same shared
+            // makeAddIntakeUpdate() factory BillerApptModal now also calls —
+            // one shared d.intakeUpdates array, not two separate threads.
+            const addIntakeUpdate = makeAddIntakeUpdate(intakeNote, d, setD, setIntakeNote, onUpdate);
             function doHandleSave() {
                 // Intake/InsVerified/Autopay are batched in local state (d)
                 // until this Save click — so attribution has to fire from
@@ -20628,6 +20637,7 @@
                 `${p.firstName} ${p.lastName}`.toLowerCase() === (appt.patient || '').toLowerCase()
             ) || {};
             const [commNote, setCommNote] = React.useState('');
+            const [intakeNote, setIntakeNote] = React.useState('');
             // Default to the first role-appropriate recipient (e.g. 'provider' for biller)
             // rather than 'all' so messages are targeted by default.
             const [commTo, setCommTo] = React.useState(() => {
@@ -20679,6 +20689,9 @@
             // d.comms synced with readBy updates in useEffect above
             // Send is FINAL — persist immediately via onUpdate without closing
             const addComm = makeAddComm(commNote, commTo, d, setD, setCommNote, onUpdate);
+            // Same shared factory PatientModal calls — one shared
+            // d.intakeUpdates array, not a separate Biller-side thread.
+            const addIntakeUpdate = makeAddIntakeUpdate(intakeNote, d, setD, setIntakeNote, onUpdate);
 
             const ns = d.noteStatus || '';
             const nsInfo = NS_LABELS[ns] || NS_LABELS[''];
@@ -20748,6 +20761,22 @@
                                                 }} /> {l}
                                             </label>
                                         ))}
+                                    </div>
+                                </div>
+                                <div className="frm">
+                                    <label className="fl" style={{display: 'flex', alignItems: 'center', gap: 5}}>📝 Intake Updates</label>
+                                    {(d.intakeUpdates || []).length > 0 && (
+                                        <div style={{marginBottom: 8}}>
+                                            {d.intakeUpdates.map((c, i) => <CommItem key={i} c={c} />)}
+                                        </div>
+                                    )}
+                                    <div style={{display: 'flex', gap: 8}}>
+                                        <input className="fi" style={{flex: 1}}
+                                            placeholder="Updates, — Status on Issue resolution, updates on anything pertaining to billing, paperwork, readiness for appointment…"
+                                            value={intakeNote}
+                                            onChange={e => setIntakeNote(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && addIntakeUpdate()} />
+                                        <button className="btn btn-s btn-sm" onClick={addIntakeUpdate}>+ Add</button>
                                     </div>
                                 </div>
                                 {d.method === 'direct' && (
