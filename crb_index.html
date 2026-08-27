@@ -14300,7 +14300,7 @@
                                     return {s, checked, score, result};
                                 });
                                 const anyData = rows.some(r => r.checked !== null && r.checked !== undefined);
-                                if (!anyData && !appt.scrNote && !appt.checklistNote) return null;
+                                if (!anyData && !appt.checklistNote) return null;
                                 return (
                                     <div className="pam-section">
                                         <div className="pam-sec-hdr scr-hdr">
@@ -14329,12 +14329,6 @@
                                                             </span>
                                                         );
                                                     })}
-                                                </div>
-                                            ) : null}
-                                            {appt.scrNote ? (
-                                                <div style={{marginTop: anyData ? 6 : 0, background: '#F8EFD8', borderRadius: 7, padding: '8px 11px', fontSize: 12.5, color: 'var(--text-primary)', lineHeight: 1.55, borderLeft: '3px solid var(--brand-primary)', whiteSpace: 'pre-wrap'}}>
-                                                    <span style={{fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: .5, color: '#777355', display: 'block', marginBottom: 3}}>📝 Clinical Notes</span>
-                                                    {appt.scrNote}
                                                 </div>
                                             ) : null}
                                             {appt.checklistNote ? (
@@ -16871,15 +16865,6 @@
                                         );
                                     })
                                 )}
-                            </div>
-
-                            {/* ── Clinical Notes from Assistant ── always shown */}
-                            <div>
-                                <div className="pim-sec-hdr">📝 Clinical Notes</div>
-                                {appt.scrNote
-                                    ? <div className="pim-note-box">{appt.scrNote}</div>
-                                    : <div style={{fontSize: 13, color: '#777355', fontStyle: 'italic', padding: '4px 2px'}}>No clinical notes entered by assistant.</div>
-                                }
                             </div>
 
                             {/* ── Pre-Encounter Checklist ── */}
