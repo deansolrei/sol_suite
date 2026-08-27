@@ -821,6 +821,20 @@ function saveAppointment(prov, date, apptJson) {
       sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
       _audit(ss, 'UPDATE', `${apptData.patient} | ${apptData.time} | ${date} | ${prov}`);
 
+      // ── Intake Updates ───────────────────────────────────────────────────
+      // Standalone column (99 / CU, outside apptToRow()'s fixed-width return
+      // — see the comment above INTAKE_UPDATES_COL), so it needs its own
+      // targeted write here, same as INSURANCE_CARRIER_MANUAL_BY/AT_COL just
+      // below. No attribution stamp needed — each entry already carries its
+      // own author/date/time (built client-side in PatientModal, same
+      // buildComment()-style shape Comms/Messages already uses), so this is
+      // purely "write the array if it changed," never a WHO/WHEN pair.
+      var newIntakeUpdates = JSON.stringify(apptData.intakeUpdates || []);
+      var oldIntakeUpdates = String(values[targetRow - 1][INTAKE_UPDATES_COL - 1] || '[]');
+      if (newIntakeUpdates !== oldIntakeUpdates) {
+        sheet.getRange(targetRow, INTAKE_UPDATES_COL).setValue(newIntakeUpdates);
+      }
+
       // ── InsuranceCarrier Manual-Override Attribution ────────────────────
       // Same "only fires when it actually changed" discipline as Note
       // Status Attribution below — insuranceCarrierManuallyEdited was
@@ -2365,6 +2379,20 @@ var TEBRA_SOURCE_ID_COL = 96;  // CR
 var INSURANCE_CARRIER_MANUAL_BY_COL = 97;  // CS
 var INSURANCE_CARRIER_MANUAL_AT_COL = 98;  // CT
 
+/* ── INTAKE UPDATES (2026-08-27) — standalone column, same reasoning as
+   TEBRA_SOURCE_ID_COL / PAYMENT_COMMENTS_COL etc. above. Holds a
+   JSON-stringified array of {date, time, author, note} entries — the
+   Assistant-written successor to ScrNote/ChecklistNote's single-value
+   "Provider Notes" field, but supporting multiple, individually-
+   attributed entries over time instead of one overwritten string. No
+   separate by/at pair needed: each entry already carries its own
+   author/date/time internally, the same way Comms (Messages) already
+   does — this mirrors that exact JSON-array-on-one-column pattern, not
+   the by/at-pair pattern used elsewhere in this block. Column 98 (CT)
+   is the last currently-used standalone column; this picks up right
+   after it. ── */
+var INTAKE_UPDATES_COL = 99;  // CU
+
 /* ── TEBRA PATIENT ID (2026-08-17) — standalone column. Repurposes BH
    (60), one of four columns an earlier comment described as "3 dead
    duplicate headers + a real PatientID column written by the separate
@@ -3809,6 +3837,18 @@ function rowToAppt(r) {
     })(),
     scrNote: String(r[57] || ''),
     checklistNote: String(r[58] || ''),
+    // Standalone column (99 / CU, outside APPT_COLS' own width — see the
+    // comment above INTAKE_UPDATES_COL) — safe to read directly off `r`
+    // here since every caller of rowToAppt() sources its rows via
+    // sheet.getDataRange().getValues(), the full sheet width, not a
+    // range scoped to APPT_COLS.length. Same JSON-array-on-one-column
+    // pattern as `comms` above.
+    intakeUpdates: (() => {
+      try {
+        var cell = r[INTAKE_UPDATES_COL - 1];
+        return cell ? JSON.parse(String(cell)) : [];
+      } catch (e) { return []; }
+    })(),
   };
 }
 
