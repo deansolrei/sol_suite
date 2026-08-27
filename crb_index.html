@@ -17667,6 +17667,9 @@
                                                     {ms.text && <div className={`pv-stxt ${ms.valid === true ? 'ok' : ms.valid === false ? 'err' : 'pend'}`}>{ms.text}</div>}
                                                     {showPay && <div className={`pay-badge ${pBadge}`}>{pTxt}</div>}
                                                     {a.method !== 'direct' && <ProvClaimPill a={a} />}
+                                                    <div style={{display: 'flex', alignItems: 'center', marginTop: 6}}>
+                                                        <CommChatIcon appt={a} onOpen={() => setPamModal(a)} className="pv-comm-icon-lg" />
+                                                    </div>
                                                 </div>
                                             )}
                                         </>
