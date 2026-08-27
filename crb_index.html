@@ -1791,11 +1791,6 @@
             font-weight: 900;
         }
 
-        .pv-reason-note {
-            margin-top: 6px;
-            text-align: center;
-        }
-
         /* ── Shared 3-column strip — used by BOTH Pre-visit (Channel & Coverage /
        Clinical / Unsigned) and Post-visit (Rx / CPT / Sign) rows so the two
        workflows share one visual language: a status line on top, then a
@@ -17618,7 +17613,14 @@
                                                                     <span>{val === true ? '✓' : val === false ? '✗' : '?'}</span>
                                                                 </div>
                                                             ))}
-                                                            {a.checklistNote && <div className="pv-reason-note">{a.checklistNote}</div>}
+                                                            {(a.intakeUpdates || []).length > 0 && (
+                                                                <>
+                                                                    <div className="pv-reason-label" style={{marginTop: 6}}>📝 Intake Updates</div>
+                                                                    <div style={{textAlign: 'left'}}>
+                                                                        {a.intakeUpdates.map((c, i) => <CommItem key={i} c={c} />)}
+                                                                    </div>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     )}
                                                     {/* Screener chips, Channel, and Insurance now live in the
