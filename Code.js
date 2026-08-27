@@ -6101,11 +6101,14 @@ function deduplicateAppointments() {
   });
 
   // ── Score function: prefer rows with more important fields filled in ──────
+  // Notes removed from this list (2026-08-26) — Column U is being retired from
+  // every internal dependency, not just frontend display, so its eventual
+  // reservation/repurposing can't silently skew which duplicate row this
+  // function keeps. The other 8 fields are untouched.
   var SCORE_COLS = [
     APPT_COLS.indexOf('Signed'),
     APPT_COLS.indexOf('CPTCodes'),
     APPT_COLS.indexOf('TebraStatus'),
-    APPT_COLS.indexOf('Notes'),
     APPT_COLS.indexOf('BillingChannel'),
     APPT_COLS.indexOf('ApptID'),
     APPT_COLS.indexOf('ClaimStatus'),

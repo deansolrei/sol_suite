@@ -1772,15 +1772,6 @@
             color: var(--warning);
         }
 
-        .pv-notes-box {
-            background: var(--paper-deep);
-            border: 1px solid var(--brand-primary);
-        }
-
-        .pv-notes-box .pv-reason-label {
-            color: var(--brand-primary);
-        }
-
         .pv-checklist-row {
             display: flex;
             align-items: center;
@@ -1851,31 +1842,6 @@
         .pv-strip-empty {
             font-size: 11px;
             color: #777355;
-        }
-
-        .pv-notes-ta {
-            width: 100%;
-            min-height: 52px;
-            border: 1.5px solid #FBFBF3;
-            border-radius: 6px;
-            padding: 6px 8px;
-            font-size: 12px;
-            font-family: inherit;
-            color: var(--text-primary);
-            resize: vertical;
-            outline: none;
-            background: #FBFBF3;
-            line-height: 1.4;
-            transition: border-color .15s
-        }
-
-        .pv-notes-ta:focus {
-            border-color: var(--brand-primary);
-            box-shadow: 0 0 0 2px rgba(9, 55, 31, .08)
-        }
-
-        .pv-notes-ta::placeholder {
-            color: #777355
         }
 
         .pv-sign-btn {
@@ -6235,21 +6201,6 @@
 
         body.dark .pv-stxt.pend {
             color: var(--warning)
-        }
-
-        body.dark .pv-notes-ta {
-            background: #051F11;
-            border-color: var(--border);
-            color: #D8D3BF
-        }
-
-        body.dark .pv-notes-ta:focus {
-            border-color: #6B9E8A;
-            box-shadow: 0 0 0 2px rgba(107, 175, 136, .12)
-        }
-
-        body.dark .pv-notes-ta::placeholder {
-            color: var(--text-secondary)
         }
 
         body.dark .pv-unote {
@@ -17228,7 +17179,6 @@
         function ProviderView({appts, date, prov, onUpdate, onSignNote, totalUnsigned, onClearPhantom, userRole, userProvID, onForceRefresh, patientDb, dayMode, setDayMode, pendingModalRequest, onConsumePendingModalRequest, navigateAndOpenModal, returnToAppointmentFlow, onConsumeReturnToAppointmentFlow, showLedger, setShowLedger, showNoteBoard, setShowNoteBoard, showPaymentTracker, setShowPaymentTracker, showAppointmentFlow, setShowAppointmentFlow}) {
             const [cptModal, setCptModal] = useState(null);
             const [rxModal, setRxModal] = useState(null);
-            const [notesDraft, setNotesDraft] = useState({});
             const [pamModal, setPamModal] = useState(null); // ProviderApptModal from day view 💬 button
             const [infoModalId, setInfoModalId] = useState(null); // PatientInfoModal — store ID for live lookup
             const [channelModal, setChannelModal] = useState(null); // ProvChannelModal — Jodene-only, Post-Visit .pv-channel button
@@ -17387,12 +17337,6 @@
                 onUpdate({...appt, rxMeds: meds, rxBillerAlert: false});
                 setRxModal(null);
             }
-            function handleNotesBlur(a) {
-                const draft = notesDraft[a.id];
-                if (draft !== undefined && draft !== a.notes) {
-                    onUpdate({...a, notes: draft});
-                }
-            }
 
             // Banner-level "Issues" / "In Process" stat click. Two behaviors,
             // depending on current state:
@@ -17505,7 +17449,6 @@
                                 ? (a.paymentCollected ? 'var(--success)' : a.paymentFailed ? 'var(--error)' : 'var(--warning)')
                                 : '#777355';
                             const statusColor = sCls === 'ok' ? 'var(--success)' : sCls === 'err' ? 'var(--error)' : 'var(--warning)';
-                            const currentNotes = notesDraft[a.id] !== undefined ? notesDraft[a.id] : (a.notes || '');
                             const detailOpen = !!expandedDetail[a.id];
                             const unsignedOpen = !!expandedUnsigned[a.id];
                             const toggleDetail = e => {e.stopPropagation(); setExpandedDetail(p => ({...p, [a.id]: !p[a.id]}));};
@@ -17667,12 +17610,6 @@
                                                                 </div>
                                                             ))}
                                                             {a.checklistNote && <div className="pv-reason-note">{a.checklistNote}</div>}
-                                                        </div>
-                                                    )}
-                                                    {a.notes && (
-                                                        <div className="pv-reason-box pv-notes-box">
-                                                            <div className="pv-reason-label">📝 Provider Notes</div>
-                                                            <div>{a.notes}</div>
                                                         </div>
                                                     )}
                                                     {/* Screener chips, Channel, and Insurance now live in the
@@ -19507,7 +19444,6 @@
                                                 <th>Patient</th>
                                                 <th>Tebra Status</th>
                                                 <th>Method</th>
-                                                <th>Notes</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -19517,7 +19453,6 @@
                                                     <td><span className="void-archive-name"><PatientName name={a.patient} state={a.patientState} /></span></td>
                                                     <td><TBadge status={a.tebraStatus} /></td>
                                                     <td>{METHOD_LABEL[a.method] || a.method || '—'}</td>
-                                                    <td style={{maxWidth: 200, fontSize: 11}}>{a.notes || '—'}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
