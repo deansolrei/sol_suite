@@ -4040,6 +4040,17 @@
             text-transform: uppercase;
             white-space: nowrap;
             font-family: inherit;
+            /* Safety net (2026-08-26) — a frozen-width sticky-header column
+               (AssistantView's colWidths mechanism) can end up narrower than
+               its own label needs if the body content it was measured from
+               is sparse/empty. Without this, the label spills uncontained
+               into the next header cell (the ancestor .tbl-wrap/.asst-hd-sticky
+               wrappers both deliberately use overflow:visible so sticky
+               positioning still works, so nothing else stops it). Ellipsis
+               here is strictly a backstop — the real fix is the measurement
+               itself, see the colWidths effect in AssistantView. */
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* ── Assistant Table column header (TIME/PATIENT/METHOD/BILLING…) ──
@@ -19172,8 +19183,24 @@
                 if (!tbl) return;
                 const firstRow = tbl.querySelector('tbody tr');
                 if (!firstRow) return;
-                const widths = Array.from(firstRow.children).map(td => td.getBoundingClientRect().width);
-                if (widths.length && widths.every(w => w > 0)) setColWidths(widths);
+                const bodyWidths = Array.from(firstRow.children).map(td => td.getBoundingClientRect().width);
+                if (!(bodyWidths.length && bodyWidths.every(w => w > 0))) return;
+                // A column's frozen width must never end up narrower than its own
+                // header label needs — the body content it's measured from can be
+                // sparse or empty on a given day (e.g. Unsigned with no outstanding
+                // notes), which used to freeze that column too narrow and spill the
+                // label into the next header cell (2026-08-26 fix). At this point
+                // colWidths is still null, so both tables are still table-layout:
+                // 'auto' — the header table has only its one <thead> row, so its
+                // own natural per-column width here is exactly the label's needed
+                // width, nothing else in that table to widen/narrow it.
+                const hdTable = hdScrollRef.current;
+                const headerRow = hdTable && hdTable.querySelector('thead tr');
+                const headerWidths = headerRow
+                    ? Array.from(headerRow.children).map(th => th.getBoundingClientRect().width)
+                    : [];
+                const widths = bodyWidths.map((w, i) => headerWidths[i] ? Math.max(w, headerWidths[i]) : w);
+                setColWidths(widths);
             });
 
             useEffect(() => {
