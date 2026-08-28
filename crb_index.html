@@ -13630,11 +13630,7 @@
             });
             const [commNote, setCommNote] = useState('');
             const [intakeNote, setIntakeNote] = useState('');
-            const [commTo, setCommTo] = useState(() => {
-                const r = _crbUser.role || 'assistant';
-                const opts = COMM_TO_OPTIONS[r] || COMM_TO_OPTIONS.assistant;
-                return (opts[0] && opts[0].v) || 'all';
-            });
+            const [commTo, setCommTo] = useState(() => defaultCommTo(appt, 'assistant'));
             const commListRef = React.useRef(null);
             const myRole = _crbUser.role || 'assistant';
             const toOptions = COMM_TO_OPTIONS[myRole] || COMM_TO_OPTIONS.assistant;
@@ -14151,6 +14147,25 @@
             biller: [{v: 'provider', l: 'Provider'}, {v: 'assistant', l: 'Assistant'}, {v: 'all', l: 'All'}],
         };
 
+        /* ── Shared "who do I default to messaging" resolver, used by every
+           Messages surface's commTo initializer. Prefers the sender of the
+           most recent INCOMING message (mirrors getIncomingComms's own filter
+           exactly — comms is append-ordered, so the last matching entry is
+           the most recent), falling back to the surface's existing static
+           first-option default when there's nothing incoming to key off.
+           COMM_TO_OPTIONS[last.role] also guards against a stray/legacy
+           entry with an invalid role (e.g. buildComment's 'unknown'
+           fallback) — only a genuine provider/assistant/biller role is
+           ever used as the default. ── */
+        function defaultCommTo(appt, fallbackRole) {
+            const incoming = getIncomingComms(appt);
+            const last = incoming[incoming.length - 1];
+            if (last && COMM_TO_OPTIONS[last.role]) return last.role;
+            const r = _crbUser.role || fallbackRole;
+            const opts = COMM_TO_OPTIONS[r] || COMM_TO_OPTIONS[fallbackRole];
+            return (opts[0] && opts[0].v) || 'all';
+        }
+
         /* ── Screener configuration: score ranges + severity colours ──────── */
         const SCR_CONFIG = {
             'PHQ-9': {
@@ -14223,13 +14238,11 @@
             const [cpt, setCpt] = useState(appt.cpt || []);
             const [out, setOut] = useState(appt.out || false);
             const [commNote, setCommNote] = useState('');
-            // Default to the first role-appropriate recipient (e.g. 'assistant' for provider)
-            // rather than 'all' so messages are targeted by default.
-            const [commTo, setCommTo] = useState(() => {
-                const r = _crbUser.role || 'provider';
-                const opts = COMM_TO_OPTIONS[r] || COMM_TO_OPTIONS.provider;
-                return (opts[0] && opts[0].v) || 'all';
-            });
+            // Defaults to whoever sent the most recent incoming message, falling
+            // back to the first role-appropriate recipient (e.g. 'assistant' for
+            // provider) when there's no incoming message to key off — see
+            // defaultCommTo().
+            const [commTo, setCommTo] = useState(() => defaultCommTo(appt, 'provider'));
             const [rxModal, setRxModal] = useState(false);
             const [cptModal, setCptModal] = useState(false);
             const commListRef = React.useRef(null);
@@ -18558,13 +18571,11 @@
         function CommentsPopup({appt, onUpdate, onClose}) {
             const [comms, setComms] = useState(appt.comms || []);
             const [commNote, setCommNote] = useState('');
-            // Default to the first role-appropriate recipient (e.g. 'provider' for assistant)
-            // rather than 'all' so messages are targeted by default.
-            const [commTo, setCommTo] = useState(() => {
-                const r = _crbUser.role || 'assistant';
-                const opts = COMM_TO_OPTIONS[r] || COMM_TO_OPTIONS.assistant;
-                return (opts[0] && opts[0].v) || 'all';
-            });
+            // Defaults to whoever sent the most recent incoming message, falling
+            // back to the first role-appropriate recipient (e.g. 'provider' for
+            // assistant) when there's no incoming message to key off — see
+            // defaultCommTo().
+            const [commTo, setCommTo] = useState(() => defaultCommTo(appt, 'assistant'));
             const commListRef = React.useRef(null);
 
             const myRole = _crbUser.role || 'assistant';
@@ -20678,13 +20689,11 @@
             ) || {};
             const [commNote, setCommNote] = React.useState('');
             const [intakeNote, setIntakeNote] = React.useState('');
-            // Default to the first role-appropriate recipient (e.g. 'provider' for biller)
-            // rather than 'all' so messages are targeted by default.
-            const [commTo, setCommTo] = React.useState(() => {
-                const r = _crbUser.role || 'biller';
-                const opts = COMM_TO_OPTIONS[r] || COMM_TO_OPTIONS.biller;
-                return (opts[0] && opts[0].v) || 'all';
-            });
+            // Defaults to whoever sent the most recent incoming message, falling
+            // back to the first role-appropriate recipient (e.g. 'provider' for
+            // biller) when there's no incoming message to key off — see
+            // defaultCommTo().
+            const [commTo, setCommTo] = React.useState(() => defaultCommTo(appt, 'biller'));
             const commListRef = React.useRef(null);
 
             // Determine "To" options for biller
