@@ -22219,6 +22219,13 @@
             }
 
             const fetchedRef = useRef(new Set());
+            // inFlightRef: keys with a fetch currently pending (added when a fetch
+            // effect below issues its gsr() call, removed once that call settles —
+            // separate from fetchedRef's "has this ever been fetched" bookkeeping).
+            // At a 60s poll interval a fetch can legitimately still be in flight
+            // when the next tick fires; this lets the interval skip re-triggering
+            // THAT key for this tick without touching any other key's refresh.
+            const inFlightRef = useRef(new Set());
             const editingRef = useRef(false);
 
             // Keep editingRef in sync with editing state so the interval
@@ -22240,11 +22247,16 @@
                     const k = period === 'week'
                         ? (view === 'provider' ? `week:${prov}:${weekStart(date)}` : `allweek:${weekStart(date)}`)
                         : dkey(prov, date);
+                    // Block refresh for this key specifically while its own fetch is
+                    // still in flight — at 60s cadence a slow/delayed request can
+                    // still be pending when the next tick fires; this skips only
+                    // THIS key for THIS tick, every other key still refreshes normally.
+                    if (inFlightRef.current.has(k)) return;
                     fetchedRef.current.delete(k);
                     setRefreshTick(t => t + 1);
-                }, 28800000);   // 480 minutes
+                }, 60000);   // 60 seconds
                 return () => clearInterval(id);
-            }, [initLoading, prov, date, period]);
+            }, [initLoading, prov, date, period, view]);
 
             useEffect(() => {
                 if (!IS_GAS) {
@@ -22306,6 +22318,7 @@
                 // open panels like Claims Ledger are not dismissed by the re-mount.
                 const isFirstLoad = !data[k];
                 fetchedRef.current.add(k);
+                inFlightRef.current.add(k);
                 if (isFirstLoad) setApptLoading(true);
                 gsr('getAppointments', prov, date)
                     .then(json => {
@@ -22317,7 +22330,8 @@
                         } catch (e) {console.log('[NOTE-ATTRIB] parse error', e);}
                         setApptLoading(false);
                     })
-                    .catch(() => setApptLoading(false));
+                    .catch(() => setApptLoading(false))
+                    .finally(() => inFlightRef.current.delete(k));
             }, [prov, date, period, initLoading, refreshTick]);
 
             useEffect(() => {
@@ -22326,13 +22340,15 @@
                 const cacheKey = `week:${prov}:${ws}`;
                 if (fetchedRef.current.has(cacheKey)) return;
                 fetchedRef.current.add(cacheKey);
+                inFlightRef.current.add(cacheKey);
                 setApptLoading(true);
                 gsr('getWeekAppointments', prov, ws)
                     .then(json => {
                         try {const wd = JSON.parse(json); if (wd && !wd.error) setData(p => ({...p, ...wd}));} catch (e) { }
                         setApptLoading(false);
                     })
-                    .catch(() => setApptLoading(false));
+                    .catch(() => setApptLoading(false))
+                    .finally(() => inFlightRef.current.delete(cacheKey));
             }, [prov, date, period, initLoading, refreshTick]);
 
             useEffect(() => {
@@ -22341,13 +22357,15 @@
                 const cacheKey = `allweek:${ws}`;
                 if (fetchedRef.current.has(cacheKey)) return;
                 fetchedRef.current.add(cacheKey);
+                inFlightRef.current.add(cacheKey);
                 setApptLoading(true);
                 gsr('getAllWeekAppointments', ws)
                     .then(json => {
                         try {const wd = JSON.parse(json); if (wd && !wd.error) setAllWeekData(p => ({...p, ...wd}));} catch (e) { }
                         setApptLoading(false);
                     })
-                    .catch(() => setApptLoading(false));
+                    .catch(() => setApptLoading(false))
+                    .finally(() => inFlightRef.current.delete(cacheKey));
             }, [view, date, period, initLoading, refreshTick]);
 
             // ===== Sticky header sync =====
