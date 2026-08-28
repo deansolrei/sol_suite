@@ -1477,6 +1477,347 @@ function getTotalUnsignedCount(prov) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────
+// DIAGNOSTIC: testUnsignedCountBreakdown — read-only, makes zero
+// writes to any sheet. Breaks down exactly what getTotalUnsignedCount()
+// / _isUnsignedEligible() are counting for one provider, to compare
+// against a manual audit count. Run this from Apps Script and check
+// the Logs (View → Logs) after running.
+// ─────────────────────────────────────────────────────────────────
+function testUnsignedCountBreakdown(provID, auditStartStr, auditEndStr) {
+  provID = provID || 'jodene';
+  auditStartStr = auditStartStr || '2026-01-01';
+  auditEndStr = auditEndStr || '2026-08-26';
+
+  Logger.log('── testUnsignedCountBreakdown for provID="' + provID + '" ' +
+    '(audit window ' + auditStartStr + ' → ' + auditEndStr + ') ──────────');
+
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) {
+      Logger.log('❌  No Appointments sheet found (or it has no data rows).');
+      return;
+    }
+
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');
+    var TIME_IDX = APPT_COLS.indexOf('Time');
+    var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+    var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+    var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+    var DATE_IDX = APPT_COLS.indexOf('Date');
+    var PLACEHOLDER_NAMES = PLACEHOLDER_PATIENT_NAMES;  // shared list — see top of file
+
+    var rows = sheet.getDataRange().getValues();
+
+    // Bucket 1 — Signed value, among counted rows only
+    var signedBlank = 0, signedFalse = 0, signedOther = 0;
+    var otherSignedSamples = [];
+
+    // Bucket 2 — inside/outside Dean's audited date window
+    var inWindow = 0, outsideWindow = 0;
+
+    // Bucket 3 — TebraStatus shape, among counted rows only
+    var statusRecognized = 0, statusBlank = 0, statusOther = 0;
+    var otherStatusSamples = [];
+
+    var totalCounted = 0;
+    var falseOnlyCount = 0;      // adjusted (a): literal FALSE only, excludes blanks
+    var windowOnlyCount = 0;     // adjusted (b): audited window only, regardless of Signed shape
+
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+
+      // Provider filter — this row must belong to provID and no other,
+      // same guard getTotalUnsignedCount() itself uses.
+      var rowProv = String(r[PROV_IDX] || '').trim();
+      if (rowProv !== String(provID).trim()) continue;
+
+      // Skip placeholder patients (calendar blocks / personal day holds) —
+      // same exclusion getTotalUnsignedCount() applies, so "total counted"
+      // below lines up with the live badge's own number.
+      if (PATIENT_IDX >= 0) {
+        var patName = String(r[PATIENT_IDX] || '').trim().toUpperCase();
+        if (PLACEHOLDER_NAMES.indexOf(patName) !== -1) continue;
+      }
+
+      var tebraStatus = TEBRA_IDX >= 0 ? String(r[TEBRA_IDX] || '') : '';
+      var signedVal = r[SIGNED_IDX];
+      var dateStr = _fmtDate(r[DATE_IDX]);
+
+      if (!_isUnsignedEligible(tebraStatus, r[DATE_IDX], r[TIME_IDX], signedVal)) continue;
+
+      totalCounted++;
+
+      // ── Bucket 1: Signed value shape ──
+      var signedStr = String(signedVal).trim().toUpperCase();
+      if (signedVal === '' || signedVal === null || signedVal === undefined) {
+        signedBlank++;
+      } else if (signedVal === false || signedStr === 'FALSE') {
+        signedFalse++;
+        falseOnlyCount++;
+      } else {
+        signedOther++;
+        if (otherSignedSamples.length < 10) {
+          otherSignedSamples.push('row ' + (i + 1) + ': ' + JSON.stringify(signedVal));
+        }
+      }
+
+      // ── Bucket 2: audited date window ──
+      if (dateStr && dateStr >= auditStartStr && dateStr <= auditEndStr) {
+        inWindow++;
+        windowOnlyCount++;
+      } else {
+        outsideWindow++;
+      }
+
+      // ── Bucket 3: TebraStatus shape ──
+      var normStatus = _normalizeStatusWord(tebraStatus);
+      if (tebraStatus === '') {
+        statusBlank++;
+      } else if (normStatus === 'scheduled' || _isConfirmedStatus(tebraStatus) || _isCheckedOutStatus(tebraStatus)) {
+        statusRecognized++;
+      } else {
+        statusOther++;
+        if (otherStatusSamples.length < 10) {
+          otherStatusSamples.push('row ' + (i + 1) + ': "' + tebraStatus + '"');
+        }
+      }
+    }
+
+    Logger.log('── Bucket 1: Signed value breakdown ──');
+    Logger.log('  Blank/empty:        ' + signedBlank);
+    Logger.log('  Literal FALSE:      ' + signedFalse);
+    Logger.log('  Other unexpected:   ' + signedOther);
+    if (otherSignedSamples.length) {
+      Logger.log('  Other-value samples (up to 10):');
+      otherSignedSamples.forEach(function (s) { Logger.log('    ' + s); });
+    }
+
+    Logger.log('── Bucket 2: audited date window (' + auditStartStr + ' → ' + auditEndStr + ') ──');
+    Logger.log('  Inside window:      ' + inWindow);
+    Logger.log('  Outside window:     ' + outsideWindow +
+      '  (today\'s already-occurred appts, or anything before ' + auditStartStr + ')');
+
+    Logger.log('── Bucket 3: TebraStatus breakdown (counted rows only) ──');
+    Logger.log('  Recognized non-void: ' + statusRecognized + '  (Scheduled/Confirmed/Checked Out)');
+    Logger.log('  Blank/empty:         ' + statusBlank);
+    Logger.log('  Other (unrecognized):' + statusOther);
+    if (otherStatusSamples.length) {
+      Logger.log('  Other-status samples (up to 10):');
+      otherStatusSamples.forEach(function (s) { Logger.log('    ' + s); });
+    }
+
+    Logger.log('── Summary ──');
+    Logger.log('  Total counted (matches the live badge today): ' + totalCounted);
+    Logger.log('  Adjusted (a) literal FALSE only, excl. blanks: ' + falseOnlyCount);
+    Logger.log('  Adjusted (b) audited window only (' + auditStartStr + '–' + auditEndStr + '): ' + windowOnlyCount);
+    Logger.log('  (Bonus) both restrictions combined:            ' +
+      (function () {
+        var both = 0;
+        for (var j = 1; j < rows.length; j++) {
+          var rr = rows[j];
+          if (String(rr[PROV_IDX] || '').trim() !== String(provID).trim()) continue;
+          if (PATIENT_IDX >= 0 && PLACEHOLDER_NAMES.indexOf(String(rr[PATIENT_IDX] || '').trim().toUpperCase()) !== -1) continue;
+          var ts = TEBRA_IDX >= 0 ? String(rr[TEBRA_IDX] || '') : '';
+          var sv = rr[SIGNED_IDX];
+          if (!_isUnsignedEligible(ts, rr[DATE_IDX], rr[TIME_IDX], sv)) continue;
+          var svStr = String(sv).trim().toUpperCase();
+          var isLiteralFalse = sv === false || svStr === 'FALSE';
+          var ds = _fmtDate(rr[DATE_IDX]);
+          var inW = ds && ds >= auditStartStr && ds <= auditEndStr;
+          if (isLiteralFalse && inW) both++;
+        }
+        return both;
+      })());
+  } catch (e) {
+    Logger.log('❌  Error: ' + e.message);
+  }
+  Logger.log('────────────────────────────────────────────────────────────');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DIAGNOSTIC: testUnsignedDuplicateGroups — read-only, makes zero
+// writes to any sheet. Groups one provider's counted-as-unsigned rows
+// by the SAME identity (date + time + patient, normalized) that
+// deduplicateAppointments() itself groups by — _fmtDate +
+// _normalizeTimeKey for date/time, _stripMiddleName + lowercase for
+// patient — so this reuses the sync's own matching rule rather than
+// inventing a separate one. Run this from Apps Script and check the
+// Logs (View → Logs) after running.
+// ─────────────────────────────────────────────────────────────────
+function testUnsignedDuplicateGroups(provID) {
+  provID = provID || 'jodene';
+
+  Logger.log('── testUnsignedDuplicateGroups for provID="' + provID + '" ──────────');
+
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) {
+      Logger.log('❌  No Appointments sheet found (or it has no data rows).');
+      return;
+    }
+
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');
+    var TIME_IDX = APPT_COLS.indexOf('Time');
+    var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+    var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+    var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+    var DATE_IDX = APPT_COLS.indexOf('Date');
+    var PLACEHOLDER_NAMES = PLACEHOLDER_PATIENT_NAMES;  // shared list — see top of file
+
+    var rows = sheet.getDataRange().getValues();
+
+    // groupKey (date||time||ptNorm) → array of { rowNum, dateStr, timeStr,
+    // patient, tebraStatus, signedVal }
+    var groups = {};
+    var totalRows = 0;
+
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+
+      var rowProv = String(r[PROV_IDX] || '').trim();
+      if (rowProv !== String(provID).trim()) continue;
+
+      if (PATIENT_IDX >= 0) {
+        var patNameCheck = String(r[PATIENT_IDX] || '').trim().toUpperCase();
+        if (PLACEHOLDER_NAMES.indexOf(patNameCheck) !== -1) continue;
+      }
+
+      var tebraStatus = TEBRA_IDX >= 0 ? String(r[TEBRA_IDX] || '') : '';
+      var signedVal = r[SIGNED_IDX];
+
+      if (!_isUnsignedEligible(tebraStatus, r[DATE_IDX], r[TIME_IDX], signedVal)) continue;
+
+      totalRows++;
+
+      var dateStr = _fmtDate(r[DATE_IDX]);
+      var timeStr = _normalizeTimeKey(r[TIME_IDX]);
+      var patient = String(r[PATIENT_IDX] || '').trim();
+      var ptNorm = _stripMiddleName(patient).toLowerCase().replace(/\s+/g, ' ').trim();
+      var groupKey = dateStr + '||' + timeStr + '||' + ptNorm;
+
+      if (!groups[groupKey]) groups[groupKey] = [];
+      groups[groupKey].push({
+        rowNum: i + 1,
+        dateStr: dateStr,
+        timeStr: timeStr,
+        patient: patient,
+        tebraStatus: tebraStatus,
+        signedVal: signedVal,
+      });
+    }
+
+    var distinctGroups = Object.keys(groups).length;
+    var dupGroupCount = 0;
+    var dupRowCount = 0;
+
+    Logger.log('── Groups with more than one row ──');
+    Object.keys(groups).forEach(function (key) {
+      var entries = groups[key];
+      if (entries.length < 2) return;
+      dupGroupCount++;
+      dupRowCount += entries.length;
+
+      var initials = _initialsFor(entries[0].patient);
+      Logger.log('  🔀 ' + entries[0].dateStr + ' ' + entries[0].timeStr +
+        '  "' + initials + '"  (' + entries.length + ' rows)');
+      entries.forEach(function (e) {
+        Logger.log('      row ' + e.rowNum +
+          ': TebraStatus="' + e.tebraStatus + '"' +
+          '  Signed=' + JSON.stringify(e.signedVal));
+      });
+    });
+    if (dupGroupCount === 0) {
+      Logger.log('  (none found)');
+    }
+
+    Logger.log('── Summary ──');
+    Logger.log('  Total counted-as-unsigned rows: ' + totalRows);
+    Logger.log('  Distinct identity groups:       ' + distinctGroups);
+    Logger.log('  Groups with duplicates:         ' + dupGroupCount +
+      '  (' + dupRowCount + ' rows across them, ' +
+      (dupRowCount - dupGroupCount) + ' of which are extra beyond one-per-group)');
+  } catch (e) {
+    Logger.log('❌  Error: ' + e.message);
+  }
+  Logger.log('────────────────────────────────────────────────────────────');
+}
+
+// Redacted "F.L." initials from a full name — first letter of the first
+// token + first letter of the last token, uppercased. Used only for log
+// output so a patient's full name never appears in the Apps Script log.
+function _initialsFor(fullName) {
+  var parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  var first = parts[0].charAt(0).toUpperCase();
+  var last = parts[parts.length - 1].charAt(0).toUpperCase();
+  return parts.length === 1 ? (first + '.') : (first + '.' + last + '.');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DIAGNOSTIC: testUnsignedRowList — read-only, makes zero writes to
+// any sheet. Raw row-by-row list of every row _isUnsignedEligible()
+// currently counts for one provider — no buckets, no analysis — so it
+// can be checked directly against filtering the live sheet by hand.
+// Run this from Apps Script and check the Logs (View → Logs) after
+// running.
+// ─────────────────────────────────────────────────────────────────
+function testUnsignedRowList(provID) {
+  provID = provID || 'jodene';
+
+  Logger.log('── testUnsignedRowList for provID="' + provID + '" ──────────');
+
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) {
+      Logger.log('❌  No Appointments sheet found (or it has no data rows).');
+      return;
+    }
+
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');
+    var TIME_IDX = APPT_COLS.indexOf('Time');
+    var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+    var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+    var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+    var DATE_IDX = APPT_COLS.indexOf('Date');
+    var PLACEHOLDER_NAMES = PLACEHOLDER_PATIENT_NAMES;  // shared list — see top of file
+
+    var rows = sheet.getDataRange().getValues();
+    var count = 0;
+
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+
+      var rowProv = String(r[PROV_IDX] || '').trim();
+      if (rowProv !== String(provID).trim()) continue;
+
+      if (PATIENT_IDX >= 0) {
+        var patNameCheck = String(r[PATIENT_IDX] || '').trim().toUpperCase();
+        if (PLACEHOLDER_NAMES.indexOf(patNameCheck) !== -1) continue;
+      }
+
+      var tebraStatus = TEBRA_IDX >= 0 ? String(r[TEBRA_IDX] || '') : '';
+      var signedVal = r[SIGNED_IDX];
+
+      if (!_isUnsignedEligible(tebraStatus, r[DATE_IDX], r[TIME_IDX], signedVal)) continue;
+
+      count++;
+      var dateStr = _fmtDate(r[DATE_IDX]);
+      var timeStr = _fmtTime(r[TIME_IDX]);
+      var patient = String(r[PATIENT_IDX] || '').trim();
+      Logger.log('  row ' + (i + 1) + ':  ' + dateStr + '  ' + timeStr + '  "' + _initialsFor(patient) + '"');
+    }
+
+    Logger.log('── Total: ' + count + ' rows ──');
+  } catch (e) {
+    Logger.log('❌  Error: ' + e.message);
+  }
+  Logger.log('────────────────────────────────────────────────────────────');
+}
+
 /* ════════════════════════════════════════════════════════════════════
    OVERDUE DIRECT-PAY COLLECTIONS — getOverdueDirectPay
    ════════════════════════════════════════════════════════════════════
@@ -4929,6 +5270,133 @@ function _fetchTebraAppointments(c, startDateStr, endDateStr) {
     }
     return true;
   });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DIAGNOSTIC: testStaleStatusCheck — read-only against the Sheet, and
+// makes only a live GetAppointments (query) call to Tebra per sample
+// date — no Tebra write endpoint is ever called, so this changes
+// nothing in Tebra either. Uses _fetchTebraAppointments() directly —
+// the SAME full Fields block (ConfirmationStatus/ID/PatientCaseID/
+// PatientCaseName/PatientFullName/PatientID/ResourceID1/ResourceName1/
+// StartDate) importFromTebraApi() itself uses in production, not the
+// narrower 6-field block testTebraGetAppointments() uses (that one is
+// missing PatientCaseID/PatientCaseName/PatientID and isn't what
+// production actually relies on).
+//
+// For a hand-picked sample of dates, fetches Tebra's LIVE status for
+// every one of provID's appointments that day, matches each one
+// against the Sheet by the same identity (date+time+patient,
+// normalized) deduplicateAppointments() uses, and logs the Sheet's
+// stored TebraStatus/Signed side by side with what Tebra says right
+// now. Directly tests the stale-sync-window theory: if Tebra already
+// says Checked Out while the Sheet still shows something else, that's
+// a real sync gap; if Tebra itself still shows an open status, the
+// visit is genuinely unresolved, not a sync artifact.
+//
+// sampleDates defaults to a PROPOSED illustrative spread (weekly,
+// early July → early August, comfortably outside the ~14-day rolling
+// sync window) — swap in real dates pulled from testUnsignedRowList's
+// actual output once you have it. Run this from Apps Script and check
+// the Logs (View → Logs) after running.
+// ─────────────────────────────────────────────────────────────────
+function testStaleStatusCheck(provID, sampleDates) {
+  provID = provID || 'jodene';
+  sampleDates = sampleDates || [
+    '2026-07-01', '2026-07-08', '2026-07-15',
+    '2026-07-22', '2026-07-29', '2026-08-05',
+  ];
+
+  Logger.log('── testStaleStatusCheck for provID="' + provID + '" ──────────');
+  Logger.log('  Sample dates: ' + sampleDates.join(', '));
+
+  var c = _getTebraCreds();
+  if (!c.customerKey) {
+    Logger.log('❌  Run setTebraCreds() first.');
+    return;
+  }
+
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) {
+      Logger.log('❌  No Appointments sheet found (or it has no data rows).');
+      return;
+    }
+
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');
+    var TIME_IDX = APPT_COLS.indexOf('Time');
+    var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+    var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+    var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+    var DATE_IDX = APPT_COLS.indexOf('Date');
+
+    // Build one Sheet lookup, scoped to provID only, keyed the same way
+    // deduplicateAppointments() groups rows: date||time||normalizedPatient.
+    var sheetRows = sheet.getDataRange().getValues();
+    var sheetByKey = {};
+    for (var i = 1; i < sheetRows.length; i++) {
+      var r = sheetRows[i];
+      if (String(r[PROV_IDX] || '').trim() !== String(provID).trim()) continue;
+      var key = _fmtDate(r[DATE_IDX]) + '||' + _normalizeTimeKey(r[TIME_IDX]) + '||' +
+        _stripMiddleName(String(r[PATIENT_IDX] || '').trim()).toLowerCase().replace(/\s+/g, ' ').trim();
+      sheetByKey[key] = {
+        rowNum: i + 1,
+        tebraStatus: TEBRA_IDX >= 0 ? String(r[TEBRA_IDX] || '') : '',
+        signedVal: r[SIGNED_IDX],
+      };
+    }
+
+    var totalChecked = 0, totalMismatched = 0, totalNoSheetRow = 0;
+
+    sampleDates.forEach(function (dateStr) {
+      Logger.log('── ' + dateStr + ' — live Tebra fetch ──');
+      var liveAppts;
+      try {
+        liveAppts = _fetchTebraAppointments(c, dateStr, dateStr);
+      } catch (fetchErr) {
+        Logger.log('  ❌  Fetch error: ' + fetchErr.message);
+        return;
+      }
+
+      var forProv = liveAppts.filter(function (a) { return a.provID === provID; });
+      if (!forProv.length) {
+        Logger.log('  (no ' + provID + ' appointments returned for this date)');
+        return;
+      }
+
+      forProv.forEach(function (a) {
+        totalChecked++;
+        var key = a.date + '||' + _normalizeTimeKey(a.time) + '||' +
+          _stripMiddleName(a.patient).toLowerCase().replace(/\s+/g, ' ').trim();
+        var sheetRow = sheetByKey[key];
+        var initials = _initialsFor(a.patient);
+
+        if (!sheetRow) {
+          totalNoSheetRow++;
+          Logger.log('  ⚠️  ' + a.date + ' ' + a.time + '  "' + initials + '"' +
+            '  LIVE Tebra="' + a.tebraStatus + '"   — no matching Sheet row found');
+          return;
+        }
+
+        var mismatch = String(sheetRow.tebraStatus || '') !== String(a.tebraStatus || '');
+        if (mismatch) totalMismatched++;
+        Logger.log('  ' + (mismatch ? '🔀' : '  ') + ' ' + a.date + ' ' + a.time +
+          '  "' + initials + '"' +
+          '  Sheet: TebraStatus="' + sheetRow.tebraStatus + '" Signed=' + JSON.stringify(sheetRow.signedVal) +
+          '  |  LIVE Tebra: "' + a.tebraStatus + '"' +
+          (mismatch ? '   ← MISMATCH' : ''));
+      });
+    });
+
+    Logger.log('── Summary ──');
+    Logger.log('  Total live appointments checked: ' + totalChecked);
+    Logger.log('  Sheet/Tebra status mismatches:   ' + totalMismatched);
+    Logger.log('  No matching Sheet row found:     ' + totalNoSheetRow);
+  } catch (e) {
+    Logger.log('❌  Error: ' + e.message);
+  }
+  Logger.log('────────────────────────────────────────────────────────────');
 }
 
 function _fetchTebraAppointmentsChunked(c, startDateStr, endDateStr) {
