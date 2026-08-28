@@ -2328,9 +2328,15 @@ var SCR_DATA_AT_COL = 81;              // CC   ScrData blob, not per individual 
 var BEST_RATE_CONFIRMED_COL = 82;      // CD — HVA confirmed the auto-computed
 var BEST_RATE_CONFIRMED_BY_COL = 83;   // CE   best-channel recommendation
 var BEST_RATE_CONFIRMED_AT_COL = 84;   // CF
-var UNSIGNED_CONFIRMED_COL = 85;       // CG — this row's own (unsigned) date has
-var UNSIGNED_CONFIRMED_BY_COL = 86;    // CH   been reviewed; row IS the unsigned date,
-var UNSIGNED_CONFIRMED_AT_COL = 87;    // CI   no separate date list needed
+/* ── UNSIGNED-CONFIRMED ATTRIBUTION — RESERVED (unused). Columns 85-87
+   (CG-CI) held UNSIGNED_CONFIRMED_COL/BY_COL/AT_COL and
+   saveUnsignedConfirmed() — a fully-built, never-activated feature
+   (no frontend caller ever existed for the save path, and rowToAppt's
+   read of it was equally unconsumed). Removed 2026-08-28. Left
+   reserved rather than reused for a new column: the live Sheet's
+   header cells (CG1/CH1/CI1) still read UnsignedConfirmed/By/At and
+   were deliberately left untouched, same as ChecklistNote's own
+   orphaned header — reconcile those cells before ever reusing 85-87. ── */
 
 /* ── PRE-VISIT CHECKLIST ATTRIBUTION (2026-08-10) — Intake/InsVerified/
    Autopay/ChecklistNote never had any by/at tracking at all before this;
@@ -2649,30 +2655,6 @@ function saveBestRateConfirmed(apptId, confirmed) {
   }
 }
 
-/* ── Unsigned-date confirmation — marks THIS row's own outstanding
-   unsigned date as reviewed. The row already IS the live-computed
-   unsigned entry (see _isUnsignedEligible); this never feeds back into
-   that computation, it's a pure annotation layer on top of it. ────── */
-function saveUnsignedConfirmed(apptId, confirmed) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(TAB_APPT);
-    if (!sheet || sheet.getLastRow() < 2) return JSON.stringify({ ok: false });
-    var rowNum = _findApptRow(sheet, apptId);
-    if (rowNum < 0) return JSON.stringify({ ok: false, err: 'Appointment not found: ' + apptId });
-
-    sheet.getRange(rowNum, UNSIGNED_CONFIRMED_COL).setValue(!!confirmed);
-    var attrib = _stampAttribution(ss, sheet, rowNum, UNSIGNED_CONFIRMED_BY_COL, UNSIGNED_CONFIRMED_AT_COL);
-    var now = attrib.now;
-
-    _audit(ss, 'UNSIGNED_CONFIRMED', 'Appt ' + apptId + ' → confirmed=' + !!confirmed);
-    return JSON.stringify({ ok: true, at: now });
-  } catch (e) {
-    Logger.log('saveUnsignedConfirmed ERROR: ' + e.message);
-    return JSON.stringify({ ok: false, err: e.message });
-  }
-}
-
 /* ── Pre-visit checklist attribution — Intake, InsVerified, Autopay,
    ChecklistNote. All four are assistant-entered in PatientModal before
    the appointment date; Table View surfaces whichever of these is an
@@ -2977,9 +2959,6 @@ function _rowToApptWithAttribution(r, bounds, tableBounds) {
   appt.bestRateConfirmed = r[BEST_RATE_CONFIRMED_COL - 1] === true || r[BEST_RATE_CONFIRMED_COL - 1] === 'TRUE';
   appt.bestRateConfirmedBy = String(r[BEST_RATE_CONFIRMED_BY_COL - 1] || '');
   appt.bestRateConfirmedAt = String(r[BEST_RATE_CONFIRMED_AT_COL - 1] || '');
-  appt.unsignedConfirmed = r[UNSIGNED_CONFIRMED_COL - 1] === true || r[UNSIGNED_CONFIRMED_COL - 1] === 'TRUE';
-  appt.unsignedConfirmedBy = String(r[UNSIGNED_CONFIRMED_BY_COL - 1] || '');
-  appt.unsignedConfirmedAt = String(r[UNSIGNED_CONFIRMED_AT_COL - 1] || '');
   // Pre-visit checklist attribution — new columns, see the block comment
   // above INTAKE_BY_COL. appt.intake/ins/autopay/checklistNote themselves
   // already come from rowToAppt() above; these are just who/when.
