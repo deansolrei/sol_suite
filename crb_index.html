@@ -19323,10 +19323,10 @@
                                             title="Select all"
                                         />
                                     </th>
-                                    <th>Time</th><th>Patient</th><th>Method</th>
+                                    <th>Time</th><th>Patient</th><th title="Comments">💬</th><th>Method</th>
                                     <th>Billing</th><th>Intake</th><th>Ins.</th><th>Autopay</th>
                                     <th>PHQ-9</th><th>GAD-7</th><th>PCL-5</th>
-                                    <th>Unsigned</th><th title="Clinic note formatting status — click badge to cycle">Note Status</th><th title="Comments">💬</th><th>Tebra</th><th>Signed</th>
+                                    <th>Unsigned</th><th title="Clinic note formatting status — click badge to cycle">Note Status</th><th>Tebra</th><th>Signed</th>
                                 </tr>
                             </thead>
                         </table>
@@ -19371,6 +19371,9 @@
                                                         provider={a.provID}
                                                         currentMethod={a.method}
                                                     />
+                                                </td>
+                                                <td style={{textAlign: 'center'}} onClick={e => e.stopPropagation()}>
+                                                    <CommChatIcon appt={a} onOpen={() => setModal(a)} />
                                                 </td>
                                                 <td><span className="td-method-lbl" style={{fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: .4}}>{METHOD_LABEL[a.method] || a.method}</span>
                                                     {ms.text && <div className={`td-method-status${ms.valid === true ? ' tm-ok' : ms.valid === false ? ' tm-err' : ' tm-pend'}`} style={{fontSize: 11, fontWeight: 600, marginTop: 2}}>{ms.text}</div>}
@@ -19443,9 +19446,6 @@
                                                             </div>
                                                         );
                                                     })()}
-                                                </td>
-                                                <td style={{textAlign: 'center'}} onClick={e => e.stopPropagation()}>
-                                                    <CommChatIcon appt={a} onOpen={() => setModal(a)} />
                                                 </td>
                                                 <td style={{whiteSpace: 'nowrap'}}>
                                                     {a.tebraStatus
