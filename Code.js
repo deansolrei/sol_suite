@@ -67,7 +67,7 @@ const APPT_COLS = [
   'Comms', 'LastModified', 'ModifiedBy',
   'TebraStatus', 'PaymentDate', 'RxMeds', 'RxBillerAlert', 'PaymentProcessingChannel',
   // ── Claim tracking & payout (indices 39-47) ──────────────────────────────
-  'ClaimSubmittedDate', 'ClaimID', 'ClaimStatus', 'ClaimStatusNotes',
+  'ClaimSubmittedDate', 'ClaimID', 'ClaimStatus', 'ClaimStatusInfo',
   'ClaimPaidDate', 'ClaimPaidAmount', 'ClaimCheckID',
   'ClaimDepositBank', 'ClaimDepositDate',
   // ── Direct-pay validity flag (index 48) ──────────────────────────────────
@@ -2235,7 +2235,7 @@ function getClaimsLedger(provFilter) {
 /* ════════════════════════════════════════════════════════════════
    SAVE CLAIM NOTES
    Targeted single-field update for the Claims Ledger notes cell.
-   Only touches ClaimStatusNotes (col AQ, 0-based index 42).
+   Only touches ClaimStatusInfo (col AQ, 0-based index 42).
 ════════════════════════════════════════════════════════════════ */
 function saveClaimNotes(provId, dateStr, apptId, notes) {
   try {
@@ -2248,8 +2248,8 @@ function saveClaimNotes(provId, dateStr, apptId, notes) {
       var r = data[i];
       // Match by ApptID (index 2) — unique identifier — with ProvID (index 0) as guard
       if (String(r[2]) === String(apptId) && String(r[0]) === String(provId)) {
-        // ClaimStatusNotes is APPT_COLS index 42 → spreadsheet column 43 (1-based)
-        sheet.getRange(i + 1, APPT_COLS.indexOf('ClaimStatusNotes') + 1)
+        // ClaimStatusInfo is APPT_COLS index 42 → spreadsheet column 43 (1-based)
+        sheet.getRange(i + 1, APPT_COLS.indexOf('ClaimStatusInfo') + 1)
           .setValue(notes || '');
         return JSON.stringify({ ok: true });
       }
