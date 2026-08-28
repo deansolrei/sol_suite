@@ -5143,7 +5143,16 @@ function _fetchServiceLocationMap(c) {
 }
 
 
-function _fetchTebraAppointments(c, startDateStr, endDateStr) {
+// quiet (optional, default false) — suppresses the four raw-patient-name
+// narration lines below (placeholder-skip, invalid-skip, incomplete-skip,
+// Status-only) for callers that redact patient identity in their own
+// output (e.g. reconcileStaleTebraStatuses). Additive and
+// backward-compatible: every existing call site omits this argument, so
+// it's always undefined → falsy there, and behavior is unchanged. The
+// PII-free "Tebra returned N total appointment elements" line always
+// logs regardless, since it carries no patient data and is needed for
+// timing visibility.
+function _fetchTebraAppointments(c, startDateStr, endDateStr, quiet) {
   var startTebra = _tebraDateFmt(_parseYMD(startDateStr));
   var endTebra = _tebraDateFmt(_parseYMD(endDateStr));
 
@@ -5253,18 +5262,20 @@ function _fetchTebraAppointments(c, startDateStr, endDateStr) {
     };
   }).filter(function (a) {
     if (a._invalid) {
-      var isPlaceholder = PLACEHOLDER_PATIENT_NAMES.indexOf((a.patient || '').toUpperCase()) !== -1;
-      Logger.log(isPlaceholder
-        ? '  Skipping placeholder calendar block: ' + a.patient + ' on ' + a.date
-        : '  Invalid (unmapped provider "' + (a.resourceName1 || '?') + '" / no name): ' + a.patient + ' on ' + a.date);
+      if (!quiet) {
+        var isPlaceholder = PLACEHOLDER_PATIENT_NAMES.indexOf((a.patient || '').toUpperCase()) !== -1;
+        Logger.log(isPlaceholder
+          ? '  Skipping placeholder calendar block: ' + a.patient + ' on ' + a.date
+          : '  Invalid (unmapped provider "' + (a.resourceName1 || '?') + '" / no name): ' + a.patient + ' on ' + a.date);
+      }
       return false;
     }
     if (!a.patient || !a.date || !a.time) {
-      Logger.log('  Skipping incomplete: ' + JSON.stringify(a));
+      if (!quiet) Logger.log('  Skipping incomplete: ' + JSON.stringify(a));
       return false;
     }
     // Keep status-only records — they still go to importFromTebraApi for existing-row updates
-    if (a._statusOnly) {
+    if (a._statusOnly && !quiet) {
       Logger.log('  Status-only [' + a.provID + '/' + a.tebraStatus + ']: ' +
         a.patient + ' on ' + a.date);
     }
@@ -5393,6 +5404,226 @@ function testStaleStatusCheck(provID, sampleDates) {
     Logger.log('  Total live appointments checked: ' + totalChecked);
     Logger.log('  Sheet/Tebra status mismatches:   ' + totalMismatched);
     Logger.log('  No matching Sheet row found:     ' + totalNoSheetRow);
+  } catch (e) {
+    Logger.log('❌  Error: ' + e.message);
+  }
+  Logger.log('────────────────────────────────────────────────────────────');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// RECONCILIATION: reconcileStaleTebraStatuses — the write-capable
+// sibling of testStaleStatusCheck(). Same live-fetch/match approach
+// (_fetchTebraAppointments()'s full 9-field production shape, matched
+// against the Sheet by date+time+patient identity), but for every
+// mismatch found: dryRun=true logs it and stops there (zero writes);
+// dryRun=false writes the corrected TebraStatus, then runs the SAME
+// Checked-Out auto-sign condition importFromTebraApi()'s main loop
+// uses — COL_SIGNED > 0 && _isCheckedOutStatus(newStatus) &&
+// !alreadySigned — reusing _isCheckedOutStatus() itself directly. That
+// block isn't a standalone callable function in importFromTebraApi()
+// (it's inline, tied to that loop's own apptData/rowIdx/
+// existingSignedMap batch-write variables), so the write here is a
+// single targeted setValue() per row instead of a batch — the
+// predicate and the idempotency guard are identical, only how the
+// write reaches the sheet differs.
+//
+// dryRun follows importFromTebraApi()'s own convention exactly: last
+// parameter, coerced with !!, defaults false (a live write) if
+// omitted — so pass dryRun=true explicitly to preview first.
+//
+// Deliberately scoped to the genuine stale-sync-window backlog only —
+// this only ever touches a row whose Sheet TebraStatus disagrees with
+// what Tebra says right now. It never touches Signed directly except
+// via that same Checked-Out condition, so the manual Signed-lag cases
+// (blank/FALSE rows where Tebra's own status hasn't changed) are left
+// completely untouched, per Dean's direction.
+//
+// Run this from Apps Script and check the Logs (View → Logs) after
+// running. Strongly recommend dryRun=true first.
+// ─────────────────────────────────────────────────────────────────
+function reconcileStaleTebraStatuses(provID, startDateStr, endDateStr, dryRun) {
+  provID = provID || 'jodene';
+  dryRun = !!dryRun;
+
+  Logger.log('── reconcileStaleTebraStatuses for provID="' + provID + '" ' +
+    '[' + startDateStr + ' – ' + endDateStr + ']' +
+    (dryRun ? '  (DRY RUN — no writes)' : '  (LIVE — will write)') + ' ──────────');
+
+  if (!startDateStr || !endDateStr) {
+    Logger.log('❌  startDateStr and endDateStr are required (YYYY-MM-DD).');
+    return;
+  }
+
+  var c = _getTebraCreds();
+  if (!c.customerKey) {
+    Logger.log('❌  Run setTebraCreds() first.');
+    return;
+  }
+
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) {
+      Logger.log('❌  No Appointments sheet found (or it has no data rows).');
+      return;
+    }
+
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');
+    var TIME_IDX = APPT_COLS.indexOf('Time');
+    var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+    var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+    var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+    var DATE_IDX = APPT_COLS.indexOf('Date');
+    var COL_TEBRA_STATUS = TEBRA_IDX + 1;   // 1-based sheet column
+    var COL_SIGNED = SIGNED_IDX + 1;        // 1-based sheet column (Z)
+
+    // Same Sheet lookup approach as testStaleStatusCheck(): one read,
+    // scoped to provID, keyed by date||time||normalizedPatient.
+    var sheetRows = sheet.getDataRange().getValues();
+    var sheetByKey = {};
+    for (var i = 1; i < sheetRows.length; i++) {
+      var r = sheetRows[i];
+      if (String(r[PROV_IDX] || '').trim() !== String(provID).trim()) continue;
+      var key = _fmtDate(r[DATE_IDX]) + '||' + _normalizeTimeKey(r[TIME_IDX]) + '||' +
+        _stripMiddleName(String(r[PATIENT_IDX] || '').trim()).toLowerCase().replace(/\s+/g, ' ').trim();
+      sheetByKey[key] = {
+        rowNum: i + 1,
+        tebraStatus: TEBRA_IDX >= 0 ? String(r[TEBRA_IDX] || '') : '',
+        signedVal: r[SIGNED_IDX],
+      };
+    }
+
+    var totalChecked = 0, totalCorrected = 0, totalAutoSigned = 0;
+    var tz = Session.getScriptTimeZone();
+    var cur = _parseYMD(startDateStr);
+    var end = _parseYMD(endDateStr);
+
+    // ── Runtime elapsed-time guard, not a pre-sized day-count ──────────────
+    // Apps Script's hard execution ceiling is 6 minutes. No real per-day
+    // timing data was available to derive a "safe N days" number from (no
+    // Logger output from an actual run has been shared), and a static
+    // day-count would be wrong on an unusually heavy day regardless — a
+    // runtime cutoff self-corrects no matter what the real per-day timing
+    // turns out to be. Threshold: 4.5 minutes (270s) of the 6-minute
+    // budget, checked at the START of every day's iteration (the finest
+    // granularity practically available — each day's fetch is one
+    // synchronous, non-interruptible call, so this can stop the loop
+    // before a NEW day starts but can't abort a day already in flight).
+    // The remaining ~1.5 minutes covers: that one already-permitted day's
+    // fetch+processing finishing, the summary/audit/flush after the loop,
+    // and general Apps Script latency variance.
+    var MAX_ELAPSED_MS = 4.5 * 60 * 1000;
+    var startTime = new Date().getTime();
+    var lastCompletedDateStr = null;
+    var stoppedEarly = false;
+
+    while (cur <= end) {
+      var elapsedMs = new Date().getTime() - startTime;
+      if (elapsedMs >= MAX_ELAPSED_MS) {
+        stoppedEarly = true;
+        var stoppedAtStr = Utilities.formatDate(cur, tz, 'yyyy-MM-dd');
+        Logger.log('⏱  Elapsed-time guard tripped at ' + Math.round(elapsedMs / 1000) +
+          's — stopping before starting ' + stoppedAtStr + '.');
+        Logger.log('   Last date fully completed: ' +
+          (lastCompletedDateStr || '(none — stopped before completing any date)'));
+        Logger.log('   Resume with startDateStr="' + stoppedAtStr + '".');
+        break;
+      }
+
+      var dateStr = Utilities.formatDate(cur, tz, 'yyyy-MM-dd');
+      Logger.log('── ' + dateStr + ' — live Tebra fetch ──');
+
+      var liveAppts;
+      try {
+        // quiet=true — this function redacts patient identity to initials
+        // in its own output; suppress _fetchTebraAppointments()'s own raw-
+        // name narration lines for this call so none leak through.
+        liveAppts = _fetchTebraAppointments(c, dateStr, dateStr, true);
+      } catch (fetchErr) {
+        // NOT marked as completed — the fetch itself failed, so this date
+        // wasn't actually checked. A resume should retry it, not skip it.
+        Logger.log('  ❌  Fetch error: ' + fetchErr.message);
+        cur.setDate(cur.getDate() + 1);
+        continue;
+      }
+
+      var forProv = liveAppts.filter(function (a) { return a.provID === provID; });
+      if (!forProv.length) {
+        Logger.log('  (no ' + provID + ' appointments returned for this date)');
+        lastCompletedDateStr = dateStr;
+        cur.setDate(cur.getDate() + 1);
+        continue;
+      }
+
+      forProv.forEach(function (a) {
+        totalChecked++;
+        var key = a.date + '||' + _normalizeTimeKey(a.time) + '||' +
+          _stripMiddleName(a.patient).toLowerCase().replace(/\s+/g, ' ').trim();
+        var sheetRow = sheetByKey[key];
+        var initials = _initialsFor(a.patient);
+
+        if (!sheetRow) {
+          Logger.log('  ⚠️  ' + a.date + ' ' + a.time + '  "' + initials + '"' +
+            '  LIVE Tebra="' + a.tebraStatus + '"  — no matching Sheet row, skipped');
+          return;
+        }
+
+        var oldStatus = sheetRow.tebraStatus || '';
+        var newStatus = a.tebraStatus || '';
+        if (oldStatus === newStatus) return;   // no mismatch, nothing to reconcile
+
+        totalCorrected++;
+        var alreadySigned = sheetRow.signedVal === true ||
+          String(sheetRow.signedVal).trim().toUpperCase() === 'TRUE';
+        var willAutoSign = COL_SIGNED > 0 && _isCheckedOutStatus(newStatus) && !alreadySigned;
+
+        if (dryRun) {
+          Logger.log('  🔀 [DRY RUN] row ' + sheetRow.rowNum + '  ' + a.date + ' ' + a.time +
+            '  "' + initials + '"  TebraStatus: "' + oldStatus + '" → "' + newStatus + '"' +
+            (willAutoSign ? '  (would also auto-sign)' : ''));
+          return;
+        }
+
+        // ── LIVE write: correct TebraStatus ──
+        sheet.getRange(sheetRow.rowNum, COL_TEBRA_STATUS).setValue(newStatus);
+        Logger.log('  ✓ row ' + sheetRow.rowNum + '  ' + a.date + ' ' + a.time +
+          '  "' + initials + '"  TebraStatus: "' + oldStatus + '" → "' + newStatus + '"');
+
+        // ── Same Checked-Out auto-sign condition as importFromTebraApi()'s
+        // main loop — see the block comment above this function. ──
+        if (willAutoSign) {
+          sheet.getRange(sheetRow.rowNum, COL_SIGNED).setValue(true);
+          totalAutoSigned++;
+          Logger.log('    ✓ Auto-signed: "' + initials + '" — TebraStatus "' +
+            newStatus + '" → Signed=TRUE');
+        }
+      });
+
+      lastCompletedDateStr = dateStr;
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    Logger.log('── Summary ──');
+    Logger.log('  Total checked:          ' + totalChecked);
+    Logger.log('  Total corrected:        ' + totalCorrected + (dryRun ? '  (dry run — no writes made)' : ''));
+    Logger.log('  Of those, auto-signed:  ' + totalAutoSigned);
+    Logger.log('  Range requested:        [' + startDateStr + ' – ' + endDateStr + ']');
+    if (stoppedEarly) {
+      Logger.log('  ⏱  STOPPED EARLY (elapsed-time guard) — last completed: ' +
+        (lastCompletedDateStr || '(none)') + '. Resume with startDateStr="' +
+        Utilities.formatDate(cur, tz, 'yyyy-MM-dd') + '".');
+    } else {
+      Logger.log('  ✅  Completed the full requested range.');
+    }
+
+    if (!dryRun && totalCorrected > 0) {
+      SpreadsheetApp.flush();
+      _audit(ss, 'TEBRA_STALE_RECONCILE',
+        'reconcileStaleTebraStatuses: ' + totalCorrected + ' TebraStatus corrected, ' +
+        totalAutoSigned + ' auto-signed (Checked Out → Signed=TRUE) — provID=' + provID +
+        ' [' + startDateStr + ' – ' + (stoppedEarly ? lastCompletedDateStr : endDateStr) + ']' +
+        (stoppedEarly ? ' (stopped early — elapsed-time guard)' : ''));
+    }
   } catch (e) {
     Logger.log('❌  Error: ' + e.message);
   }
