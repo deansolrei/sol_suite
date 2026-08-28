@@ -17559,6 +17559,7 @@
                                                     style={{flex: 1}}>
                                                     <PatientName name={a.patient} state={a.patientState} />
                                                 </span>
+                                                <CommChatIcon appt={a} onOpen={() => setPamModal(a)} />
                                                 <span
                                                     className="pv-status-inline"
                                                     onClick={sCls !== 'ok' ? toggleDetail : undefined}
@@ -17685,6 +17686,7 @@
                                                     style={{flex: 1}}>
                                                     <PatientName name={a.patient} state={a.patientState} />
                                                 </span>
+                                                <CommChatIcon appt={a} onOpen={() => setPamModal(a)} />
                                                 {(() => {
                                                     if (a.out) {
                                                         const cs = a.billing === 'submitted' ? (a.claimStatus || 'Pending') : '';
