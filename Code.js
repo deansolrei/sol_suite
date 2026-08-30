@@ -5630,6 +5630,130 @@ function reconcileStaleTebraStatuses(provID, startDateStr, endDateStr, dryRun) {
   Logger.log('────────────────────────────────────────────────────────────');
 }
 
+// ─────────────────────────────────────────────────────────────────
+// DIAGNOSTIC: testPostReconcileSpotCheck — read-only, makes zero
+// writes. Self-contained companion check for reconcileStaleTebraStatuses:
+// doesn't depend on any prior run's output or row-number list, since
+// it independently rediscovers the relevant rows fresh from the Sheet
+// each time it's run.
+//
+// 1. Reruns the standard _isUnsignedEligible()-based count for provID
+//    (same rule getTotalUnsignedCount()/testUnsignedCountBreakdown()
+//    use) — the current true total, right now.
+// 2. Separately finds every one of provID's rows whose TebraStatus is
+//    currently Checked Out (_isCheckedOutStatus() — the same predicate
+//    the auto-sign mechanism itself uses), and for ALL of them checks
+//    the live Signed value read fresh in this execution — not a cached
+//    or previously-observed value. Reports how many are Signed=true vs
+//    not, then logs a sample (favoring any NOT-signed ones first, since
+//    those are the actionable case) of up to sampleSize rows by row
+//    number, date, time, initials, TebraStatus, and the live Signed
+//    value. If persistence were failing, Checked-Out rows would show
+//    Signed genuinely false/blank here — this reads the Sheet fresh,
+//    so there's nothing to reconcile between "write attempted" and
+//    "value observed."
+//
+// Run this from Apps Script and check the Logs (View → Logs) after
+// running.
+// ─────────────────────────────────────────────────────────────────
+function testPostReconcileSpotCheck(provID, sampleSize) {
+  provID = provID || 'jodene';
+  sampleSize = sampleSize || 8;
+
+  Logger.log('── testPostReconcileSpotCheck for provID="' + provID + '" ──────────');
+
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TAB_APPT);
+    if (!sheet || sheet.getLastRow() < 2) {
+      Logger.log('❌  No Appointments sheet found (or it has no data rows).');
+      return;
+    }
+
+    var PROV_IDX = APPT_COLS.indexOf('ProvID');
+    var TIME_IDX = APPT_COLS.indexOf('Time');
+    var SIGNED_IDX = APPT_COLS.indexOf('Signed');
+    var TEBRA_IDX = APPT_COLS.indexOf('TebraStatus');
+    var PATIENT_IDX = APPT_COLS.indexOf('Patient');
+    var DATE_IDX = APPT_COLS.indexOf('Date');
+    var PLACEHOLDER_NAMES = PLACEHOLDER_PATIENT_NAMES;  // shared list — see top of file
+
+    var rows = sheet.getDataRange().getValues();
+
+    // ── Part 1: fresh unsigned total, right now, same rule the live badge uses ──
+    var totalUnsigned = 0;
+    for (var i = 1; i < rows.length; i++) {
+      var r1 = rows[i];
+      if (String(r1[PROV_IDX] || '').trim() !== String(provID).trim()) continue;
+      if (PATIENT_IDX >= 0 && PLACEHOLDER_NAMES.indexOf(String(r1[PATIENT_IDX] || '').trim().toUpperCase()) !== -1) continue;
+      var ts1 = TEBRA_IDX >= 0 ? String(r1[TEBRA_IDX] || '') : '';
+      if (_isUnsignedEligible(ts1, r1[DATE_IDX], r1[TIME_IDX], r1[SIGNED_IDX])) totalUnsigned++;
+    }
+
+    // ── Part 2: every currently-Checked-Out row, live Signed value ──
+    var checkedOutRows = [];
+    for (var j = 1; j < rows.length; j++) {
+      var r2 = rows[j];
+      if (String(r2[PROV_IDX] || '').trim() !== String(provID).trim()) continue;
+      if (PATIENT_IDX >= 0 && PLACEHOLDER_NAMES.indexOf(String(r2[PATIENT_IDX] || '').trim().toUpperCase()) !== -1) continue;
+      var ts2 = TEBRA_IDX >= 0 ? String(r2[TEBRA_IDX] || '') : '';
+      if (!_isCheckedOutStatus(ts2)) continue;
+
+      var sv = r2[SIGNED_IDX];
+      var isSignedTrue = sv === true || String(sv).trim().toUpperCase() === 'TRUE';
+      checkedOutRows.push({
+        rowNum: j + 1,
+        dateStr: _fmtDate(r2[DATE_IDX]),
+        timeStr: _fmtTime(r2[TIME_IDX]),
+        patient: String(r2[PATIENT_IDX] || '').trim(),
+        tebraStatus: ts2,
+        signedVal: sv,
+        isSignedTrue: isSignedTrue,
+      });
+    }
+
+    var totalCheckedOut = checkedOutRows.length;
+    var signedTrueCount = checkedOutRows.filter(function (x) { return x.isSignedTrue; }).length;
+    var notSignedCount = totalCheckedOut - signedTrueCount;
+
+    // Sample: show every NOT-signed row first (the actionable case, up to
+    // sampleSize), then fill any remaining slots with Signed=true rows
+    // spread across the list so the sample isn't just the first N rows.
+    var notSigned = checkedOutRows.filter(function (x) { return !x.isSignedTrue; });
+    var signedOk = checkedOutRows.filter(function (x) { return x.isSignedTrue; });
+    var sample = notSigned.slice(0, sampleSize);
+    if (sample.length < sampleSize && signedOk.length) {
+      var need = sampleSize - sample.length;
+      var stepFill = Math.max(1, Math.floor(signedOk.length / need));
+      for (var k = 0; k < signedOk.length && sample.length < sampleSize; k += stepFill) {
+        sample.push(signedOk[k]);
+      }
+    }
+
+    Logger.log('── Part 1: fresh unsigned total (right now) ──');
+    Logger.log('  Total unsigned for ' + provID + ': ' + totalUnsigned);
+
+    Logger.log('── Part 2: Checked-Out rows — live Signed value ──');
+    Logger.log('  Total Checked-Out rows:      ' + totalCheckedOut);
+    Logger.log('  Signed=true (persisted):     ' + signedTrueCount);
+    Logger.log('  Signed NOT true (⚠ check):   ' + notSignedCount);
+
+    Logger.log('── Sample (up to ' + sampleSize + ' rows, NOT-signed ones shown first) ──');
+    if (!sample.length) {
+      Logger.log('  (no Checked-Out rows found for this provider)');
+    }
+    sample.forEach(function (x) {
+      Logger.log('  ' + (x.isSignedTrue ? '✓' : '⚠') + '  row ' + x.rowNum + '  ' +
+        x.dateStr + ' ' + x.timeStr + '  "' + _initialsFor(x.patient) + '"' +
+        '  TebraStatus="' + x.tebraStatus + '"  Signed=' + JSON.stringify(x.signedVal) +
+        (x.isSignedTrue ? '' : '   ← NOT Signed=true right now'));
+    });
+  } catch (e) {
+    Logger.log('❌  Error: ' + e.message);
+  }
+  Logger.log('────────────────────────────────────────────────────────────');
+}
+
 function _fetchTebraAppointmentsChunked(c, startDateStr, endDateStr) {
   var all = [];
   var seenKeys = {};
