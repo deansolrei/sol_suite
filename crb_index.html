@@ -17084,6 +17084,37 @@
             );
         }
 
+        // ── Channel-switch-off-a-submitted-claim warning — ClaimSubmitModal
+        // only, same visual pattern as InsuranceCarrierWarningDialog (not the
+        // shared component itself — this one's copy is specific to switching
+        // billing channels away from an already-submitted Clinic Submit
+        // claim, a different check than the insurance-carrier one). Cancel
+        // leaves the draft exactly as it was — nothing is reset, the switcher
+        // still shows the newly-picked channel until the user acts again.
+        function ClaimChannelSwitchWarningDialog({onConfirm, onCancel}) {
+            return (
+                <div className="overlay" onClick={onCancel} style={{zIndex: 10000}}>
+                    <div className="modal sm" onClick={e => e.stopPropagation()}>
+                        <div className="m-hdr">
+                            <div className="m-title">Confirm Billing Channel Change</div>
+                            <button className="m-close" onClick={onCancel}>×</button>
+                        </div>
+                        <div className="m-body">
+                            <p style={{fontSize: 13, lineHeight: 1.5, margin: 0}}>
+                                This appointment already has a submitted claim. Switching billing
+                                channels won't delete that claim data, but it will move this
+                                appointment off the active Direct-Pay workflow.
+                            </p>
+                        </div>
+                        <div className="m-foot">
+                            <button className="btn btn-s" onClick={onCancel}>Cancel</button>
+                            <button className="btn btn-p" onClick={onConfirm}>Confirm &amp; Save</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         function ProvChannelModal({a, patientDb, onUpdate, onClose, onOpenComments}) {
             const [savingId, setSavingId] = useState(null); // METHODS id currently in flight, or null
             const [errId, setErrId] = useState(null);
@@ -19887,7 +19918,25 @@
             function insuranceChanged() {
                 return insurance !== (appt.insuranceCarrier || '');
             }
+            // Channel-switch-off-an-already-submitted-claim warning — checked
+            // against appt.method (the outgoing/original value) vs.
+            // localAppt.method (the draft), so it only fires for a genuine
+            // edit through the new switcher above, never as a side effect of
+            // an unrelated save. Save-only: canSubmit already excludes
+            // billing === 'submitted', so this condition can never be true on
+            // the Submit path — nothing needed there.
+            const [showChannelWarning, setShowChannelWarning] = useState(false);
+            function channelSwitchNeedsWarning() {
+                return localAppt.method !== appt.method && appt.method === 'direct' &&
+                    localAppt.billing === 'submitted';
+            }
+            function proceedPastChannelWarning() {
+                setShowChannelWarning(false);
+                if (insuranceChanged()) { setPendingInsuranceAction('save'); return; }
+                doHandleSave();
+            }
             function handleSave() {
+                if (channelSwitchNeedsWarning()) { setShowChannelWarning(true); return; }
                 if (insuranceChanged()) { setPendingInsuranceAction('save'); return; }
                 doHandleSave();
             }
@@ -19927,6 +19976,26 @@
                                 {/* ── Section 1: Patient Claim Record ── */}
                                 <div className="csm-section csm-static">
                                     <div className="csm-section-title">🗂 Patient Claim Record</div>
+                                    {/* ── Billing Channel — draft-until-Save, matching BillerApptModal's
+                              own meth-opt buttons exactly (same METHODS array, same visual
+                              treatment). No switching-INTO-'direct' setup logic exists
+                              anywhere in this app (confirmed 2026-08-28 investigation) —
+                              not something this modal introduces or fixes, since it's
+                              already reachable via BillerApptModal today regardless. ── */}
+                                    <div className="csm-fields-group-lbl">Billing Channel</div>
+                                    <div className="csm-field">
+                                        <div style={{display: 'flex', gap: 8}}>
+                                            {METHODS.map(({id, label}) => (
+                                                <div key={id} className={`meth-opt${localAppt.method === id ? ' meth-sel' : ''}`}
+                                                    style={{
+                                                        cursor: 'pointer', padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700,
+                                                        background: localAppt.method === id ? '#3D768A' : '#FBFBF3',
+                                                        color: localAppt.method === id ? '#FFFFFF' : '#2B2716',
+                                                    }}
+                                                    onClick={() => setLocalAppt({...localAppt, method: id})}>{label}</div>
+                                            ))}
+                                        </div>
+                                    </div>
                                     {/* ── Insurance Carrier & Subscriber ── */}
                                     <div className="csm-fields-group-lbl">Insurance Carrier &amp; Subscriber</div>
                                     <div className="csm-grid-2">
@@ -20418,6 +20487,12 @@
                                 setPendingInsuranceAction(null);
                                 if (action === 'submit') doHandleSubmit(); else doHandleSave();
                             }}
+                        />
+                    )}
+                    {showChannelWarning && (
+                        <ClaimChannelSwitchWarningDialog
+                            onCancel={() => setShowChannelWarning(false)}
+                            onConfirm={proceedPastChannelWarning}
                         />
                     )}
                 </>
