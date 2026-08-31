@@ -17159,6 +17159,7 @@
                 Promise.resolve(onUpdate({...a, insuranceCarrier: insurance}))
                     .then(result => {
                         if (result && result.ok === false) setInsErr(true);
+                        else onClose();
                     })
                     .catch(() => setInsErr(true))
                     .finally(() => setSavingIns(false));
