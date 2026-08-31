@@ -3211,18 +3211,86 @@
             align-items: center;
         }
 
-        /* Single vertical column of all 6 items, not the design reference's
-       two side-by-side sub-columns — at the real ~172-247px card width a
-       two-column split leaves each label under ~25px, truncating text
-       like "Unsigned" to 2 characters even with ellipsis. One column gives
-       every label the card's full available legend width instead. */
+        /* Wide (>768px, flank layout) only — narrow mode's gap stays exactly
+       8px, untouched, since it was never width-constrained to begin with. */
+        @media (min-width: 769px) {
+            .wkdr-main {
+                gap: 1px;
+            }
+            /* Shrinks the RENDERED size only — the <svg>'s own width/height
+               HTML attributes (78) are overridden by this CSS rule (CSS wins
+               over the attribute for a replaced element), viewBox stays
+               "0 0 92 92" and every circle's cx/cy/r/strokeWidth/dasharray
+               is untouched, so this is a uniform visual scale-down, not a
+               change to the ring's own math. Scoped to .wkdr-main .wkdr-ring
+               specifically so the zero-state ring (T === 0, not inside
+               .wkdr-main) and the narrow single-column layout are both
+               unaffected. Real-render verified (2026-08-29): tried the
+               initially-proposed 66-68px first — not enough on its own to
+               bring the flank legend text back up near .wkdr-intake's own
+               7.5px without still truncating at the real 171px card floor.
+               58px, combined with the gap/dot/item-gap reductions below,
+               is what actually got there — a big filled shape can afford
+               more of a cut than that starting point before this stops
+               reading as a ring; the flank text's own readability floor is
+               the harder constraint. */
+            .wkdr-main .wkdr-ring {
+                width: 58px;
+                height: 58px;
+            }
+        }
+
+        /* Single vertical column of all 6 items (incl. Total, redundant with
+       the ring's own center total but kept here since this IS the width
+       tier that can't afford to drop it) — same reasoning as before
+       (2026-08-25): at the real ~150-247px card width a two-column split
+       truncates labels like "Unsigned". Hidden by default now (2026-08-29)
+       — the two-flank layout below is the >768px default; this narrow
+       single-column layout is restored via the SAME @media(max-width:768px)
+       block .wk-grid's own mobile-scroll switch uses, immediately below
+       its override, so the two thresholds can never disagree. */
         .wkdr-legend {
             flex: 1;
             min-width: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        /* Two-column "flanking the ring" layout (2026-08-29), >768px default —
+       Total omitted here since the ring's own center text already shows it;
+       Unsigned/Signed left, Not Filed/Pending/Paid right. Reuses
+       .wkdr-legend-item/.wkdr-dot verbatim for each row's own styling, so
+       only the column container itself needs new rules. min-width: 0 for
+       the same reason .wk-col-hd itself needs it — without it a flex
+       child's automatic min-content width (this column's own nowrap label
+       text) can force the column wider than its fair share. */
+        .wkdr-flank {
             display: flex;
             flex-direction: column;
             justify-content: center;
             gap: 3px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Real-render verified (2026-08-29): with the ring above shrunk to
+       58px and .wkdr-main's own gap down to 1px, this brings the flank
+       legend text back up to 7.5px — the same size .wkdr-intake already
+       uses on this card — with zero truncation at both real ends of the
+       desktop range (171px and 245px). .wkdr-legend-item's own base
+       8.75px/7px-dot sizing (correct for the single, full-width narrow
+       column) is untouched — this override is scoped to flank context
+       only; the narrow .wkdr-legend variant below 768px is unaffected. */
+        .wkdr-flank .wkdr-legend-item {
+            gap: 1px;
+            font-size: 7.5px;
+        }
+
+        .wkdr-flank .wkdr-dot {
+            width: 4px;
+            height: 4px;
         }
 
         .wkdr-legend-item {
@@ -3253,23 +3321,52 @@
             margin: 9px 0 7px;
         }
 
+        /* Relocated (2026-08-29) directly under .wkdr-day, above everything
+       else — same overflow discipline .wk-col-hd's own min-width: 0
+       comment documents: nowrap + ellipsis so a narrow card truncates
+       cleanly instead of wrapping or forcing the column wider. */
         .wkdr-intake {
-            font-size: 9.5px;
+            font-size: 7.5px;
             color: var(--text-primary);
             line-height: 1.5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        /* Full-width banner bar (2026-08-29), replacing the plain-text
+       .wkdr-cap caption in the T > 0 branch only — .wkdr-cap itself is
+       untouched and still used verbatim by the zero-state (T === 0)
+       return, which this task doesn't touch. Same copy/meaning as the
+       caption it replaces, just restyled as a solid bar. Same overflow
+       discipline as .wkdr-intake above. */
+        .wkdr-banner {
+            background: #377BAD;
+            color: #FFFFFF;
+            font-size: 7.5px;
+            font-weight: 700;
+            text-align: center;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin: 4px 0 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
         }
 
         .wkdr-intake-tag {
-            font-size: 8px;
+            font-size: 7px;
             letter-spacing: .08em;
             color: #527AAE;
             text-transform: uppercase;
-            margin-right: 5px;
+            margin-right: 3px;
         }
 
         .wkdr-intake-sep {
             color: #ccc;
-            margin: 0 4px;
+            margin: 0 3px;
         }
 
         .wkdr-intake u {
@@ -11534,6 +11631,35 @@
             /* .wk-week-label and .wk-grid > .wk-col-hd stay sticky (JS-measured
          offsets, same as desktop) — no override needed here anymore. */
 
+            /* WeekDualRing's two-column-vs-single-column legend switch
+         (2026-08-29) — deliberately placed right after .wk-grid's own
+         mobile override above, in this SAME @media block, so the two
+         thresholds can never disagree: below this exact breakpoint, fall
+         back to the existing single-column legend (.wkdr-legend, all 6
+         items incl. Total) instead of the >768px two-flank layout. */
+            .wkdr-flank {
+                display: none;
+            }
+
+            .wkdr-legend {
+                display: flex;
+            }
+
+            /* Real-render verified (2026-08-29) at the literal 150px scroll
+         floor: .wkdr-intake (relocated here) and .wkdr-banner (new) both
+         need smaller text than their >768px sizing to avoid truncating at
+         this exact width — sized down further, scoped to this breakpoint
+         only, same overflow discipline (nowrap/ellipsis) as a safety net
+         either way. */
+            .wkdr-intake {
+                font-size: 6.25px;
+            }
+
+            .wkdr-banner {
+                font-size: 6.5px;
+                padding: 2px 3px;
+            }
+
             /* ── Modals — use nearly the full screen instead of a centered card ── */
             .overlay,
             .pim-overlay,
@@ -18876,11 +19002,31 @@
                 paid: `Claim submitted and paid (${PD})`,
             };
 
+            const counts = appts.reduce((acc, a) => {
+                const cs = computeStatus(a);
+                const s = cs === 'valid' ? 'ok' : cs === 'issue' ? 'err' : 'pend';
+                acc[s] = (acc[s] || 0) + 1;
+                return acc;
+            }, {ok: 0, err: 0, pend: 0});
+
             return (
                 <>
                     <div className="wkdr-day">{dayLabel}</div>
-                    <div className="wkdr-cap">Inner = post-visit &nbsp;·&nbsp; Outer = billing</div>
+                    <div className="wkdr-intake">
+                        <span className="wkdr-intake-tag">Intake</span>
+                        <b>{counts.pend}</b> <u style={{textDecorationColor: '#fdef54'}} title="This represents Pre-Visit designation of 'In Process'">In Process</u>
+                        <span className="wkdr-intake-sep">·</span>
+                        <b>{counts.err}</b> <u style={{textDecorationColor: '#d83434'}} title="This represents Pre-Visit designation of 'Issue'">Issue</u>
+                        <span className="wkdr-intake-sep">·</span>
+                        <b>{counts.ok}</b> <u style={{textDecorationColor: '#447433'}} title="This represents Pre-Visit designation of 'Valid'">Valid</u>
+                    </div>
+                    <div className="wkdr-banner">Inner = post-visit &nbsp;·&nbsp; Outer = billing</div>
+                    <hr className="wkdr-divider" />
                     <div className="wkdr-main">
+                        <div className="wkdr-flank">
+                            <div className="wkdr-legend-item" title={tip.unsigned}><span className="wkdr-dot" style={{background: '#d83434'}} />Unsigned <b>{U}</b></div>
+                            <div className="wkdr-legend-item" title={tip.signed}><span className="wkdr-dot" style={{background: '#4E6C43'}} />Signed <b>{S}</b></div>
+                        </div>
                         <svg width="78" height="78" viewBox="0 0 92 92" className="wkdr-ring" style={{flexShrink: 0}}>
                             <circle cx={cx} cy={cy} r={rOut} fill="none" stroke="#F0F0F0" strokeWidth={swOut} />
                             <circle cx={cx} cy={cy} r={rIn} fill="none" stroke="#F0F0F0" strokeWidth={swIn} />
@@ -18928,34 +19074,20 @@
                                 TOTAL
                             </text>
                         </svg>
+                        <div className="wkdr-flank">
+                            <div className="wkdr-legend-item" title={tip.notSub}><span className="wkdr-dot" style={{background: '#d83434'}} />Not Filed <b>{NS}</b></div>
+                            <div className="wkdr-legend-item" title={tip.pending}><span className="wkdr-dot" style={{background: '#fdef54'}} />Pending <b>{P}</b></div>
+                            <div className="wkdr-legend-item" title={tip.paid}><span className="wkdr-dot" style={{background: '#447433'}} />Paid <b>{PD}</b></div>
+                        </div>
                         <div className="wkdr-legend">
                             <div className="wkdr-legend-item" title={tip.total} style={{color: '#527AAE'}}><span className="wkdr-dot" style={{background: '#527AAE'}} />Total <b>{T}</b></div>
                             <div className="wkdr-legend-item" title={tip.unsigned}><span className="wkdr-dot" style={{background: '#d83434'}} />Unsigned <b>{U}</b></div>
                             <div className="wkdr-legend-item" title={tip.signed}><span className="wkdr-dot" style={{background: '#4E6C43'}} />Signed <b>{S}</b></div>
-                            <div className="wkdr-legend-item" title={tip.notSub}><span className="wkdr-dot" style={{background: '#d83434'}} />Not Sub. <b>{NS}</b></div>
+                            <div className="wkdr-legend-item" title={tip.notSub}><span className="wkdr-dot" style={{background: '#d83434'}} />Not Filed <b>{NS}</b></div>
                             <div className="wkdr-legend-item" title={tip.pending}><span className="wkdr-dot" style={{background: '#fdef54'}} />Pending <b>{P}</b></div>
                             <div className="wkdr-legend-item" title={tip.paid}><span className="wkdr-dot" style={{background: '#447433'}} />Paid <b>{PD}</b></div>
                         </div>
                     </div>
-                    <hr className="wkdr-divider" />
-                    {(() => {
-                        const counts = appts.reduce((acc, a) => {
-                            const cs = computeStatus(a);
-                            const s = cs === 'valid' ? 'ok' : cs === 'issue' ? 'err' : 'pend';
-                            acc[s] = (acc[s] || 0) + 1;
-                            return acc;
-                        }, {ok: 0, err: 0, pend: 0});
-                        return (
-                            <div className="wkdr-intake">
-                                <span className="wkdr-intake-tag">Intake</span>
-                                <b>{counts.pend}</b> <u style={{textDecorationColor: '#fdef54'}} title="This represents Pre-Visit designation of 'In Process'">In Process</u>
-                                <span className="wkdr-intake-sep">·</span>
-                                <b>{counts.err}</b> <u style={{textDecorationColor: '#d83434'}} title="This represents Pre-Visit designation of 'Issue'">Issue</u>
-                                <span className="wkdr-intake-sep">·</span>
-                                <b>{counts.ok}</b> <u style={{textDecorationColor: '#447433'}} title="This represents Pre-Visit designation of 'Valid'">Valid</u>
-                            </div>
-                        );
-                    })()}
                 </>
             );
         }
