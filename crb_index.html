@@ -7863,8 +7863,18 @@
             line-height: 1;
         }
 
+        /* 16px → 19px (+3px, +18.75%) — a further deliberate size increase
+           (2026-08-29) on top of the .pv-comm-icon-lg bump below, applied to
+           the DEFAULT size this time (all 5 non-pv-comm-icon-lg call sites:
+           Week View rows, AllProviderWeekView, AssistantView, BillingView, and
+           Pre/Post-Visit collapsed rows). Same "clearly perceptible without
+           dominating the row" reasoning as before — the bubble was already the
+           largest glyph in every one of these rows at 16px; +3px keeps it the
+           unambiguous focal point without visually overwhelming the copy
+           around it. ci-empty/ci-has opacity are left exactly as-is —
+           deliberately, not touched by this pass. */
         .ci-bubble {
-            font-size: 16px;
+            font-size: 19px;
             line-height: 1;
             display: block;
         }
@@ -7878,9 +7888,14 @@
             opacity: .55;
         }
 
+        /* Red gets the same colored glow yellow/green already had (below) —
+           closes that inconsistency rather than introducing a new pattern.
+           rgba(220,38,38,...) matches the richer red now also used for
+           .ci-red's badge fill (was var(--error), see below). */
         .comm-icon-red .ci-bubble {
             filter: none;
             opacity: 1;
+            text-shadow: 0 0 7px rgba(220, 38, 38, .9);
         }
 
         .comm-icon-yellow-exclaim .ci-bubble {
@@ -7900,15 +7915,13 @@
             text-shadow: 0 0 7px rgba(34, 197, 94, .9);
         }
 
-        /* Post-Visit expanded row only, via CommChatIcon's className prop —
-           the shared .ci-bubble/.ci-has defaults above stay untouched, since
-           CommChatIcon also renders at the original 16px/.55 in five other
-           call sites (Week View rows, AllProviderWeekView, AssistantView,
-           BillingView) whose narrower layouts this task was never asked to
-           touch. 16px → 18px (+12.5%): a deliberate, clearly perceptible
-           bump without becoming the visually dominant element in a row
-           whose surrounding text (pv-channel, pv-ins) sits at 10-11px —
-           the bubble was already the largest glyph here before this change.
+        /* Post-Visit/Pre-Visit expanded panels only, via CommChatIcon's
+           className prop — the shared .ci-bubble/.ci-has defaults above stay
+           untouched relative to each other. Originally 16px→18px (+12.5%);
+           now 19px→21px (+3px, +16.7%, 2026-08-29) — the same relative
+           "clearly larger, still one size step above the default" gap as
+           before (was 2px/16px, now 2px/19px), just carried forward on top
+           of the default's own bump above rather than left behind by it.
            ci-has opacity .55 → .75 (+~36% relative): reads as clearly
            present rather than half-faded, while staying visibly one step
            below the fully-opaque (1.0) red/yellow/green urgent states —
@@ -7917,7 +7930,7 @@
            filter change: .ci-has never had a grayscale filter to begin
            with (only .ci-empty does), so there's nothing to adjust there. */
         .pv-comm-icon-lg .ci-bubble {
-            font-size: 18px;
+            font-size: 21px;
         }
 
         .pv-comm-icon-lg .ci-bubble.ci-has {
@@ -7942,19 +7955,32 @@
             pointer-events: none;
         }
 
+        /* Richer, more saturated fills (2026-08-29) — var(--error)/
+           var(--warning)/var(--success) read as too muted for an
+           action-required badge at a glance (#B66969/#E8D49E/#85A679, the
+           app's general-purpose semantic tokens). Rather than invent new
+           colors from scratch, these three reuse the more vivid RGB values
+           this same component ALREADY used for the pulse/glow effects below
+           (ci-pulse's rgba(220,38,38,...), .comm-icon-yellow's
+           rgba(245,158,11,...), ci-green-pulse's rgba(34,197,94,...)) —
+           closing the gap between "the glow is vivid but the fill
+           underneath it is muted" rather than introducing a fourth color
+           family. Deliberately scoped to just this component, not a
+           --error/--warning/--success token change — those stay as they are
+           everywhere else in the app. */
         .ci-red {
-            background: var(--error);
+            background: #DC2626;
             color: #FFFFFF;
             animation: ci-pulse 2s ease-in-out infinite;
         }
 
         .ci-yellow {
-            background: var(--warning);
+            background: #F59E0B;
             color: #FFFFFF;
         }
 
         .ci-green {
-            background: var(--success);
+            background: #22C55E;
             color: #FFFFFF;
             animation: ci-green-pulse 2s ease-in-out infinite;
         }
