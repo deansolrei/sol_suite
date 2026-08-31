@@ -1138,6 +1138,51 @@
             color: var(--brand-primary)
         }
 
+        /* ── Outstanding-notes banner show/hide toggle (2026-08-29) ──────────
+           Sits next to UnsignedTotalBanner at both its mount sites (Provider
+           Day View's olive .day-date-sticky-wrap band, and Week View's cream
+           .wk-week-label strip) — deliberately self-contained (own border +
+           background) rather than bare text on the surrounding band, so it
+           reads the same regardless of which of those two backgrounds it's
+           on, the same way .utb-pill itself already does. Same visual weight
+           as .utb-pill (padding/border/font-size) so it reads as belonging to
+           the same control family as the banner it toggles, without being
+           the literal same class. Chevron reuses the SAME rotate-on-open
+           transform/transition values as .una-chevron (not the shared class
+           itself — this is its own control, per Dean's explicit direction),
+           matching the established per-section-owns-its-chevron-class
+           convention .una-chevron's own comment documents. */
+        .utb-toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .utb-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px 3px 7px;
+            border-radius: 0;
+            border: 1px solid var(--brand-primary);
+            background: #FBFBF3;
+            color: var(--brand-primary);
+            font-size: 11px;
+            font-weight: 700;
+            font-family: inherit;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .utb-toggle-chevron {
+            font-size: 10px;
+            transition: transform .2s;
+        }
+
+        .utb-toggle-chevron.open {
+            transform: rotate(90deg);
+        }
+
         /* Header-mounted variant — sits on dark header background */
         .utb-hdr-pill {
             display: inline-flex;
@@ -17263,6 +17308,23 @@
             const [infoModalId, setInfoModalId] = useState(null); // PatientInfoModal — store ID for live lookup
             const [channelModal, setChannelModal] = useState(null); // ProvChannelModal — Jodene-only, Post-Visit .pv-channel button
 
+            // ── Outstanding-notes banner show/hide (2026-08-29) ──────────────
+            // Independent localStorage key — completely separate from
+            // crb-theme, never read or written by the dark/light mode logic.
+            // Same pattern theme itself uses: useState initializer reads once
+            // on mount, useEffect writes back on every change. Visible by
+            // default (matches today's existing behavior when nothing has
+            // ever been saved). This gate is deliberately separate from
+            // UnsignedTotalBanner's own "count is 0" early-return — the
+            // banner itself is untouched; this just decides whether it's
+            // rendered at all, at the call site below.
+            const [unsignedBannerHidden, setUnsignedBannerHidden] = useState(() => {
+                try {return localStorage.getItem('crb-unsigned-banner-hidden') === 'true';} catch {return false;}
+            });
+            useEffect(() => {
+                try {localStorage.setItem('crb-unsigned-banner-hidden', unsignedBannerHidden ? 'true' : 'false');} catch { }
+            }, [unsignedBannerHidden]);
+
             // A5 (proof stage) — consumes navigateAndOpenModal's pending
             // request once this view has actually rendered with the target
             // appointment loaded in `appts`. Only acts on the two modal
@@ -17493,7 +17555,14 @@
                     <div className="pv-date-band">
                         <div className="day-date-sticky-wrap">
                             <div className="day-date-banner">📋 {fmtDate(date)}</div>
-                            <UnsignedTotalBanner count={totalUnsigned} />
+                            <div className="utb-toggle-row">
+                                <button className="utb-toggle" onClick={() => setUnsignedBannerHidden(h => !h)}
+                                    title={unsignedBannerHidden ? 'Show outstanding notes count' : 'Hide outstanding notes count'}>
+                                    <span className={`utb-toggle-chevron${!unsignedBannerHidden ? ' open' : ''}`}>▶</span>
+                                    Note Status View
+                                </button>
+                                {!unsignedBannerHidden && <UnsignedTotalBanner count={totalUnsigned} />}
+                            </div>
                         </div>
                         <BorderColorKey mode={dayMode} />
                     </div>
@@ -18375,6 +18444,18 @@
 
         function WeekView({prov, date, data, onUpdateForDate, onSwitchToDay, onDeleteForDate, totalUnsigned, userRole, userProvID, navigateAndOpenModal, showLedger, setShowLedger, showNoteBoard, setShowNoteBoard, showPaymentTracker, setShowPaymentTracker, showAppointmentFlow, setShowAppointmentFlow}) {
             const [modal, setModal] = useState(null);
+            // Same independent, theme-pattern-matching persistence as
+            // ProviderView's own copy of this state — see its comment for the
+            // full reasoning. Kept as each view's own local state (not lifted
+            // to App) since the two views are never mounted simultaneously;
+            // localStorage itself is what keeps the preference consistent
+            // across a Day↔Week switch.
+            const [unsignedBannerHidden, setUnsignedBannerHidden] = useState(() => {
+                try {return localStorage.getItem('crb-unsigned-banner-hidden') === 'true';} catch {return false;}
+            });
+            useEffect(() => {
+                try {localStorage.setItem('crb-unsigned-banner-hidden', unsignedBannerHidden ? 'true' : 'false');} catch { }
+            }, [unsignedBannerHidden]);
             const ws = weekStart(date);
             const days = Array.from({length: 7}, (_, i) => addDays(ws, i));
 
@@ -18401,7 +18482,14 @@
             return (
                 <div>
                     <div className="wk-week-label">Week of {fmtDate(ws)}</div>
-                    <UnsignedTotalBanner count={totalUnsigned} />
+                    <div className="utb-toggle-row">
+                        <button className="utb-toggle" onClick={() => setUnsignedBannerHidden(h => !h)}
+                            title={unsignedBannerHidden ? 'Show outstanding notes count' : 'Hide outstanding notes count'}>
+                            <span className={`utb-toggle-chevron${!unsignedBannerHidden ? ' open' : ''}`}>▶</span>
+                            Note Status View
+                        </button>
+                        {!unsignedBannerHidden && <UnsignedTotalBanner count={totalUnsigned} />}
+                    </div>
                     <UnsignedWeekAlert data={data} prov={prov} days={days} />
 
                     {/* ── UNIFIED WEEK GRID — perfect column alignment ──── */}
