@@ -5458,17 +5458,6 @@
             flex-shrink: 0;
         }
 
-        .pim-note-box {
-            background: #F8EFD8;
-            border-radius: 9px;
-            padding: 12px 14px;
-            font-size: 13px;
-            line-height: 1.6;
-            color: var(--text-primary);
-            border-left: 3px solid var(--brand-primary);
-            white-space: pre-wrap;
-        }
-
         .pim-checklist-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -5489,6 +5478,55 @@
             font-size: 15px;
             font-weight: 900;
             flex-shrink: 0;
+        }
+
+        /* ── Messages section — own pim- namespace, matching this modal's
+           existing visual language (not pam-/cp-'s own classes). Message
+           rows themselves reuse the already-shared .comm-item/.comm-meta/
+           .comm-note classes via CommItem, same as every other surface. ── */
+        .pim-comm-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-height: 50px;
+            max-height: 180px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+            padding-right: 2px;
+        }
+
+        .pim-comm-input {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .pim-to-select {
+            border: 1.5px solid var(--brand-primary);
+            border-radius: 7px;
+            font-size: 12px;
+            padding: 6px 8px;
+            background: #FBFBF3;
+            color: var(--brand-primary);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .pim-send-btn {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary));
+            color: var(--text-on-brand);
+            border: none;
+            border-radius: 7px;
+            padding: 7px 14px;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .pim-send-btn:active {
+            opacity: .85;
         }
 
         .pim-foot {
@@ -17052,10 +17090,35 @@
            PatientInfoModal — Provider clicks a patient name in the Day View to
            see pre-encounter screener scores, clinical notes, and checklist status.
         ───────────────────────────────────────────────────────────────────────── */
-        function PatientInfoModal({appt, onClose}) {
+        function PatientInfoModal({appt, onClose, onUpdate}) {
             const SCR_NAMES = ['PHQ-9', 'GAD-7', 'PCL-5'];
             const scrData = appt.scrData || {};
             const scr = appt.scr || {};
+
+            // ── Messages — built entirely from the shared Messages pieces
+            // already used by ProviderApptModal/PatientModal/CommentsPopup;
+            // none of that logic is reimplemented here. ──
+            const [comms, setComms] = useState(appt.comms || []);
+            const [commNote, setCommNote] = useState('');
+            const [commTo, setCommTo] = useState(() => defaultCommTo(appt, 'provider'));
+            const commListRef = useRef(null);
+            const toOptions = COMM_TO_OPTIONS.provider;
+
+            // Mark incoming as read + persist readBy on open, exactly like every
+            // other existing Messages surface.
+            useEffect(() => {
+                markCommsReadPersist(appt, (u) => {
+                    setComms(u.comms || []);
+                    if (onUpdate) onUpdate(u);
+                });
+            }, []);
+
+            // Auto-scroll to bottom on new comment, same as the other surfaces.
+            useEffect(() => {
+                if (commListRef.current) commListRef.current.scrollTop = commListRef.current.scrollHeight;
+            }, [comms.length]);
+
+            const sendComment = makeSendComment(commNote, commTo, appt, comms, setComms, setCommNote, onUpdate);
 
             // Determine which screeners have usable data
             const scrRows = SCR_NAMES.map(s => {
@@ -17157,15 +17220,40 @@
                                         );
                                     })}
                                 </div>
-                                {/* Issue notes — always shown so provider knows if there are concerns */}
-                                <div style={{marginTop: 10}}>
-                                    <div style={{fontSize: 10.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: .7, color: '#777355', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 5}}>
-                                        ⚠️ Issue Notes
-                                    </div>
-                                    {appt.checklistNote
-                                        ? <div className="pim-note-box" style={{borderLeftColor: 'var(--warning)', background: '#F8EFD8'}}>{appt.checklistNote}</div>
-                                        : <div style={{fontSize: 13, color: '#777355', fontStyle: 'italic', padding: '4px 2px'}}>No issues noted.</div>
-                                    }
+                            </div>
+
+                            {/* ── Messages — replaces the old Issue Notes block. Same
+                      appt.comms thread ProviderApptModal's own chat icon on
+                      this row already reads/writes — a second, independent
+                      way to reach it, not a separate thread. ── */}
+                            <div>
+                                <div className="pim-sec-hdr">💬 Messages</div>
+                                <div style={{fontSize: 12, color: '#777355', fontStyle: 'italic', marginBottom: 8}}>
+                                    Staff messaging — date, time, and author logged automatically. 🔴 Unread message waiting for you · 🟡 Unread (sent by you) · 🟢 All read.
+                                </div>
+                                <div className="pim-comm-list" ref={commListRef}>
+                                    {comms.length === 0 && (
+                                        <div style={{fontSize: 12, color: '#777355', fontStyle: 'italic', padding: '8px 0'}}>No messages yet.</div>
+                                    )}
+                                    {comms.map((c, i) => <CommItem key={i} c={c} />)}
+                                </div>
+                                <div className="pim-comm-input">
+                                    <select
+                                        className="pim-to-select"
+                                        value={commTo}
+                                        onChange={e => setCommTo(e.target.value)}
+                                        title="Send to…"
+                                    >
+                                        {toOptions.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+                                    </select>
+                                    <input
+                                        className="fi msg-input" style={{flex: 1}}
+                                        placeholder="Add message…"
+                                        value={commNote}
+                                        onChange={e => setCommNote(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && sendComment()}
+                                    />
+                                    <button className="pim-send-btn" onClick={sendComment}>Send</button>
                                 </div>
                             </div>
 
@@ -18188,7 +18276,7 @@
                     {infoModalId && (() => {
                         const liveAppt = sorted.find(a => a.id === infoModalId);
                         return liveAppt
-                            ? <PatientInfoModal appt={liveAppt} onClose={() => setInfoModalId(null)} />
+                            ? <PatientInfoModal appt={liveAppt} onClose={() => setInfoModalId(null)} onUpdate={onUpdate} />
                             : null;
                     })()}
 
