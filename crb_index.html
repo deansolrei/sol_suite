@@ -5598,15 +5598,6 @@
             max-width: 640px
         }
 
-        .cpt-section-lbl {
-            font-size: 10px;
-            font-weight: 800;
-            color: var(--brand-primary);
-            text-transform: uppercase;
-            letter-spacing: .7px;
-            margin-bottom: 7px
-        }
-
         .cpt-combos {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -6670,10 +6661,6 @@
         }
 
         /* CPT modal redesign — dark mode */
-        body.dark .cpt-section-lbl {
-            color: #6B9E8A
-        }
-
         body.dark .cpt-row-lbl {
             color: rgba(107, 175, 136, .3)
         }
@@ -13364,6 +13351,9 @@
             const [custom, setCustom] = useState('');
             const [bhOpen, setBhOpen] = useState(false);
             const [addonSel, setAddonSel] = useState('');
+            // Independent of bhOpen — its own collapse state, same glyph-swap
+            // pattern, defaults closed (2026-08-29 layout simplification).
+            const [quickOpen, setQuickOpen] = useState(false);
             // Closes immediately — the save (and any auto-sign-note that follows)
             // runs in the background so the provider can move to the next patient
             // right away, instead of sitting here waiting for the round-trip.
@@ -13471,8 +13461,22 @@
                                 </div>
                             </div>
 
-                            {/* ── Add-On Codes dropdown ── */}
+                            {/* ── Add-on Codes — dropdown, plus a standalone 90785 tile
+                      directly above it, right-aligned (2026-08-29). Same
+                      .cpt-tile class/visual treatment as the Add-on
+                      Psychotherapy tiles above; wired to the exact same
+                      toggle('90785') + sel array the dropdown's own 90785
+                      option already reads/writes, so the two stay in sync
+                      automatically — not a second, separate state. ── */}
                             <div className="cpt-sec-hd" style={{marginTop: 10, marginBottom: 4}}>Add-On Codes</div>
+                            <div style={{display: 'flex', justifyContent: 'flex-end', marginBottom: 6}}>
+                                <div className={`cpt-tile${sel.includes('90785') ? ' on' : ''}`}
+                                    style={{flex: '0 0 auto', minWidth: 110}}
+                                    onClick={() => toggle('90785')}>
+                                    <div className="cpt-code">90785</div>
+                                    <div className="cpt-desc">Interactive Complexity</div>
+                                </div>
+                            </div>
                             <select className="fi" style={{width: '100%'}} value={addonSel}
                                 onChange={e => {
                                     const code = e.target.value;
@@ -13486,45 +13490,11 @@
                                 ))}
                             </select>
 
-                            {/* ── Quick Select — Most Common (secondary) ── */}
-                            <div className="cpt-section-lbl" style={{marginTop: 14}}>⚡ Quick Select — Most Common</div>
-                            <div className="cpt-combos">
-                                <div className="cpt-row-lbl">99214 combinations</div>
-                                {COMBOS.slice(0, 3).map(([p, a]) => {
-                                    const bothOn = sel.includes(p) && sel.includes(a);
-                                    return (
-                                        <button key={`${p}+${a}`}
-                                            className={`cpt-combo-btn${bothOn ? ' on' : ''}`}
-                                            onClick={() => quickCombo(p, a)}>
-                                            <span className="cpt-combo-row">
-                                                <span className="cpt-combo-pri">{p}</span>
-                                                <span className="cpt-combo-plus">+</span>
-                                                <span className="cpt-combo-add">{a}</span>
-                                            </span>
-                                            <span className="cpt-combo-desc">{CPT_MAP[a]}</span>
-                                        </button>
-                                    );
-                                })}
-                                <div className="cpt-row-lbl">99215 combinations</div>
-                                {COMBOS.slice(3).map(([p, a]) => {
-                                    const bothOn = sel.includes(p) && sel.includes(a);
-                                    return (
-                                        <button key={`${p}+${a}`}
-                                            className={`cpt-combo-btn${bothOn ? ' on' : ''}`}
-                                            onClick={() => quickCombo(p, a)}>
-                                            <span className="cpt-combo-row">
-                                                <span className="cpt-combo-pri">{p}</span>
-                                                <span className="cpt-combo-plus">+</span>
-                                                <span className="cpt-combo-add">{a}</span>
-                                            </span>
-                                            <span className="cpt-combo-desc">{CPT_MAP[a]}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            {/* ── BCBS Alternative Codes — collapsed ── */}
-                            <div className="cpt-bh-toggle" onClick={() => setBhOpen(o => !o)}>
+                            {/* ── BCBS Alternative Codes — collapsed, relocated (2026-08-29)
+                      directly below Add-on Codes. Own behavior completely
+                      unchanged — same bhOpen state, same ▾/▸ toggle, same
+                      .cpt-bh-tiles content. ── */}
+                            <div className="cpt-bh-toggle" onClick={() => setBhOpen(o => !o)} style={{marginTop: 10}}>
                                 <span>{bhOpen ? '▾' : '▸'} BCBS Alternative Codes</span>
                                 <span className="cpt-bh-note">Emerging — select for certain carrier-specific claims</span>
                             </div>
@@ -13539,14 +13509,16 @@
                                 </div>
                             )}
 
-                            {/* ── Custom code ── */}
+                            {/* ── Custom code — relocated (2026-08-29) to follow BCBS
+                      Alternative Codes. Internally unchanged. ── */}
                             <div style={{marginTop: 10, display: 'flex', gap: 8}}>
                                 <input className="fi" style={{flex: 1}} placeholder="Custom code…" value={custom}
                                     onChange={e => setCustom(e.target.value)} onKeyDown={e => e.key === 'Enter' && addCustom()} />
                                 <button className="btn btn-s btn-sm" onClick={addCustom}>+ Add</button>
                             </div>
 
-                            {/* ── Selected codes ── */}
+                            {/* ── Selected codes — unchanged, stays directly after Custom
+                      code (its existing natural position). ── */}
                             {sel.length > 0 && (
                                 <div className="cpt-sel-area">
                                     <div className="cpt-sel-lbl">Selected ({sel.length})</div>
@@ -13557,6 +13529,53 @@
                                             </span>
                                         ))}
                                     </div>
+                                </div>
+                            )}
+
+                            {/* ── Quick Select — Most Common — moved to the very end
+                      (2026-08-29), collapsed by default behind its own
+                      independent quickOpen state (not bhOpen). Same
+                      ▾/▸ glyph-swap header treatment as BCBS Alternative
+                      Codes, reusing .cpt-bh-toggle's own visual treatment.
+                      Contents (both combo rows, all six buttons) completely
+                      unchanged — only visibility/position moved. ── */}
+                            <div className="cpt-bh-toggle" onClick={() => setQuickOpen(o => !o)} style={{marginTop: 10}}>
+                                <span>{quickOpen ? '▾' : '▸'} ⚡ Quick Select — Most Common</span>
+                            </div>
+                            {quickOpen && (
+                                <div className="cpt-combos" style={{marginTop: 7}}>
+                                    <div className="cpt-row-lbl">99214 combinations</div>
+                                    {COMBOS.slice(0, 3).map(([p, a]) => {
+                                        const bothOn = sel.includes(p) && sel.includes(a);
+                                        return (
+                                            <button key={`${p}+${a}`}
+                                                className={`cpt-combo-btn${bothOn ? ' on' : ''}`}
+                                                onClick={() => quickCombo(p, a)}>
+                                                <span className="cpt-combo-row">
+                                                    <span className="cpt-combo-pri">{p}</span>
+                                                    <span className="cpt-combo-plus">+</span>
+                                                    <span className="cpt-combo-add">{a}</span>
+                                                </span>
+                                                <span className="cpt-combo-desc">{CPT_MAP[a]}</span>
+                                            </button>
+                                        );
+                                    })}
+                                    <div className="cpt-row-lbl">99215 combinations</div>
+                                    {COMBOS.slice(3).map(([p, a]) => {
+                                        const bothOn = sel.includes(p) && sel.includes(a);
+                                        return (
+                                            <button key={`${p}+${a}`}
+                                                className={`cpt-combo-btn${bothOn ? ' on' : ''}`}
+                                                onClick={() => quickCombo(p, a)}>
+                                                <span className="cpt-combo-row">
+                                                    <span className="cpt-combo-pri">{p}</span>
+                                                    <span className="cpt-combo-plus">+</span>
+                                                    <span className="cpt-combo-add">{a}</span>
+                                                </span>
+                                                <span className="cpt-combo-desc">{CPT_MAP[a]}</span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
