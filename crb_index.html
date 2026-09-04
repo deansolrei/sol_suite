@@ -3560,6 +3560,18 @@
             justify-content: flex-end
         }
 
+        /* Groups Pending/Denied/Resubmitted apart from Paid (leading, own
+           style) and the ✕ cancel (trailing) — a thin left border on both
+           this group and .csb-sm-cancel reads as a divider without a
+           layout change to .csb-status-menu itself. */
+        .csb-sm-secondary {
+            display: flex;
+            gap: 4px;
+            padding-left: 8px;
+            margin-left: 4px;
+            border-left: 1px solid var(--border);
+        }
+
         .csb-sm-btn {
             font-size: 12px;
             font-weight: 800;
@@ -3572,7 +3584,13 @@
             transition: none;
         }
 
-        .csb-sm-pend {
+        /* Renamed from the old abbreviated .csb-sm-pend/.csb-sm-resub —
+           those never matched the classes JSX actually generates
+           (`csb-sm-${s.toLowerCase()}` produces the full word), so Pending
+           and Resubmitted silently fell back to .csb-sm-btn's unstyled
+           default border instead of their intended soft tint. Full-word
+           selectors here so this can't happen again for a future status. */
+        .csb-sm-pending {
             color: var(--warning);
             border-color: var(--warning)
         }
@@ -3582,17 +3600,21 @@
             border-color: var(--error)
         }
 
-        .csb-sm-resub {
+        .csb-sm-resubmitted {
             color: #3D768A;
             border-color: #7494AA
         }
 
+        /* Paid is the primary control — filled, heavier border, set apart
+           from the plain-outline secondary options (2026-09-03). */
         .csb-sm-paid {
-            color: var(--success);
-            border-color: var(--success)
+            color: var(--text-on-brand);
+            background: var(--success);
+            border: 2px solid var(--success);
+            font-weight: 900;
         }
 
-        .csb-sm-pend:hover {
+        .csb-sm-pending:hover {
             background: #F8EFD8
         }
 
@@ -3600,18 +3622,20 @@
             background: #FEF2F2
         }
 
-        .csb-sm-resub:hover {
+        .csb-sm-resubmitted:hover {
             background: #E9F1F4
         }
 
         .csb-sm-paid:hover {
-            background: #F0FDF4
+            background: #6F8F63;
+            border-color: #6F8F63
         }
 
         .csb-sm-cancel {
             background: #FBFBF3;
             color: #777355;
             border-color: #777355;
+            margin-left: 8px;
         }
 
         .csb-sm-cancel:hover {
@@ -21973,18 +21997,25 @@
                             {!statusMenuOpen
                                 ? <button className="csb-change-btn" onClick={() => setStatusMenuOpen(true)}>▾ Change</button>
                                 : <div className="csb-status-menu">
-                                    {['Pending', 'Denied', 'Resubmitted'].filter(s => s !== st).map(s => (
-                                        <button key={s} className={`csb-sm-btn csb-sm-${s.toLowerCase()}`}
-                                            onClick={() => {scrollSafeUpdate({...a, claimStatus: s}); setStatusMenuOpen(false);}}>
-                                            {CS_ICON[s]} {s}
-                                        </button>
-                                    ))}
+                                    {/* Paid leads the menu, set apart as the primary control —
+                              same claimStatus: 'Paid' write as before, just repositioned
+                              and restyled (2026-09-03). Nothing reads this array's order
+                              or the buttons' position, only their status value, so this
+                              move is layout-only. */}
                                     {st !== 'Paid' && (
                                         <button className="csb-sm-btn csb-sm-paid"
                                             onClick={() => {scrollSafeUpdate({...a, claimStatus: 'Paid'}); setStatusMenuOpen(false);}}>
                                             ✅ Paid
                                         </button>
                                     )}
+                                    <div className="csb-sm-secondary">
+                                        {['Pending', 'Denied', 'Resubmitted'].filter(s => s !== st).map(s => (
+                                            <button key={s} className={`csb-sm-btn csb-sm-${s.toLowerCase()}`}
+                                                onClick={() => {scrollSafeUpdate({...a, claimStatus: s}); setStatusMenuOpen(false);}}>
+                                                {CS_ICON[s]} {s}
+                                            </button>
+                                        ))}
+                                    </div>
                                     <button className="csb-sm-btn csb-sm-cancel" onClick={() => setStatusMenuOpen(false)}>✕</button>
                                 </div>
                             }
